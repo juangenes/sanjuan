@@ -1,0 +1,115 @@
+.pagina {
+  background: #0B2E55;
+  min-height: 100vh;
+  color: white;
+  font-family: 'Segoe UI', sans-serif;
+  padding-bottom: 2rem;
+}
+
+.header {
+  background: #E63946;
+  text-align: center;
+  padding: 1rem;
+}
+
+.header h1 {
+  color: #FFCE00;
+  margin: 0;
+  font-size: 1.5rem;
+}
+
+.loading {
+  text-align: center;
+  padding: 3rem;
+  color: white;
+}
+
+.card {
+  background: white;
+  color: #333;
+  max-width: 480px;
+  margin: 1.5rem auto;
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+}
+
+.estadoBadge {
+  text-align: center;
+  padding: 0.5rem;
+  border-radius: 6px;
+  font-weight: 700;
+  margin-bottom: 1rem;
+}
+
+.qrWrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.codigo {
+  margin-top: 0.5rem;
+  font-size: 0.95rem;
+}
+
+.datosPedido p {
+  margin: 0.25rem 0;
+}
+
+.items {
+  margin-top: 1rem;
+  border-top: 1px solid #eee;
+  padding-top: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.itemLinea {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.9rem;
+}
+
+.instruccionesPago {
+  margin-top: 1.25rem;
+  border-top: 1px solid #eee;
+  padding-top: 1rem;
+  text-align: center;
+}
+
+.instruccionesPago h3 {
+  color: #E63946;
+  margin-bottom: 0.75rem;
+}
+
+.btnBancard {
+  background: #1D4ED8;
+  color: white;
+  border: none;
+  padding: 0.8rem 1.5rem;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  width: 100%;
+}
+
+.oAlternativa {
+  color: #999;
+  margin: 0.75rem 0;
+}
+
+.btnVolver {
+  display: block;
+  margin: 1rem auto 0;
+  background: transparent;
+  color: #FFCE00;
+  border: 1px solid #FFCE00;
+  padding: 0.6rem 1.4rem;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.95rem;
+}

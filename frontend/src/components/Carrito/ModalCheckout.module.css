@@ -1,0 +1,89 @@
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.7);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  z-index: 200;
+}
+
+.modal {
+  background: white;
+  color: #333;
+  width: 100%;
+  max-width: 500px;
+  border-radius: 16px 16px 0 0;
+  padding: 1.5rem;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.modal h2 {
+  text-align: center;
+  color: #E63946;
+  margin: 0 0 1rem;
+}
+
+.resumen {
+  background: #f8f8f8;
+  border-radius: 8px;
+  padding: 0.75rem;
+  margin-bottom: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.lineaResumen {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.9rem;
+}
+
+.totalResumen {
+  display: flex;
+  justify-content: space-between;
+  font-size: 1rem;
+  border-top: 1px solid #ddd;
+  padding-top: 0.5rem;
+  margin-top: 0.25rem;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.form label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #555;
+}
+
+.form input {
+  padding: 0.6rem 0.8rem;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 1rem;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.btnEnviar {
+  background: #0B2E55;
+  color: white;
+  border: none;
+  padding: 0.9rem;
+  border-radius: 8px;
+  font-size: 1.05rem;
+  font-weight: 700;
+  cursor: pointer;
+  margin-top: 0.5rem;
+}
+
+.btnEnviar:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}

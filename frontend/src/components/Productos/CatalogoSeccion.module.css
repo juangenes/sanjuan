@@ -1,0 +1,116 @@
+.seccion {
+  padding: 1rem;
+}
+
+.titulo {
+  font-size: 1.3rem;
+  color: #FFCE00;
+  border-bottom: 2px solid #FF7F00;
+  padding-bottom: 0.4rem;
+  margin-bottom: 1rem;
+}
+
+.grid {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.card {
+  background: white;
+  border-radius: 12px;
+  color: #333;
+  display: flex;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+}
+
+.agotado {
+  opacity: 0.5;
+}
+
+.imagen {
+  width: 90px;
+  height: 90px;
+  object-fit: cover;
+  border-radius: 8px;
+  flex-shrink: 0;
+}
+
+.info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.nombre {
+  font-size: 1rem;
+  font-weight: 700;
+  margin: 0;
+}
+
+.descripcion {
+  font-size: 0.8rem;
+  color: #666;
+  margin: 0;
+}
+
+.precio {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #E63946;
+  margin: 0;
+}
+
+.precioNormal {
+  font-size: 0.8rem;
+  color: #999;
+  text-decoration: line-through;
+  margin-left: 0.4rem;
+}
+
+.controles {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-top: 0.3rem;
+}
+
+.controles button {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: none;
+  background: #FFCE00;
+  color: #0B2E55;
+  font-size: 1.3rem;
+  font-weight: 700;
+  cursor: pointer;
+  line-height: 1;
+  transition: background 0.15s;
+}
+
+.controles button:disabled {
+  background: #ddd;
+  color: #aaa;
+  cursor: not-allowed;
+}
+
+.controles span {
+  font-size: 1.1rem;
+  font-weight: 600;
+  min-width: 20px;
+  text-align: center;
+}
+
+.tagAgotado {
+  display: inline-block;
+  background: #E63946;
+  color: white;
+  font-size: 0.75rem;
+  padding: 0.2rem 0.6rem;
+  border-radius: 20px;
+  margin-top: 0.3rem;
+}

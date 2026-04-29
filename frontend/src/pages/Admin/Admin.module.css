@@ -1,0 +1,122 @@
+.loginPagina {
+  min-height: 100vh;
+  background: #0B2E55;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Segoe UI', sans-serif;
+}
+
+.loginCard {
+  background: white;
+  border-radius: 12px;
+  padding: 2rem;
+  width: 90%;
+  max-width: 360px;
+  text-align: center;
+}
+
+.loginCard h1 { color: #E63946; margin: 0; font-size: 2rem; }
+.loginCard h2 { color: #0B2E55; margin: 0.25rem 0 1.5rem; font-size: 1rem; font-weight: 400; }
+
+.loginCard form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.loginCard input {
+  padding: 0.7rem;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 1rem;
+}
+
+.loginCard button {
+  background: #0B2E55;
+  color: white;
+  border: none;
+  padding: 0.8rem;
+  border-radius: 6px;
+  font-size: 1rem;
+  cursor: pointer;
+}
+
+/* Panel layout */
+.panel {
+  min-height: 100vh;
+  background: #f5f5f5;
+  font-family: 'Segoe UI', sans-serif;
+}
+
+.navbar {
+  background: #0B2E55;
+  color: white;
+  padding: 0.75rem 1rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.navbar h1 { margin: 0; font-size: 1.1rem; color: #FFCE00; }
+
+.navLinks { display: flex; gap: 1rem; }
+.navLinks a { color: white; text-decoration: none; font-size: 0.9rem; }
+.navLinks a:hover { color: #FFCE00; }
+
+.contenido { padding: 1rem; max-width: 1200px; margin: 0 auto; }
+
+.cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.cardStat {
+  background: white;
+  border-radius: 10px;
+  padding: 1.25rem;
+  text-align: center;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+
+.cardStat h3 { margin: 0 0 0.5rem; font-size: 0.85rem; color: #666; text-transform: uppercase; }
+.cardStat .valor { font-size: 1.8rem; font-weight: 700; color: #0B2E55; }
+.cardStat .sub { font-size: 0.8rem; color: #999; }
+
+table { width: 100%; border-collapse: collapse; background: white; border-radius: 10px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+th, td { padding: 0.75rem 1rem; text-align: left; border-bottom: 1px solid #eee; }
+th { background: #0B2E55; color: white; font-size: 0.85rem; }
+tr:last-child td { border-bottom: none; }
+
+.badge {
+  display: inline-block;
+  padding: 0.2rem 0.6rem;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+.pendiente { background: #fff3cd; color: #856404; }
+.pagado { background: #d4edda; color: #155724; }
+
+.btnPagar {
+  background: #22c55e;
+  color: white;
+  border: none;
+  padding: 0.35rem 0.75rem;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 0.85rem;
+}
+
+.btnWa {
+  background: #25D366;
+  color: white;
+  border: none;
+  padding: 0.35rem 0.6rem;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  margin-left: 0.3rem;
+}

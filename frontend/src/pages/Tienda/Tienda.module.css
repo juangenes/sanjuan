@@ -1,0 +1,48 @@
+:root {
+  --azul: #0B2E55;
+  --amarillo: #FFCE00;
+  --rojo: #E63946;
+  --naranja: #FF7F00;
+  --blanco: #FFFFFF;
+}
+
+.tienda {
+  background: var(--azul);
+  min-height: 100vh;
+  color: var(--blanco);
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  padding-bottom: 100px;
+}
+
+.header {
+  background: var(--rojo);
+  text-align: center;
+  padding: 1.5rem 1rem;
+}
+
+.logo {
+  width: 140px;
+  height: auto;
+  margin-bottom: 0.5rem;
+}
+
+.header h1 {
+  font-size: 1.8rem;
+  margin: 0;
+  color: var(--amarillo);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.subtitulo {
+  margin: 0.25rem 0 0;
+  font-size: 0.95rem;
+  opacity: 0.9;
+}
+
+.loading {
+  text-align: center;
+  padding: 3rem;
+  font-size: 1.2rem;
+  opacity: 0.7;
+}

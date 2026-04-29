@@ -1,0 +1,62 @@
+.pagina {
+  min-height: 100vh;
+  background: #1D4ED8;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Segoe UI', sans-serif;
+}
+
+.card {
+  background: white;
+  border-radius: 16px;
+  padding: 2rem;
+  max-width: 380px;
+  width: 90%;
+  text-align: center;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+}
+
+.logo { font-size: 3rem; margin-bottom: 0.5rem; }
+
+.card h2 { margin: 0 0 1rem; color: #1D4ED8; }
+
+.aviso {
+  background: #fff3cd;
+  color: #856404;
+  border-radius: 6px;
+  padding: 0.6rem;
+  font-size: 0.85rem;
+  margin-bottom: 1.5rem;
+}
+
+.montoBox {
+  background: #f0f0f0;
+  border-radius: 8px;
+  padding: 1rem;
+  margin-bottom: 1.5rem;
+  font-size: 1.1rem;
+}
+
+.btnPagar {
+  background: #22c55e;
+  color: white;
+  border: none;
+  padding: 0.9rem;
+  border-radius: 8px;
+  width: 100%;
+  font-size: 1.05rem;
+  font-weight: 700;
+  cursor: pointer;
+  margin-bottom: 0.75rem;
+}
+
+.btnCancelar {
+  background: transparent;
+  color: #999;
+  border: 1px solid #ddd;
+  padding: 0.6rem;
+  border-radius: 8px;
+  width: 100%;
+  cursor: pointer;
+}
