@@ -46,3 +46,27 @@
   font-size: 1.2rem;
   opacity: 0.7;
 }
+
+.adminBar {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  padding: 1.5rem 1rem;
+  border-top: 1px solid rgba(255,255,255,0.1);
+  margin-top: 1rem;
+}
+
+.adminLink {
+  color: rgba(255,255,255,0.45);
+  font-size: 0.8rem;
+  text-decoration: none;
+  padding: 0.3rem 0.75rem;
+  border: 1px solid rgba(255,255,255,0.2);
+  border-radius: 20px;
+  transition: opacity 0.2s;
+}
+
+.adminLink:hover {
+  opacity: 1;
+  color: white;
+}

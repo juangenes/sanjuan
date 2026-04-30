@@ -68,3 +68,136 @@
   font-weight: 700;
   cursor: pointer;
 }
+
+/* Tabs */
+.tabs {
+  display: flex;
+  border-bottom: 2px solid #eee;
+  margin-bottom: 1rem;
+}
+
+.tabBtn {
+  flex: 1;
+  padding: 0.6rem;
+  border: none;
+  background: #f0f0f0;
+  color: #888;
+  font-weight: 700;
+  font-size: 0.85rem;
+  cursor: pointer;
+  border-radius: 6px 6px 0 0;
+}
+
+.tabActivo {
+  background: white;
+  color: #0B2E55;
+  border-bottom: 2px solid #0B2E55;
+  margin-bottom: -2px;
+}
+
+.badge2 {
+  background: #E63946;
+  color: white;
+  border-radius: 10px;
+  padding: 0 0.4rem;
+  font-size: 0.75rem;
+  margin-left: 0.4rem;
+}
+
+/* Botón seleccionar todo */
+.btnSelAll {
+  background: #e6f2ff;
+  color: #0B2E55;
+  border: 1px solid #b3d1f0;
+  padding: 0.45rem 1rem;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  margin-bottom: 0.75rem;
+}
+
+.btnSelAll:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* +/- controls */
+.plusMinus {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.plusMinus button {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: none;
+  background: #0B2E55;
+  color: white;
+  font-size: 1.1rem;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.plusMinus span {
+  min-width: 1.8rem;
+  text-align: center;
+  font-weight: 700;
+  font-size: 1rem;
+}
+
+.yaEntregado {
+  color: #22c55e;
+  font-weight: 700;
+  font-size: 1.1rem;
+}
+
+.todoEntregado {
+  text-align: center;
+  color: #22c55e;
+  font-weight: 700;
+  font-size: 1.1rem;
+  padding: 1rem;
+}
+
+/* Historial retiros */
+.historialWrap {
+  padding: 0.5rem 0;
+}
+
+.historialTitulo {
+  font-weight: 600;
+  color: #0B2E55;
+  margin-bottom: 0.5rem;
+}
+
+.boletasList {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.boletaItem {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.6rem 0;
+  border-bottom: 1px solid #eee;
+}
+
+.boletaLink {
+  font-family: monospace;
+  color: #0B2E55;
+  font-weight: 700;
+  text-decoration: underline;
+}
+
+.fechaBoleta {
+  color: #888;
+  font-size: 0.85rem;
+}

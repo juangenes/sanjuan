@@ -11,6 +11,7 @@ import AdminPedidos from './pages/Admin/AdminPedidos';
 import AdminProductos from './pages/Admin/AdminProductos';
 import ExpendioLogin from './pages/Expendio/ExpendioLogin';
 import ExpendioPanel from './pages/Expendio/ExpendioPanel';
+import ExpendioBoleta from './pages/Expendio/ExpendioBoleta';
 import TarjetasPanel from './pages/Tarjetas/TarjetasPanel';
 
 export default function App() {
@@ -28,6 +29,7 @@ export default function App() {
           <Route path="/admin/productos" element={<AdminProductos />} />
           <Route path="/expendio" element={<ExpendioLogin />} />
           <Route path="/expendio/panel" element={<ExpendioPanel />} />
+          <Route path="/expendio/boleta/:hash/:idot" element={<ExpendioBoleta />} />
           <Route path="/tarjetas" element={<TarjetasPanel />} />
         </Routes>
       </CarritoProvider>

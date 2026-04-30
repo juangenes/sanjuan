@@ -53,4 +53,11 @@ async function obtenerBoleta(hash, idot) {
   return { pedido, items };
 }
 
-module.exports = { obtenerPedidoParaExpendio, registrarEntrega, obtenerBoleta };
+async function obtenerHistorial(hash) {
+  const pedido = await pedidoModel.buscarPorHash(hash);
+  if (!pedido) return null;
+  const historial = await entregaModel.historialBoletas(pedido.idpedido);
+  return historial;
+}
+
+module.exports = { obtenerPedidoParaExpendio, registrarEntrega, obtenerBoleta, obtenerHistorial };

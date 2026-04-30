@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getPedidoExpendio, registrarEntrega } from '../../api';
+import { getPedidoExpendio, registrarEntrega, getHistorialExpendio } from '../../api';
 import toast from 'react-hot-toast';
 import styles from './Expendio.module.css';
 
@@ -8,6 +8,8 @@ export default function ExpendioPanel() {
   const [hash, setHash] = useState('');
   const [pedido, setPedido] = useState(null);
   const [cantidades, setCantidades] = useState({});
+  const [historial, setHistorial] = useState([]);
+  const [tab, setTab] = useState('entregar');
   const [cargando, setCargando] = useState(false);
   const navigate = useNavigate();
 
@@ -17,17 +19,36 @@ export default function ExpendioPanel() {
     if (!val) return;
     setCargando(true);
     try {
-      const data = await getPedidoExpendio(val);
+      const [data, hist] = await Promise.all([
+        getPedidoExpendio(val),
+        getHistorialExpendio(val),
+      ]);
       setPedido(data);
+      setHistorial(hist);
       const init = {};
-      data.items.forEach(i => { init[i.idproducto] = i.pendiente > 0 ? i.pendiente : 0; });
+      data.items.forEach(i => { init[i.idproducto] = 0; });
       setCantidades(init);
+      setTab('entregar');
     } catch (err) {
       toast.error(err.response?.data?.error || 'Pedido no encontrado o no pagado');
       setPedido(null);
+      setHistorial([]);
     } finally {
       setCargando(false);
     }
+  }
+
+  function seleccionarTodo() {
+    const init = {};
+    pedido.items.forEach(i => { init[i.idproducto] = i.pendiente; });
+    setCantidades(init);
+  }
+
+  function cambiar(idproducto, delta, max) {
+    setCantidades(c => {
+      const val = Math.min(Math.max(0, (c[idproducto] || 0) + delta), max);
+      return { ...c, [idproducto]: val };
+    });
   }
 
   async function handleEntregar() {
@@ -41,9 +62,12 @@ export default function ExpendioPanel() {
     try {
       const { idot } = await registrarEntrega(hash, items);
       toast.success('Entrega registrada');
-      // Recargar pedido
-      const data = await getPedidoExpendio(hash);
+      const [data, hist] = await Promise.all([
+        getPedidoExpendio(hash),
+        getHistorialExpendio(hash),
+      ]);
       setPedido(data);
+      setHistorial(hist);
       const init = {};
       data.items.forEach(i => { init[i.idproducto] = 0; });
       setCantidades(init);
@@ -54,6 +78,8 @@ export default function ExpendioPanel() {
       setCargando(false);
     }
   }
+
+  const hayPendientes = pedido?.items.some(i => i.pendiente > 0);
 
   return (
     <div className={styles.pagina}>
@@ -78,43 +104,120 @@ export default function ExpendioPanel() {
             <div className={styles.pedidoHeader}>
               <div>
                 <strong>{pedido.familia}</strong>
-                <span className={styles.codigo}> · {pedido.hash.substring(0,8).toUpperCase()}</span>
+                <span className={styles.codigo}> · {pedido.hash.substring(0, 8).toUpperCase()}</span>
               </div>
               <span className={`${styles.badge} ${pedido.estado === 'PAGADO' ? styles.pagado : styles.pendiente}`}>
                 {pedido.estado}
               </span>
             </div>
 
-            <table className={styles.tabla}>
-              <thead>
-                <tr><th>Producto</th><th>Pedido</th><th>Entregado</th><th>Pendiente</th><th>A entregar</th></tr>
-              </thead>
-              <tbody>
-                {pedido.items.map(item => (
-                  <tr key={item.idproducto} style={{ background: item.pendiente === 0 ? '#f0fdf4' : 'white' }}>
-                    <td>{item.titulo}</td>
-                    <td>{item.cantidad}</td>
-                    <td>{item.entregado}</td>
-                    <td style={{ color: item.pendiente > 0 ? '#E63946' : '#22c55e', fontWeight: '700' }}>{item.pendiente}</td>
-                    <td>
-                      <input
-                        type="number"
-                        min={0}
-                        max={item.pendiente}
-                        value={cantidades[item.idproducto] ?? 0}
-                        onChange={e => setCantidades(c => ({ ...c, [item.idproducto]: Number(e.target.value) }))}
-                        className={styles.inputCant}
-                        disabled={item.pendiente === 0}
-                      />
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+            <div className={styles.tabs}>
+              <button
+                className={`${styles.tabBtn} ${tab === 'entregar' ? styles.tabActivo : ''}`}
+                onClick={() => setTab('entregar')}
+                type="button"
+              >
+                ENTREGAR
+              </button>
+              <button
+                className={`${styles.tabBtn} ${tab === 'retiros' ? styles.tabActivo : ''}`}
+                onClick={() => setTab('retiros')}
+                type="button"
+              >
+                RETIROS {historial.length > 0 && <span className={styles.badge2}>{historial.length}</span>}
+              </button>
+            </div>
 
-            <button className={styles.btnEntregar} onClick={handleEntregar} disabled={cargando}>
-              {cargando ? 'Registrando...' : '✅ Registrar Entrega'}
-            </button>
+            {tab === 'entregar' && (
+              <>
+                <button
+                  className={styles.btnSelAll}
+                  onClick={seleccionarTodo}
+                  type="button"
+                  disabled={!hayPendientes}
+                >
+                  Seleccionar todos los saldos
+                </button>
+
+                <table className={styles.tabla}>
+                  <thead>
+                    <tr>
+                      <th>Producto</th>
+                      <th>Ped.</th>
+                      <th>Entregado</th>
+                      <th>Saldo</th>
+                      <th>A entregar</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {pedido.items.map(item => (
+                      <tr key={item.idproducto} style={{ background: item.pendiente === 0 ? '#f0fdf4' : 'white' }}>
+                        <td>{item.titulo}</td>
+                        <td>{item.cantidad}</td>
+                        <td>{item.entregado}</td>
+                        <td style={{ color: item.pendiente > 0 ? '#E63946' : '#22c55e', fontWeight: '700' }}>
+                          {item.pendiente}
+                        </td>
+                        <td>
+                          {item.pendiente > 0 ? (
+                            <div className={styles.plusMinus}>
+                              <button
+                                type="button"
+                                onClick={() => cambiar(item.idproducto, -1, item.pendiente)}
+                              >−</button>
+                              <span>{cantidades[item.idproducto] ?? 0}</span>
+                              <button
+                                type="button"
+                                onClick={() => cambiar(item.idproducto, 1, item.pendiente)}
+                              >+</button>
+                            </div>
+                          ) : (
+                            <span className={styles.yaEntregado}>✓</span>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+
+                {hayPendientes ? (
+                  <button className={styles.btnEntregar} onClick={handleEntregar} disabled={cargando}>
+                    {cargando ? 'Registrando...' : '✅ Registrar Entrega'}
+                  </button>
+                ) : (
+                  <div className={styles.todoEntregado}>TODOS LOS PRODUCTOS YA FUERON RETIRADOS</div>
+                )}
+              </>
+            )}
+
+            {tab === 'retiros' && (
+              <div className={styles.historialWrap}>
+                {historial.length === 0 ? (
+                  <em>No hay retiros registrados aún.</em>
+                ) : (
+                  <>
+                    <p className={styles.historialTitulo}>Boletas emitidas:</p>
+                    <ul className={styles.boletasList}>
+                      {historial.map(b => (
+                        <li key={b.idot} className={styles.boletaItem}>
+                          <a
+                            href={`/expendio/boleta/${hash}/${b.idot}`}
+                            target="_blank"
+                            rel="noreferrer"
+                            className={styles.boletaLink}
+                          >
+                            {b.idot.substring(0, 8).toUpperCase()}...
+                          </a>
+                          <span className={styles.fechaBoleta}>
+                            {new Date(b.fecha).toLocaleString('es-PY')}
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                  </>
+                )}
+              </div>
+            )}
           </div>
         )}
       </div>

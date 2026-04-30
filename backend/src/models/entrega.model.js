@@ -44,4 +44,17 @@ async function historialBoletas(idpedido) {
   return rows;
 }
 
-module.exports = { registrar, obtenerEntregasPorPedido, obtenerBoleta, historialBoletas };
+async function retirosPorPedido(idpedido) {
+  const [rows] = await db.query(
+    `SELECT pe.idot, pe.fecha, p.titulo, pe.cantidad, pp.precio_unitario
+     FROM pedidos_entregas pe
+     JOIN productos p ON pe.idproducto = p.idproducto
+     JOIN pedidos_productos pp ON pp.idproducto = pe.idproducto AND pp.idpedido = pe.idpedido
+     WHERE pe.idpedido = ?
+     ORDER BY pe.fecha ASC, pe.id ASC`,
+    [idpedido]
+  );
+  return rows;
+}
+
+module.exports = { registrar, obtenerEntregasPorPedido, obtenerBoleta, historialBoletas, retirosPorPedido };

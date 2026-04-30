@@ -113,3 +113,78 @@
   cursor: pointer;
   font-size: 0.95rem;
 }
+
+/* Tabs */
+.tabsRow {
+  display: flex;
+  border-bottom: 2px solid #eee;
+  margin-top: 1rem;
+  margin-bottom: 0;
+}
+
+.tabBtn {
+  flex: 1;
+  padding: 0.55rem;
+  border: none;
+  background: #f0f0f0;
+  color: #888;
+  font-weight: 700;
+  font-size: 0.8rem;
+  cursor: pointer;
+  border-radius: 6px 6px 0 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.3rem;
+}
+
+.tabActivo {
+  background: white;
+  color: #0B2E55;
+  border-bottom: 2px solid #0B2E55;
+  margin-bottom: -2px;
+}
+
+.retirosBadge {
+  background: #22c55e;
+  color: white;
+  border-radius: 10px;
+  padding: 0 0.4rem;
+  font-size: 0.7rem;
+}
+
+/* Retiros tab */
+.retirosWrap {
+  padding: 0.75rem 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.sinRetiros {
+  color: #999;
+  font-size: 0.9rem;
+  display: block;
+  text-align: center;
+  padding: 0.5rem 0;
+}
+
+.retiroLinea {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  font-size: 0.9rem;
+  padding: 0.3rem 0;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.retiroDetalle {
+  color: #888;
+}
+
+.retiroFecha {
+  color: #aaa;
+  font-size: 0.8rem;
+  white-space: nowrap;
+  margin-left: 0.5rem;
+}

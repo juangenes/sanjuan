@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { getProductos } from '../../api';
 import { useCarrito } from '../../context/CarritoContext';
 import CatalogoSeccion from '../../components/Productos/CatalogoSeccion';
@@ -48,6 +49,11 @@ export default function Tienda() {
 
       <CarritoFlotante onCheckout={() => setModalOpen(true)} />
       {modalOpen && <ModalCheckout onClose={() => setModalOpen(false)} />}
+
+      <div className={styles.adminBar}>
+        <Link to="/admin" className={styles.adminLink}>⚙ Admin</Link>
+        <Link to="/expendio" className={styles.adminLink}>🍖 Expendio</Link>
+      </div>
     </div>
   );
 }

@@ -33,6 +33,10 @@ export const actualizarProducto = (id, datos) => api.put(`/productos/${id}`, dat
 export const getPedidoExpendio = (hash) => api.get(`/expendio/pedido/${hash}`).then(r => r.data.pedido);
 export const registrarEntrega = (hash, items) => api.post('/expendio/entregar', { hash, items }).then(r => r.data);
 export const getBoleta = (hash, idot) => api.get(`/expendio/boleta/${hash}/${idot}`).then(r => r.data.boleta);
+export const getHistorialExpendio = (hash) => api.get(`/expendio/historial/${hash}`).then(r => r.data.historial);
+
+// Retiros públicos (cliente)
+export const getRetirosPedido = (hash) => api.get(`/pedidos/${hash}/retiros`).then(r => r.data.retiros);
 
 // Tarjetas
 export const getSaldo = (codigo) => api.get(`/tarjetas/${codigo}/saldo`).then(r => r.data);

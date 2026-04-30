@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { QRCodeSVG } from 'qrcode.react';
-import { getPedido, iniciarPago } from '../../api';
+import { getPedido, iniciarPago, getRetirosPedido } from '../../api';
 import toast from 'react-hot-toast';
 import styles from './Confirmacion.module.css';
 
@@ -14,12 +14,20 @@ export default function Confirmacion() {
   const { hash } = useParams();
   const navigate = useNavigate();
   const [pedido, setPedido] = useState(null);
+  const [retiros, setRetiros] = useState([]);
+  const [tab, setTab] = useState('pedido');
   const [loading, setLoading] = useState(true);
   const [pagando, setPagando] = useState(false);
 
   useEffect(() => {
-    getPedido(hash)
-      .then(setPedido)
+    Promise.all([
+      getPedido(hash),
+      getRetirosPedido(hash).catch(() => []),
+    ])
+      .then(([p, r]) => {
+        setPedido(p);
+        setRetiros(r);
+      })
       .catch(() => toast.error('Pedido no encontrado'))
       .finally(() => setLoading(false));
   }, [hash]);
@@ -64,14 +72,51 @@ export default function Confirmacion() {
           <p><strong>Total:</strong> Gs. {Number(pedido.total).toLocaleString()}</p>
         </div>
 
-        <div className={styles.items}>
-          {pedido.items?.map(item => (
-            <div key={item.id} className={styles.itemLinea}>
-              <span>{item.cantidad}x {item.titulo}</span>
-              <span>Gs. {Number(item.subtotal).toLocaleString()}</span>
-            </div>
-          ))}
+        <div className={styles.tabsRow}>
+          <button
+            className={`${styles.tabBtn} ${tab === 'pedido' ? styles.tabActivo : ''}`}
+            onClick={() => setTab('pedido')}
+          >
+            PEDIDO
+          </button>
+          <button
+            className={`${styles.tabBtn} ${tab === 'retiros' ? styles.tabActivo : ''}`}
+            onClick={() => setTab('retiros')}
+          >
+            RETIROS{retiros.length > 0 && <span className={styles.retirosBadge}>{retiros.length}</span>}
+          </button>
         </div>
+
+        {tab === 'pedido' && (
+          <div className={styles.items}>
+            {pedido.items?.map(item => (
+              <div key={item.id} className={styles.itemLinea}>
+                <span>{item.cantidad}x {item.titulo}</span>
+                <span>Gs. {Number(item.subtotal).toLocaleString()}</span>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {tab === 'retiros' && (
+          <div className={styles.retirosWrap}>
+            {retiros.length === 0 ? (
+              <em className={styles.sinRetiros}>Aún no se realizaron retiros.</em>
+            ) : (
+              retiros.map((r, i) => (
+                <div key={i} className={styles.retiroLinea}>
+                  <span>
+                    {r.titulo}
+                    <span className={styles.retiroDetalle}> · {r.cantidad} u.</span>
+                  </span>
+                  <span className={styles.retiroFecha}>
+                    {new Date(r.fecha).toLocaleString('es-PY', { dateStyle: 'short', timeStyle: 'short' })}
+                  </span>
+                </div>
+              ))
+            )}
+          </div>
+        )}
 
         {pedido.estado === 'PENDIENTE' && (
           <div className={styles.instruccionesPago}>

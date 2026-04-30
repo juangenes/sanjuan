@@ -1,6 +1,7 @@
 const router = require('express').Router();
 const pedidoService = require('../services/pedido.service');
 const pedidoModel = require('../models/pedido.model');
+const entregaModel = require('../models/entrega.model');
 const { authAdmin } = require('../middleware/auth');
 
 // Público — crear pedido
@@ -14,6 +15,18 @@ router.post('/', async (req, res) => {
     res.status(201).json({ success: true, ...resultado });
   } catch (err) {
     res.status(400).json({ success: false, error: err.message });
+  }
+});
+
+// Público — retiros de un pedido (historial de entregas para el cliente)
+router.get('/:hash/retiros', async (req, res) => {
+  try {
+    const pedido = await pedidoModel.buscarPorHash(req.params.hash);
+    if (!pedido) return res.status(404).json({ error: 'Pedido no encontrado' });
+    const retiros = await entregaModel.retirosPorPedido(pedido.idpedido);
+    res.json({ success: true, retiros });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
   }
 });
 
