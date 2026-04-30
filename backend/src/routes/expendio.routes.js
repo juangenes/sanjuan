@@ -1,8 +1,19 @@
 const router = require('express').Router();
 const expendioService = require('../services/expendio.service');
+const pedidoModel = require('../models/pedido.model');
 const { authExpendio } = require('../middleware/auth');
 
 router.use(authExpendio);
+
+// Listar todos los pedidos PAGADOS para despacho
+router.get('/pedidos', async (req, res) => {
+  try {
+    const pedidos = await pedidoModel.listarPagados();
+    res.json({ success: true, pedidos });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
 
 // Ver pedido para despacho (por hash)
 router.get('/pedido/:hash', async (req, res) => {

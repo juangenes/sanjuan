@@ -30,6 +30,7 @@ export const crearProducto = (datos) => api.post('/productos', datos).then(r => 
 export const actualizarProducto = (id, datos) => api.put(`/productos/${id}`, datos).then(r => r.data);
 
 // Expendio
+export const getPedidosExpendio = () => api.get('/expendio/pedidos').then(r => r.data.pedidos);
 export const getPedidoExpendio = (hash) => api.get(`/expendio/pedido/${hash}`).then(r => r.data.pedido);
 export const registrarEntrega = (hash, items) => api.post('/expendio/entregar', { hash, items }).then(r => r.data);
 export const getBoleta = (hash, idot) => api.get(`/expendio/boleta/${hash}/${idot}`).then(r => r.data.boleta);

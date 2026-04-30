@@ -201,3 +201,119 @@
   color: #888;
   font-size: 0.85rem;
 }
+
+/* Lista de pedidos pagados */
+.listaWrap {
+  background: white;
+  border-radius: 10px;
+  padding: 1rem;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.listaHeader {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.listaTitulo {
+  margin: 0;
+  font-size: 1rem;
+  color: #0B2E55;
+}
+
+.filtroInput {
+  width: 100%;
+  padding: 0.5rem 0.7rem;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 0.9rem;
+}
+
+.listaPedidos {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.pedidoLista {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #e6f2ff;
+  border-radius: 6px;
+  padding: 0.75rem;
+}
+
+.pedidoListaInfo {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.pedidoListaTitulo {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.pedidoListaCodigo {
+  font-family: monospace;
+  background: #0B2E55;
+  color: white;
+  padding: 0.15rem 0.4rem;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.checkCompleto {
+  color: #22c55e;
+  font-weight: 700;
+  font-size: 0.8rem;
+}
+
+.pedidoListaSub {
+  color: #666;
+  font-size: 0.82rem;
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.btnAbrir {
+  background: #0B2E55;
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 0.9rem;
+  white-space: nowrap;
+}
+
+.listaVacia {
+  text-align: center;
+  color: #888;
+  padding: 1.5rem;
+  font-style: italic;
+}
+
+.btnVolverLista {
+  background: transparent;
+  color: #0B2E55;
+  border: none;
+  text-decoration: underline;
+  font-weight: 600;
+  cursor: pointer;
+  margin-bottom: 0.75rem;
+  padding: 0;
+  font-size: 0.9rem;
+}

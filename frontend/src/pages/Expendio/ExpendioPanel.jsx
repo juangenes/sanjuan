@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getPedidoExpendio, registrarEntrega, getHistorialExpendio } from '../../api';
+import { getPedidoExpendio, registrarEntrega, getHistorialExpendio, getPedidosExpendio } from '../../api';
 import toast from 'react-hot-toast';
 import styles from './Expendio.module.css';
 
@@ -9,19 +9,36 @@ export default function ExpendioPanel() {
   const [pedido, setPedido] = useState(null);
   const [cantidades, setCantidades] = useState({});
   const [historial, setHistorial] = useState([]);
+  const [pedidosLista, setPedidosLista] = useState([]);
+  const [filtro, setFiltro] = useState('');
   const [tab, setTab] = useState('entregar');
   const [cargando, setCargando] = useState(false);
+  const [cargandoLista, setCargandoLista] = useState(true);
   const navigate = useNavigate();
 
-  async function buscarPedido(e) {
-    e.preventDefault();
-    const val = hash.trim();
-    if (!val) return;
+  useEffect(() => {
+    cargarLista();
+  }, []);
+
+  async function cargarLista() {
+    setCargandoLista(true);
+    try {
+      const data = await getPedidosExpendio();
+      setPedidosLista(data);
+    } catch (err) {
+      toast.error(err.response?.data?.error || 'Error al cargar pedidos');
+    } finally {
+      setCargandoLista(false);
+    }
+  }
+
+  async function abrirPedido(hashPedido) {
+    setHash(hashPedido);
     setCargando(true);
     try {
       const [data, hist] = await Promise.all([
-        getPedidoExpendio(val),
-        getHistorialExpendio(val),
+        getPedidoExpendio(hashPedido),
+        getHistorialExpendio(hashPedido),
       ]);
       setPedido(data);
       setHistorial(hist);
@@ -36,6 +53,20 @@ export default function ExpendioPanel() {
     } finally {
       setCargando(false);
     }
+  }
+
+  async function buscarPedido(e) {
+    e.preventDefault();
+    const val = hash.trim();
+    if (!val) return;
+    abrirPedido(val);
+  }
+
+  function volverAlListado() {
+    setPedido(null);
+    setHistorial([]);
+    setHash('');
+    cargarLista();
   }
 
   function seleccionarTodo() {
@@ -81,6 +112,16 @@ export default function ExpendioPanel() {
 
   const hayPendientes = pedido?.items.some(i => i.pendiente > 0);
 
+  const listaFiltrada = pedidosLista.filter(p => {
+    if (!filtro.trim()) return true;
+    const f = filtro.trim().toLowerCase();
+    return (
+      p.familia?.toLowerCase().includes(f) ||
+      p.cedula?.toLowerCase?.().includes(f) ||
+      p.hash?.substring(0, 8).toLowerCase().includes(f)
+    );
+  });
+
   return (
     <div className={styles.pagina}>
       <header className={styles.header}>
@@ -89,18 +130,76 @@ export default function ExpendioPanel() {
       </header>
 
       <div className={styles.contenido}>
-        <form onSubmit={buscarPedido} className={styles.buscador}>
-          <input
-            value={hash}
-            onChange={e => setHash(e.target.value)}
-            placeholder="Hash o código del pedido"
-            className={styles.inputHash}
-          />
-          <button type="submit" disabled={cargando}>Buscar</button>
-        </form>
+        {!pedido && (
+          <>
+            <form onSubmit={buscarPedido} className={styles.buscador}>
+              <input
+                value={hash}
+                onChange={e => setHash(e.target.value)}
+                placeholder="Hash o código del pedido"
+                className={styles.inputHash}
+              />
+              <button type="submit" disabled={cargando}>Buscar</button>
+            </form>
+
+            <div className={styles.listaWrap}>
+              <div className={styles.listaHeader}>
+                <h2 className={styles.listaTitulo}>Pedidos pagados ({pedidosLista.length})</h2>
+                <input
+                  type="text"
+                  placeholder="Filtrar familia, cédula o código..."
+                  value={filtro}
+                  onChange={e => setFiltro(e.target.value)}
+                  className={styles.filtroInput}
+                />
+              </div>
+
+              {cargandoLista ? (
+                <div className={styles.listaVacia}>Cargando...</div>
+              ) : listaFiltrada.length === 0 ? (
+                <div className={styles.listaVacia}>
+                  {pedidosLista.length === 0 ? 'No hay pedidos pagados.' : 'No hay pedidos que coincidan con el filtro.'}
+                </div>
+              ) : (
+                <ul className={styles.listaPedidos}>
+                  {listaFiltrada.map(p => {
+                    const completo = Number(p.total_entregado) >= Number(p.total_items);
+                    return (
+                      <li key={p.idpedido} className={styles.pedidoLista}>
+                        <div className={styles.pedidoListaInfo}>
+                          <div className={styles.pedidoListaTitulo}>
+                            <span className={styles.pedidoListaCodigo}>{p.hash.substring(0, 8).toUpperCase()}</span>
+                            <strong>{p.familia}</strong>
+                            {completo && <span className={styles.checkCompleto}>✓ entregado</span>}
+                          </div>
+                          <div className={styles.pedidoListaSub}>
+                            <span>Cédula: {p.cedula}</span>
+                            <span>Gs. {Number(p.total).toLocaleString()}</span>
+                            <span>{Number(p.total_entregado)}/{Number(p.total_items)} ítems</span>
+                          </div>
+                        </div>
+                        <button
+                          className={styles.btnAbrir}
+                          onClick={() => abrirPedido(p.hash)}
+                          disabled={cargando}
+                        >
+                          Abrir
+                        </button>
+                      </li>
+                    );
+                  })}
+                </ul>
+              )}
+            </div>
+          </>
+        )}
 
         {pedido && (
           <div className={styles.pedidoCard}>
+            <button onClick={volverAlListado} className={styles.btnVolverLista} type="button">
+              ← Volver al listado
+            </button>
+
             <div className={styles.pedidoHeader}>
               <div>
                 <strong>{pedido.familia}</strong>

@@ -31,6 +31,25 @@ async function listarTodos() {
   return rows;
 }
 
+async function listarPagados() {
+  const [rows] = await db.query(
+    `SELECT p.idpedido, p.hash, p.fecha, p.cedula, p.familia, p.total,
+            COALESCE(SUM(pp.cantidad), 0) AS total_items,
+            COALESCE(SUM(ent.entregado), 0) AS total_entregado
+     FROM pedidos p
+     LEFT JOIN pedidos_productos pp ON pp.idpedido = p.idpedido
+     LEFT JOIN (
+       SELECT idpedido, idproducto, SUM(cantidad) AS entregado
+       FROM pedidos_entregas
+       GROUP BY idpedido, idproducto
+     ) ent ON ent.idpedido = pp.idpedido AND ent.idproducto = pp.idproducto
+     WHERE p.estado = 'PAGADO'
+     GROUP BY p.idpedido
+     ORDER BY p.fecha DESC`
+  );
+  return rows;
+}
+
 async function buscarPorHash(hash) {
   const [rows] = await db.query(
     'SELECT * FROM pedidos WHERE hash = ?', [hash]
@@ -76,4 +95,4 @@ async function resumenPorProducto() {
   return rows;
 }
 
-module.exports = { crear, obtenerFecha, actualizarHash, listarTodos, buscarPorHash, buscarPorId, marcarPagado, resumenDashboard, resumenPorProducto };
+module.exports = { crear, obtenerFecha, actualizarHash, listarTodos, listarPagados, buscarPorHash, buscarPorId, marcarPagado, resumenDashboard, resumenPorProducto };
