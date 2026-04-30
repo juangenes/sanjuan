@@ -1,0 +1,75 @@
+name: Deploy to Droplet
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-main
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      DROPLET_HOST: ${{ secrets.DROPLET_HOST }}
+      DROPLET_USER: ${{ secrets.DROPLET_USER }}
+      DROPLET_PORT: ${{ secrets.DROPLET_PORT }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: |
+            backend/package-lock.json
+            frontend/package-lock.json
+
+      - name: Install frontend deps
+        working-directory: frontend
+        run: npm ci
+
+      - name: Build frontend
+        working-directory: frontend
+        run: npm run build
+
+      - name: Setup SSH agent
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.DROPLET_SSH_KEY }}
+
+      - name: Add droplet to known_hosts
+        run: |
+          mkdir -p ~/.ssh
+          ssh-keyscan -p "${DROPLET_PORT:-22}" -H "$DROPLET_HOST" >> ~/.ssh/known_hosts
+
+      - name: Sync backend source
+        run: |
+          rsync -az --delete \
+            -e "ssh -p ${DROPLET_PORT:-22}" \
+            --exclude 'node_modules' \
+            --exclude '.env' \
+            backend/ \
+            "$DROPLET_USER@$DROPLET_HOST:/var/www/sanjuan/backend/"
+
+      - name: Sync frontend build output
+        run: |
+          rsync -az --delete \
+            -e "ssh -p ${DROPLET_PORT:-22}" \
+            frontend/dist/ \
+            "$DROPLET_USER@$DROPLET_HOST:/var/www/sanjuan/frontend/dist/"
+
+      - name: Install backend deps and restart API
+        run: |
+          ssh -p "${DROPLET_PORT:-22}" "$DROPLET_USER@$DROPLET_HOST" << 'EOF'
+            set -e
+            cd /var/www/sanjuan/backend
+            npm ci --omit=dev
+            pm2 startOrRestart ecosystem.config.js --env production
+          EOF

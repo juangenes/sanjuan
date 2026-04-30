@@ -29,7 +29,7 @@ export default function Tienda() {
   return (
     <div className={styles.tienda}>
       <header className={styles.header}>
-        <img src="/logo.png" alt="San Juan Dice Que Sí" className={styles.logo} />
+        <img src="/img/sjdicequesi.jpg" alt="San Juan Dice Que Sí" className={styles.logo} />
         <h1>San Juan Dice Que Sí</h1>
         <p className={styles.subtitulo}>Torrefuerte 2025 · Sábado 07 de junio · 11:00 hs</p>
       </header>
