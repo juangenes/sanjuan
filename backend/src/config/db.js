@@ -1,8 +1,6 @@
 const mysql = require('mysql2/promise');
 
-if (process.env.NODE_ENV !== 'production') {
-  require('dotenv').config();
-}
+require('dotenv').config({ override: true });
 
 let pool;
 
