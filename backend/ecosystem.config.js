@@ -5,7 +5,7 @@ module.exports = {
     cwd: '/var/www/sanjuan/backend',
     env: {
       NODE_ENV: 'production',
-      PORT: 3001,
+      PORT: 3002,
     },
     instances: 1,
     autorestart: true,
