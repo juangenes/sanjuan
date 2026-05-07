@@ -10,6 +10,7 @@ import AdminLogin from './pages/Admin/AdminLogin';
 import AdminDashboard from './pages/Admin/AdminDashboard';
 import AdminPedidos from './pages/Admin/AdminPedidos';
 import AdminProductos from './pages/Admin/AdminProductos';
+import AdminUsuarios from './pages/Admin/AdminUsuarios';
 import ExpendioLogin from './pages/Expendio/ExpendioLogin';
 import ExpendioPanel from './pages/Expendio/ExpendioPanel';
 import ExpendioBoleta from './pages/Expendio/ExpendioBoleta';
@@ -29,6 +30,7 @@ export default function App() {
           <Route path="/admin/dashboard" element={<AdminDashboard />} />
           <Route path="/admin/pedidos" element={<AdminPedidos />} />
           <Route path="/admin/productos" element={<AdminProductos />} />
+          <Route path="/admin/usuarios" element={<AdminUsuarios />} />
           <Route path="/expendio" element={<ExpendioLogin />} />
           <Route path="/expendio/panel" element={<ExpendioPanel />} />
           <Route path="/expendio/boleta/:hash/:idot" element={<ExpendioBoleta />} />

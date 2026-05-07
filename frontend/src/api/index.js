@@ -56,4 +56,14 @@ export const cargarCredito = (codigo, cantidad, valor_unitario) =>
 export const iniciarPago = (hash) => api.post('/bancard/iniciar', { hash }).then(r => r.data);
 export const confirmarPagoMock = (hash) => api.post('/bancard/confirmar-mock', { hash }).then(r => r.data);
 
+// Usuarios
+export const getUsuarios = () => api.get('/usuarios').then(r => r.data.usuarios);
+export const crearUsuario = (datos) => api.post('/usuarios', datos).then(r => r.data);
+export const actualizarUsuario = (id, datos) => api.put(`/usuarios/${id}`, datos).then(r => r.data);
+export const resetPasswordUsuario = (id, password) =>
+  api.put(`/usuarios/${id}/password`, { password }).then(r => r.data);
+export const eliminarUsuario = (id) => api.delete(`/usuarios/${id}`).then(r => r.data);
+export const cambiarMiPassword = (actual, nueva) =>
+  api.put('/usuarios/me/password', { actual, nueva }).then(r => r.data);
+
 export default api;

@@ -75,4 +75,15 @@ router.get('/admin/resumen', authAdmin, async (req, res) => {
   }
 });
 
+// Admin — detalle de ventas por producto (filtrable por rango de fechas)
+router.get('/admin/ventas-producto', authAdmin, async (req, res) => {
+  try {
+    const { desde, hasta } = req.query;
+    const data = await pedidoModel.ventasPorProductoDetalle({ desde, hasta });
+    res.json({ success: true, ...data });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 module.exports = router;

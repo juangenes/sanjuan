@@ -95,4 +95,52 @@ async function resumenPorProducto() {
   return rows;
 }
 
-module.exports = { crear, obtenerFecha, actualizarHash, listarTodos, listarPagados, buscarPorHash, buscarPorId, marcarPagado, resumenDashboard, resumenPorProducto };
+async function ventasPorProductoDetalle({ desde, hasta } = {}) {
+  const where = ["ped.estado = 'PAGADO'"];
+  const params = [];
+  if (desde) { where.push('ped.fecha >= ?'); params.push(`${desde} 00:00:00`); }
+  if (hasta) { where.push('ped.fecha <= ?'); params.push(`${hasta} 23:59:59`); }
+  const whereSql = where.join(' AND ');
+
+  const [productos] = await db.query(`
+    SELECT
+      p.idproducto,
+      p.titulo                         AS producto,
+      p.categoria,
+      p.stock,
+      p.precio_normal,
+      COALESCE(SUM(pp.cantidad), 0)    AS unidades,
+      COUNT(DISTINCT pp.idpedido)      AS pedidos,
+      COUNT(DISTINCT ped.cedula)       AS familias,
+      COALESCE(SUM(pp.subtotal), 0)    AS ingresos,
+      COALESCE(SUM(ent.entregado), 0)  AS entregadas,
+      MIN(ped.fecha)                   AS primera_venta,
+      MAX(ped.fecha)                   AS ultima_venta
+    FROM productos p
+    LEFT JOIN pedidos_productos pp ON pp.idproducto = p.idproducto
+    LEFT JOIN pedidos ped ON ped.idpedido = pp.idpedido AND ${whereSql}
+    LEFT JOIN (
+      SELECT idpedido, idproducto, SUM(cantidad) AS entregado
+      FROM pedidos_entregas
+      GROUP BY idpedido, idproducto
+    ) ent ON ent.idpedido = pp.idpedido AND ent.idproducto = pp.idproducto
+    GROUP BY p.idproducto
+    ORDER BY ingresos DESC, p.titulo
+  `, params);
+
+  const [[totales]] = await db.query(`
+    SELECT
+      COUNT(DISTINCT ped.idpedido)      AS pedidos,
+      COUNT(DISTINCT ped.cedula)        AS familias,
+      COALESCE(SUM(ped.total), 0)       AS monto,
+      COALESCE(SUM(pp.cantidad), 0)     AS unidades,
+      COUNT(DISTINCT pp.idproducto)     AS productos_distintos
+    FROM pedidos ped
+    LEFT JOIN pedidos_productos pp ON pp.idpedido = ped.idpedido
+    WHERE ${whereSql}
+  `, params);
+
+  return { productos, totales };
+}
+
+module.exports = { crear, obtenerFecha, actualizarHash, listarTodos, listarPagados, buscarPorHash, buscarPorId, marcarPagado, resumenDashboard, resumenPorProducto, ventasPorProductoDetalle };
