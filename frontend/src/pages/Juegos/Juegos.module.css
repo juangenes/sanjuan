@@ -1,0 +1,124 @@
+.pagina { min-height: 100vh; background: #0B2E55; font-family: 'Segoe UI', sans-serif; }
+
+.header {
+  background: #E63946;
+  text-align: center;
+  padding: 1rem;
+}
+.header h1 { margin: 0; color: #FFCE00; font-size: 1.4rem; }
+
+.contenido { padding: 1.5rem; max-width: 400px; margin: 0 auto; }
+
+.buscador { display: flex; flex-direction: column; gap: 0.75rem; margin-bottom: 1.5rem; }
+
+.inputCodigo {
+  padding: 0.8rem;
+  border: none;
+  border-radius: 8px;
+  font-size: 1.1rem;
+  text-align: center;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+}
+
+.buscador button {
+  background: #FFCE00;
+  color: #0B2E55;
+  border: none;
+  padding: 0.75rem;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.tarjetaCard {
+  background: white;
+  border-radius: 16px;
+  padding: 2rem;
+  text-align: center;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+}
+
+.codigoDisplay {
+  font-size: 1.5rem;
+  font-weight: 700;
+  letter-spacing: 3px;
+  color: #0B2E55;
+  margin-bottom: 1rem;
+}
+
+.saldoDisplay {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 1.5rem;
+}
+
+.saldoLabel { font-size: 0.85rem; color: #999; }
+.saldoValor { font-size: 2rem; font-weight: 700; color: #0B2E55; }
+
+.label {
+  display: block;
+  text-align: left;
+  font-size: 0.85rem;
+  color: #555;
+  margin-bottom: 0.3rem;
+  font-weight: 600;
+}
+
+.select, .inputCantidad {
+  width: 100%;
+  padding: 0.7rem;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  font-size: 1rem;
+  margin-bottom: 1rem;
+  box-sizing: border-box;
+}
+
+.inputCantidad { text-align: center; font-weight: 700; font-size: 1.2rem; }
+
+.btnCargar {
+  background: #22c55e;
+  color: white;
+  border: none;
+  padding: 1rem;
+  border-radius: 10px;
+  width: 100%;
+  font-size: 1.1rem;
+  font-weight: 700;
+  cursor: pointer;
+  margin-bottom: 0.75rem;
+}
+
+.btnCargar:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.btnSecundario {
+  background: transparent;
+  color: #0B2E55;
+  border: 1px solid #0B2E55;
+  padding: 0.6rem;
+  border-radius: 8px;
+  width: 100%;
+  font-size: 0.95rem;
+  cursor: pointer;
+}
+
+.btnSecundario:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.scannerBox {
+  background: white;
+  border-radius: 16px;
+  padding: 1rem;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+}
+
+.scannerLabel {
+  text-align: center;
+  margin: 0 0 0.75rem;
+  color: #0B2E55;
+  font-weight: 600;
+}
+
+.scannerBox .btnSecundario { margin-top: 0.75rem; }

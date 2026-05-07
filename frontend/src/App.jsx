@@ -16,6 +16,7 @@ import ExpendioLogin from './pages/Expendio/ExpendioLogin';
 import ExpendioPanel from './pages/Expendio/ExpendioPanel';
 import ExpendioBoleta from './pages/Expendio/ExpendioBoleta';
 import TarjetasPanel from './pages/Tarjetas/TarjetasPanel';
+import JuegosPanel from './pages/Juegos/JuegosPanel';
 
 export default function App() {
   return (
@@ -37,6 +38,7 @@ export default function App() {
           <Route path="/expendio/panel" element={<ExpendioPanel />} />
           <Route path="/expendio/boleta/:hash/:idot" element={<ExpendioBoleta />} />
           <Route path="/tarjetas" element={<TarjetasPanel />} />
+          <Route path="/juegos" element={<JuegosPanel />} />
         </Routes>
       </CarritoProvider>
     </BrowserRouter>

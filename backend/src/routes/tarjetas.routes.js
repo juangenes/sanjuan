@@ -29,8 +29,8 @@ router.post('/consumir', authExpendio, async (req, res) => {
   }
 });
 
-// Admin — cargar créditos
-router.post('/cargar', authAdmin, async (req, res) => {
+// Operador puesto — cargar créditos
+router.post('/cargar', authExpendio, async (req, res) => {
   try {
     const { codigo, cantidad, valor_unitario } = req.body;
     if (!codigo || !cantidad || !valor_unitario) return res.status(400).json({ error: 'Datos incompletos' });
