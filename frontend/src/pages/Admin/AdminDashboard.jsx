@@ -8,7 +8,9 @@ export default function AdminDashboard() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    getResumen().then(setResumen).catch(() => navigate('/admin'));
+    getResumen()
+      .then(setResumen)
+      .catch(err => { if (err?.response?.status === 401) navigate('/admin'); });
   }, []);
 
   if (!resumen) return <div style={{ padding: '2rem', textAlign: 'center' }}>Cargando...</div>;

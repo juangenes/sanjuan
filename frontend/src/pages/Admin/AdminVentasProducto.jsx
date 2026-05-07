@@ -18,12 +18,17 @@ export default function AdminVentasProducto() {
   const [busqueda, setBusqueda] = useState('');
   const [orden, setOrden] = useState('ingresos');
   const [cargando, setCargando] = useState(true);
+  const [error, setError] = useState('');
 
   const cargar = () => {
     setCargando(true);
+    setError('');
     getVentasPorProducto(desde || undefined, hasta || undefined)
       .then(setData)
-      .catch(() => navigate('/admin'))
+      .catch(err => {
+        if (err?.response?.status === 401) navigate('/admin');
+        else setError(err?.response?.data?.error || err.message || 'Error al cargar datos');
+      })
       .finally(() => setCargando(false));
   };
 
@@ -118,6 +123,12 @@ export default function AdminVentasProducto() {
             <div className={styles.valor}>{fmtNum(totales.familias)}</div>
           </div>
         </div>
+
+        {error && (
+          <div style={{ background: '#fee', color: '#900', padding: '1rem', borderRadius: 8, marginBottom: '1rem' }}>
+            {error} — verificá que el backend esté actualizado con el endpoint <code>/api/pedidos/admin/ventas-producto</code>.
+          </div>
+        )}
 
         {cargando ? (
           <div style={{ padding: '2rem', textAlign: 'center' }}>Cargando...</div>
