@@ -1,21 +1,22 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { getSaldo, consumirCredito } from '../../api';
+import QrScanner from '../../components/QrScanner';
 import toast from 'react-hot-toast';
 import styles from './Tarjetas.module.css';
 
 export default function TarjetasPanel() {
-  const [codigo, setCodigo] = useState('');
   const [tarjeta, setTarjeta] = useState(null);
   const [cargando, setCargando] = useState(false);
+  const [codigoManual, setCodigoManual] = useState('');
+  const [modoManual, setModoManual] = useState(false);
 
   // En producción esto viene del token del operador
   const IDPUESTO = 1;
 
-  async function buscarTarjeta(e) {
-    e.preventDefault();
+  const buscarPorCodigo = useCallback(async (codigo) => {
     setCargando(true);
     try {
-      const data = await getSaldo(codigo.trim().toUpperCase());
+      const data = await getSaldo(codigo);
       setTarjeta(data);
     } catch {
       toast.error('Tarjeta no encontrada');
@@ -23,6 +24,12 @@ export default function TarjetasPanel() {
     } finally {
       setCargando(false);
     }
+  }, []);
+
+  async function handleManual(e) {
+    e.preventDefault();
+    if (!codigoManual.trim()) return;
+    await buscarPorCodigo(codigoManual.trim().toUpperCase());
   }
 
   async function handleConsumir() {
@@ -39,6 +46,12 @@ export default function TarjetasPanel() {
     }
   }
 
+  function nuevaBusqueda() {
+    setTarjeta(null);
+    setCodigoManual('');
+    setModoManual(false);
+  }
+
   return (
     <div className={styles.pagina}>
       <header className={styles.header}>
@@ -46,16 +59,31 @@ export default function TarjetasPanel() {
       </header>
 
       <div className={styles.contenido}>
-        <form onSubmit={buscarTarjeta} className={styles.buscador}>
-          <input
-            value={codigo}
-            onChange={e => setCodigo(e.target.value)}
-            placeholder="Código de tarjeta (ej: TJC57F6D)"
-            className={styles.inputCodigo}
-            autoFocus
-          />
-          <button type="submit" disabled={cargando}>Buscar</button>
-        </form>
+        {!tarjeta && !modoManual && (
+          <div className={styles.scannerBox}>
+            <p className={styles.scannerLabel}>Escaneá el QR de la tarjeta</p>
+            <QrScanner onDetected={buscarPorCodigo} />
+            <button className={styles.btnSecundario} onClick={() => setModoManual(true)}>
+              Ingresar código manualmente
+            </button>
+          </div>
+        )}
+
+        {!tarjeta && modoManual && (
+          <form onSubmit={handleManual} className={styles.buscador}>
+            <input
+              value={codigoManual}
+              onChange={e => setCodigoManual(e.target.value)}
+              placeholder="Código de tarjeta (ej: TJC57F6D)"
+              className={styles.inputCodigo}
+              autoFocus
+            />
+            <button type="submit" disabled={cargando}>Buscar</button>
+            <button type="button" className={styles.btnSecundario} onClick={() => setModoManual(false)}>
+              ← Volver al escáner
+            </button>
+          </form>
+        )}
 
         {tarjeta && (
           <div className={styles.tarjetaCard}>
@@ -72,6 +100,9 @@ export default function TarjetasPanel() {
               disabled={cargando || tarjeta.saldo < 1}
             >
               {cargando ? 'Procesando...' : '🎯 Canjear 1 Crédito'}
+            </button>
+            <button className={styles.btnSecundario} onClick={nuevaBusqueda} disabled={cargando}>
+              Escanear otra tarjeta
             </button>
           </div>
         )}

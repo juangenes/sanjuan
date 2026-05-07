@@ -71,3 +71,31 @@
 }
 
 .btnConsumir:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.btnSecundario {
+  background: transparent;
+  color: #0B2E55;
+  border: 1px solid #0B2E55;
+  padding: 0.6rem;
+  border-radius: 8px;
+  width: 100%;
+  font-size: 0.95rem;
+  cursor: pointer;
+  margin-top: 0.75rem;
+}
+
+.btnSecundario:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.scannerBox {
+  background: white;
+  border-radius: 16px;
+  padding: 1rem;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+}
+
+.scannerLabel {
+  text-align: center;
+  margin: 0 0 0.75rem;
+  color: #0B2E55;
+  font-weight: 600;
+}
