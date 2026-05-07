@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import { CarritoProvider } from './context/CarritoContext';
 
+import Landing from './pages/Landing/Landing';
 import Tienda from './pages/Tienda/Tienda';
 import Confirmacion from './pages/Tienda/Confirmacion';
 import PagoMock from './pages/Tienda/PagoMock';
@@ -20,7 +21,8 @@ export default function App() {
       <Toaster position="top-center" />
       <CarritoProvider>
         <Routes>
-          <Route path="/" element={<Tienda />} />
+          <Route path="/" element={<Landing />} />
+          <Route path="/tienda" element={<Tienda />} />
           <Route path="/pedido/:hash" element={<Confirmacion />} />
           <Route path="/pago/mock" element={<PagoMock />} />
           <Route path="/admin" element={<AdminLogin />} />

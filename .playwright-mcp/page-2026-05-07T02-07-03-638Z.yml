@@ -1,0 +1,197 @@
+- generic [ref=e3]:
+  - navigation [ref=e4]:
+    - generic [ref=e5]:
+      - generic [ref=e6]: SJ
+      - generic [ref=e7]: San Juan Dice Que Síii
+    - generic [ref=e8]:
+      - link "La tradición" [ref=e9] [cursor=pointer]:
+        - /url: "#tradicion"
+      - link "Juegos típicos" [ref=e10] [cursor=pointer]:
+        - /url: "#juegos"
+      - link "Comidas" [ref=e11] [cursor=pointer]:
+        - /url: "#comidas"
+      - link "Cuándo & dónde" [ref=e12] [cursor=pointer]:
+        - /url: "#info"
+    - link "Comprar preventa →" [ref=e13] [cursor=pointer]:
+      - /url: /tienda
+  - generic [ref=e15]:
+    - generic [ref=e16]:
+      - generic [ref=e17]: Edición 2026 · Colegio Torrefuerte
+      - heading "San Juan Dice Que Síii" [level=1] [ref=e19]:
+        - text: San Juan
+        - text: Dice Que Síii
+      - paragraph [ref=e20]: Una noche de fogata, mbeju recién hecho, asaditos al carbón y los juegos de siempre. Como cuando éramos chicos — pero ahora con preventa online y sin filas.
+      - generic [ref=e21]:
+        - generic [ref=e22]:
+          - generic [ref=e23]: Fecha
+          - generic [ref=e24]: Sábado 6 de junio
+        - generic [ref=e25]:
+          - generic [ref=e26]: Desde
+          - generic [ref=e27]: 11:00 am
+        - generic [ref=e28]:
+          - generic [ref=e29]: Lugar
+          - generic [ref=e30]: Colegio Torrefuerte
+      - generic [ref=e31]:
+        - link "Comprar en preventa →" [ref=e32] [cursor=pointer]:
+          - /url: /tienda
+        - link "Ver el programa" [ref=e33] [cursor=pointer]:
+          - /url: "#juegos"
+    - generic [ref=e35]:
+      - generic [ref=e36]: Colegio Torrefuerte · 6° Grado · presenta
+      - generic [ref=e37]:
+        - text: San Juan
+        - text: Dice Que Síii
+        - generic [ref=e39]: 06·06·2026
+      - generic [ref=e40]: Comida · Juegos · Fogata · Música en vivo
+      - generic [ref=e41]:
+        - generic [ref=e42]: −20%
+        - generic [ref=e43]: Preventa
+  - generic [ref=e46]:
+    - generic [ref=e47]:
+      - generic [ref=e48]: La tradición
+      - heading "Una fiesta que nos une desde hace generaciones" [level=2] [ref=e49]
+      - paragraph [ref=e50]: "San Juan se celebra cada 24 de junio en honor a San Juan Bautista, y en Paraguay es mucho más que una fecha en el calendario: es el olor a leña, los pies descalzos sobre las brasas, las botellas que vuelan alto en el carrera vosa, y la familia entera afuera hasta la tardecita. Es cultura viva, y este año los padres del Sexto Grado del Colegio Torrefuerte la traemos de vuelta para nuestros chicos."
+      - link "Sumate a la fiesta — comprá tu preventa →" [ref=e51] [cursor=pointer]:
+        - /url: /tienda
+    - generic [ref=e52]:
+      - img "Fiesta de San Juan" [ref=e53]
+      - generic [ref=e54]:
+        - text: "\"Lo bueno se vive,"
+        - text: se comparte y se come"
+  - generic [ref=e56]:
+    - generic [ref=e57]: Juegos típicos
+    - heading "Lo que vas a vivir esa noche" [level=2] [ref=e58]
+    - paragraph [ref=e59]: Los juegos de siempre, los que nuestros abuelos jugaban en sus San Juanes. Para chicos, grandes y nostálgicos.
+    - generic [ref=e60]:
+      - generic [ref=e61]:
+        - generic [ref=e62]: 🔥
+        - heading "Pelota Tatá" [level=4] [ref=e63]
+        - paragraph [ref=e64]: La pelota envuelta en trapos y kerosene que vuela encendida en la noche.
+      - generic [ref=e65]:
+        - generic [ref=e66]: 🎯
+        - heading "Tata Ári Jehasa" [level=4] [ref=e67]
+        - paragraph [ref=e68]: Caminar descalzo sobre las brasas. Solo para los más valientes.
+      - generic [ref=e69]:
+        - generic [ref=e70]: 🏃
+        - heading "Carrera Vosá" [level=4] [ref=e71]
+        - paragraph [ref=e72]: Carrera con bolsa hasta la meta. Caídas garantizadas, risas también.
+      - generic [ref=e73]:
+        - generic [ref=e74]: 🪙
+        - heading "Yvyra Sỹi" [level=4] [ref=e75]
+        - paragraph [ref=e76]: Subir el palo enjabonado para alcanzar el premio. Se puede en grupo.
+      - generic [ref=e77]:
+        - generic [ref=e78]: 🐸
+        - heading "Sapo" [level=4] [ref=e79]
+        - paragraph [ref=e80]: Tirar la moneda en la boca del sapo de bronce. Clásico de clásicos.
+      - generic [ref=e81]:
+        - generic [ref=e82]: 🎲
+        - heading "Argollas" [level=4] [ref=e83]
+        - paragraph [ref=e84]: Encestar las argollas en las botellas. Suena fácil. No lo es.
+      - generic [ref=e85]:
+        - generic [ref=e86]: ⛳
+        - heading "Tiro al Blanco" [level=4] [ref=e87]
+        - paragraph [ref=e88]: Apuntá, disparás, ganás. Premios para los mejores.
+      - generic [ref=e89]:
+        - generic [ref=e90]: 🔔
+        - heading "Toro Candil" [level=4] [ref=e91]
+        - paragraph [ref=e92]: El toro de cuernos encendidos persigue a los más rápidos.
+    - link "Llevá tu tarjeta de juegos en preventa →" [ref=e94] [cursor=pointer]:
+      - /url: /tienda
+  - generic [ref=e96]:
+    - generic [ref=e97]: Comidas típicas
+    - heading "Sabores que solo se sienten en San Juan" [level=2] [ref=e98]
+    - paragraph [ref=e99]: Toda la cocina paraguaya servida bajo las estrellas. Reservá tu plato en preventa y evitá la cola la noche del evento.
+    - generic [ref=e100]:
+      - generic [ref=e101]:
+        - generic [ref=e102]:
+          - img "Asadito de Carne" [ref=e103]
+          - generic [ref=e104]: Preventa
+        - generic [ref=e105]:
+          - heading "Asadito de Carne" [level=4] [ref=e106]
+          - paragraph [ref=e107]: Brochette al carbón con yopará y mandioca
+          - generic [ref=e108]:
+            - text: Gs. 25.000
+            - generic [ref=e109]: Gs. 30.000
+      - generic [ref=e110]:
+        - generic [ref=e111]:
+          - img "Empanadas Criollas" [ref=e112]
+          - generic [ref=e113]: Preventa
+        - generic [ref=e114]:
+          - heading "Empanadas Criollas" [level=4] [ref=e115]
+          - paragraph [ref=e116]: Fritas, hechas al momento, masa de la abuela
+          - generic [ref=e117]:
+            - text: Gs. 8.000
+            - generic [ref=e118]: Gs. 10.000
+      - generic [ref=e119]:
+        - generic [ref=e120]:
+          - img "Mbeju" [ref=e121]
+          - generic [ref=e122]: Preventa
+        - generic [ref=e123]:
+          - heading "Mbeju" [level=4] [ref=e124]
+          - paragraph [ref=e125]: Hecho al instante en sartén caliente
+          - generic [ref=e126]:
+            - text: Gs. 10.000
+            - generic [ref=e127]: Gs. 12.000
+      - generic [ref=e128]:
+        - generic [ref=e129]:
+          - img "Choripán" [ref=e130]
+          - generic [ref=e131]: Preventa
+        - generic [ref=e132]:
+          - heading "Choripán" [level=4] [ref=e133]
+          - paragraph [ref=e134]: Con chimichurri casero
+          - generic [ref=e135]:
+            - text: Gs. 20.000
+            - generic [ref=e136]: Gs. 22.000
+      - generic [ref=e137]:
+        - img "Pajagua Mascada" [ref=e139]
+        - generic [ref=e140]:
+          - heading "Pajagua Mascada" [level=4] [ref=e141]
+          - paragraph [ref=e142]: Tortilla de mandioca con carne molida
+          - generic [ref=e143]: Gs. 12.000
+      - generic [ref=e144]:
+        - img "Vorí Vorí" [ref=e146]
+        - generic [ref=e147]:
+          - heading "Vorí Vorí" [level=4] [ref=e148]
+          - paragraph [ref=e149]: Caldo caliente con bolitas de maíz, ideal para la noche fría
+          - generic [ref=e150]: Gs. 15.000
+    - generic [ref=e151]:
+      - generic [ref=e152]:
+        - strong [ref=e153]: En nuestra fiesta vas a poder disfrutar de todo esto y más
+        - generic [ref=e154]: Hacé tu pedido por adelantado, pagá online y retirá la noche del evento. Sin colas, con descuento.
+      - link "Hacé tu compra ahora →" [ref=e155] [cursor=pointer]:
+        - /url: /tienda
+  - generic [ref=e157]:
+    - generic [ref=e158]: Cuándo & dónde
+    - heading "Toda la info que necesitás" [level=2] [ref=e159]
+    - generic [ref=e160]:
+      - generic [ref=e161]:
+        - generic [ref=e162]: 📅
+        - heading "Fecha y hora" [level=5] [ref=e163]
+        - generic [ref=e164]: Sábado 6 de junio de 2026
+        - paragraph [ref=e165]: Desde las 11:00 am. Almuerzo, juegos para los chicos, fogata al caer el sol.
+      - generic [ref=e166]:
+        - generic [ref=e167]: 📍
+        - heading "Ubicación" [level=5] [ref=e168]
+        - generic [ref=e169]: Colegio Torrefuerte
+        - paragraph [ref=e170]: Patio principal del colegio. Estacionamiento habilitado para padres y familias.
+      - generic [ref=e171]:
+        - generic [ref=e172]: 💳
+        - heading "Pagos" [level=5] [ref=e173]
+        - generic [ref=e174]: Bancard, transferencia o efectivo
+        - paragraph [ref=e175]: Preventa online con descuento. Mostrás el QR y retirás.
+  - generic [ref=e177]:
+    - heading "Nos vemos el 6 de junio" [level=2] [ref=e178]
+    - paragraph [ref=e179]: Reservá tu comida y tus tarjetas de juegos antes del 4 de junio y aprovechá los precios de preventa. Toda la recaudación es para el viaje de fin de curso del 6° Grado — la cantidad es limitada.
+    - link "Comprar mi preventa →" [ref=e180] [cursor=pointer]:
+      - /url: /tienda
+  - contentinfo [ref=e181]:
+    - generic [ref=e182]:
+      - generic [ref=e183]: SJ
+      - text: San Juan Dice Que Síii · Colegio Torrefuerte · 6° Grado · 2026
+    - generic [ref=e184]:
+      - link "Contacto padres organizadores" [ref=e185] [cursor=pointer]:
+        - /url: "#"
+      - link "WhatsApp del comité" [ref=e186] [cursor=pointer]:
+        - /url: "#"
+      - link "Términos de preventa" [ref=e187] [cursor=pointer]:
+        - /url: "#"

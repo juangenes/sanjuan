@@ -1,0 +1,43 @@
+- generic [ref=e2]:
+  - generic:
+    - status [ref=e8]: No se pudieron cargar los productos
+    - status [ref=e14]: No se pudieron cargar los productos
+  - generic [ref=e15]:
+    - banner [ref=e16]:
+      - generic [ref=e18]:
+        - heading "San Juan Dice Que Síii" [level=1] [ref=e19]
+        - generic [ref=e20]: 07 jun 2026 · Colegio Torrefuerte · 11:00 am
+      - navigation [ref=e21]:
+        - generic [ref=e22] [cursor=pointer]: Tienda
+        - link "Cómo retirar" [ref=e23] [cursor=pointer]:
+          - /url: /expendio
+        - link "Admin" [ref=e24] [cursor=pointer]:
+          - /url: /admin
+    - generic [ref=e25]:
+      - text: 🔥
+      - generic [ref=e26]:
+        - strong [ref=e27]: Preventa abierta
+        - text: hasta el 4 de junio · descuentos en toda la tienda
+    - main [ref=e28]:
+      - generic [ref=e29]:
+        - generic [ref=e30]:
+          - button "Todos" [ref=e31] [cursor=pointer]:
+            - generic [ref=e32]: Todos
+          - button "🍖 Comida" [ref=e33] [cursor=pointer]:
+            - generic [ref=e34]: 🍖 Comida
+          - button "🥤 Bebidas" [ref=e35] [cursor=pointer]:
+            - generic [ref=e36]: 🥤 Bebidas
+          - button "🎯 Juegos" [ref=e37] [cursor=pointer]:
+            - generic [ref=e38]: 🎯 Juegos
+        - generic [ref=e39]:
+          - generic: 🔍
+          - textbox "Buscar mbeju, choripán, agua..." [ref=e40]
+      - generic [ref=e41]:
+        - generic [ref=e42]: 🔍
+        - generic [ref=e43]: No hay productos disponibles.
+    - complementary [ref=e44]:
+      - heading "🛒 Tu pedido" [level=2] [ref=e46]
+      - generic [ref=e48]:
+        - generic [ref=e49]: 🛒
+        - generic [ref=e50]: Tu carrito está vacío
+        - generic [ref=e51]: Agregá productos del catálogo y aparecerán acá.
