@@ -31,6 +31,7 @@ function DesktopHeader() {
         </div>
       </div>
       <nav className="td-header-nav">
+        <Link to="/">Inicio</Link>
         <a className="active">Tienda</a>
         <Link to="/expendio">Cómo retirar</Link>
         <Link to="/admin">Admin</Link>

@@ -5,7 +5,7 @@
 set -e
 
 echo "=== Sincronizando código al droplet ==="
-rsync -avz --exclude 'node_modules' --exclude '.env' --exclude 'dist' \
+rsync -avz --exclude 'node_modules' --exclude '.env' --exclude 'dist' --exclude 'uploads' \
   ./backend/ droplet:/var/www/sanjuan/backend/
 
 rsync -avz --exclude 'node_modules' --exclude '.env' --exclude 'dist' \

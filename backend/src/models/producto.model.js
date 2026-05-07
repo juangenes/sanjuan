@@ -52,4 +52,8 @@ async function crearProducto(datos) {
   return result.insertId;
 }
 
-module.exports = { listarActivos, listarTodos, buscarPorId, actualizarStock, reponerStock, actualizarProducto, crearProducto };
+async function eliminarProducto(id) {
+  await db.query('DELETE FROM productos WHERE idproducto = ?', [id]);
+}
+
+module.exports = { listarActivos, listarTodos, buscarPorId, actualizarStock, reponerStock, actualizarProducto, crearProducto, eliminarProducto };

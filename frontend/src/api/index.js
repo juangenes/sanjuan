@@ -28,6 +28,13 @@ export const getResumen = () => api.get('/pedidos/admin/resumen').then(r => r.da
 export const getProductosAdmin = () => api.get('/productos/admin').then(r => r.data.productos);
 export const crearProducto = (datos) => api.post('/productos', datos).then(r => r.data);
 export const actualizarProducto = (id, datos) => api.put(`/productos/${id}`, datos).then(r => r.data);
+export const eliminarProducto = (id) => api.delete(`/productos/${id}`).then(r => r.data);
+export const subirImagenProducto = (file) => {
+  const fd = new FormData();
+  fd.append('imagen', file);
+  return api.post('/upload/producto', fd, { headers: { 'Content-Type': 'multipart/form-data' } })
+    .then(r => r.data);
+};
 
 // Expendio
 export const getPedidosExpendio = () => api.get('/expendio/pedidos').then(r => r.data.pedidos);

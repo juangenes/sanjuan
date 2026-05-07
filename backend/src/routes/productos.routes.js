@@ -42,4 +42,19 @@ router.put('/:id', authAdmin, async (req, res) => {
   }
 });
 
+// Admin — eliminar
+router.delete('/:id', authAdmin, async (req, res) => {
+  try {
+    await productoModel.eliminarProducto(req.params.id);
+    res.json({ success: true });
+  } catch (err) {
+    if (err.code === 'ER_ROW_IS_REFERENCED_2' || err.errno === 1451) {
+      return res.status(409).json({
+        error: 'No se puede eliminar: el producto está referenciado en pedidos. Marcalo como inactivo en su lugar.',
+      });
+    }
+    res.status(500).json({ error: err.message });
+  }
+});
+
 module.exports = router;

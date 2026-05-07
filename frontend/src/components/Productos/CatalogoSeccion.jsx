@@ -16,7 +16,7 @@ export default function CatalogoSeccion({ titulo, productos }) {
           return (
             <div key={p.idproducto} className={`${styles.card} ${sinStock ? styles.agotado : ''}`}>
               <img
-                src={`/img/${p.imagen}`}
+                src={p.imagen?.startsWith('/') ? p.imagen : `/img/${p.imagen}`}
                 alt={p.titulo}
                 className={styles.imagen}
                 onError={e => { e.target.src = '/img/placeholder.jpg'; }}

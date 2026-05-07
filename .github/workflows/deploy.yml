@@ -54,7 +54,7 @@ jobs:
             User $DROPLET_USER
             Port ${DROPLET_PORT:-22}
             ControlMaster auto
-            ControlPath /tmp/ssh_mux_%h_%p_%r
+            ControlPath /tmp/ssh_mux_droplet
             ControlPersist 10m
           EOF
           ssh -fNT droplet
@@ -62,16 +62,17 @@ jobs:
       - name: Sync backend source
         run: |
           rsync -az --delete \
-            -e "ssh -o ControlMaster=no -o ControlPath=/tmp/ssh_mux_%h_%p_%r" \
+            -e "ssh -o ControlMaster=no -o ControlPath=/tmp/ssh_mux_droplet" \
             --exclude 'node_modules' \
             --exclude '.env' \
+            --exclude 'uploads' \
             backend/ \
             "droplet:/var/www/sanjuan/backend/"
 
       - name: Sync frontend build output
         run: |
           rsync -az --delete \
-            -e "ssh -o ControlMaster=no -o ControlPath=/tmp/ssh_mux_%h_%p_%r" \
+            -e "ssh -o ControlMaster=no -o ControlPath=/tmp/ssh_mux_droplet" \
             frontend/dist/ \
             "droplet:/var/www/sanjuan/frontend/dist/"
 
