@@ -25,6 +25,8 @@ export const login = (usuario, password) =>
 export const getPedidosAdmin = () => api.get('/pedidos').then(r => r.data.pedidos);
 export const marcarPagado = (id) => api.post(`/pedidos/${id}/pagar`).then(r => r.data);
 export const getResumen = () => api.get('/pedidos/admin/resumen').then(r => r.data);
+export const getVentasPorProducto = (desde, hasta) =>
+  api.get('/pedidos/admin/ventas-producto', { params: { desde, hasta } }).then(r => r.data);
 export const getProductosAdmin = () => api.get('/productos/admin').then(r => r.data.productos);
 export const crearProducto = (datos) => api.post('/productos', datos).then(r => r.data);
 export const actualizarProducto = (id, datos) => api.put(`/productos/${id}`, datos).then(r => r.data);
