@@ -22,6 +22,7 @@ export default function AdminDashboard() {
         <div className={styles.navLinks}>
           <Link to="/admin/pedidos">Pedidos</Link>
           <Link to="/admin/productos">Productos</Link>
+          <Link to="/admin/ventas-producto">Ventas x Producto</Link>
           <Link to="/admin/usuarios">Usuarios</Link>
           <a onClick={() => { localStorage.clear(); navigate('/admin'); }} style={{ cursor: 'pointer' }}>Salir</a>
         </div>
@@ -51,7 +52,10 @@ export default function AdminDashboard() {
           </div>
         </div>
 
-        <h2 style={{ marginBottom: '0.75rem' }}>Resumen por Producto</h2>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
+          <h2 style={{ margin: 0 }}>Resumen por Producto</h2>
+          <Link to="/admin/ventas-producto" style={{ fontSize: '0.9rem', color: '#0B2E55' }}>Ver detalle →</Link>
+        </div>
         <table>
           <thead>
             <tr><th>Producto</th><th>Categoría</th><th>Pagado</th><th>Pendiente</th></tr>
