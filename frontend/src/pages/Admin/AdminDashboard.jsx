@@ -20,12 +20,14 @@ export default function AdminDashboard() {
   return (
     <div className={styles.panel}>
       <nav className={styles.navbar}>
-        <h1>⛪ San Juan · Admin</h1>
+        <h1>⛪ San Juan · Administración</h1>
         <div className={styles.navLinks}>
+          <Link to="/admin/dashboard">Dashboard</Link>
           <Link to="/admin/pedidos">Pedidos</Link>
           <Link to="/admin/productos">Productos</Link>
           <Link to="/admin/ventas-producto">Ventas x Producto</Link>
           <Link to="/admin/usuarios">Usuarios</Link>
+          <Link to="/admin/puestos">Puestos</Link>
           <a onClick={() => { localStorage.clear(); navigate('/admin'); }} style={{ cursor: 'pointer' }}>Salir</a>
         </div>
       </nav>

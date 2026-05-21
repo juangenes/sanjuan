@@ -60,7 +60,9 @@ export default function AdminVentasProducto() {
           <Link to="/admin/dashboard">Dashboard</Link>
           <Link to="/admin/pedidos">Pedidos</Link>
           <Link to="/admin/productos">Productos</Link>
+          <Link to="/admin/ventas-producto">Ventas x Producto</Link>
           <Link to="/admin/usuarios">Usuarios</Link>
+          <Link to="/admin/puestos">Puestos</Link>
           <a onClick={() => { localStorage.clear(); navigate('/admin'); }} style={{ cursor: 'pointer' }}>Salir</a>
         </div>
       </nav>

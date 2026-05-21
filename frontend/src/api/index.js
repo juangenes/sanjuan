@@ -54,6 +54,13 @@ export const consumirCredito = (codigo, idpuesto) => api.post('/tarjetas/consumi
 export const cargarCredito = (codigo, cantidad, valor_unitario) =>
   api.post('/tarjetas/cargar', { codigo, cantidad, valor_unitario }).then(r => r.data);
 
+// Puestos
+export const getPuestos = () => api.get('/puestos').then(r => r.data.puestos);
+export const getPuestosAdmin = () => api.get('/puestos/admin').then(r => r.data.puestos);
+export const crearPuesto = (datos) => api.post('/puestos', datos).then(r => r.data);
+export const actualizarPuesto = (id, datos) => api.put(`/puestos/${id}`, datos).then(r => r.data);
+export const eliminarPuesto = (id) => api.delete(`/puestos/${id}`).then(r => r.data);
+
 // Bancard mock
 export const iniciarPago = (hash) => api.post('/bancard/iniciar', { hash }).then(r => r.data);
 export const confirmarPagoMock = (hash) => api.post('/bancard/confirmar-mock', { hash }).then(r => r.data);

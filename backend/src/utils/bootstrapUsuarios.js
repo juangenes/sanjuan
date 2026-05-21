@@ -10,8 +10,8 @@ async function bootstrapUsuarios() {
   } catch (e) {
     if (e && e.code === 'ER_NO_SUCH_TABLE') {
       console.error(
-        '[bootstrap] La tabla `usuarios` no existe. Corré la migración:\n' +
-        '            mysql -u $DB_USER -p $DB_NAME < backend/migrations/001_usuarios.sql'
+        '[bootstrap] La tabla `usuarios` no existe. Corré las migraciones:\n' +
+        '            cd backend && npm run migrate'
       );
       return;
     }

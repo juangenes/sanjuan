@@ -8,7 +8,7 @@ function LandingNav() {
     <nav className="ld-nav">
       <div className="ld-nav-brand">
         <span className="ld-nav-brand-mark">SJ</span>
-        <span>San Juan Dice Que Síii</span>
+        <span>San Juan Dice Que Si !!!</span>
       </div>
       <div className="ld-nav-links">
         <a href="#tradicion">La tradición</a>
@@ -32,7 +32,7 @@ function LandingHero() {
             <span className="ld-hero-tag-dot" />
             Edición 2026 · Colegio Torrefuerte
           </span>
-          <h1>San Juan<br/>Dice Que Sí<span className="ii">ii</span></h1>
+          <h1>San Juan<br/>Dice Que Si <span className="ii">!!!</span></h1>
           <p className="ld-hero-sub">
             Una noche de fogata, mbeju recién hecho, asaditos al carbón y los
             juegos de siempre. Como cuando éramos chicos — pero ahora con
@@ -63,7 +63,7 @@ function LandingHero() {
           <div className="ld-hero-poster">
             <div className="ld-hero-poster-top">Colegio Torrefuerte · 6° Grado · presenta</div>
             <div className="ld-hero-poster-mid">
-              San Juan<br/>Dice Que Sí<span style={{color:'#fff'}}>ii</span>
+              San Juan<br/>Dice Que Si <span style={{color:'#fff'}}>!!!</span>
               <span className="anio">06·06·2026</span>
             </div>
             <div className="ld-hero-poster-bot">Comida · Juegos · Fogata · Música en vivo</div>
@@ -128,7 +128,7 @@ function LandingJuegos() {
     <section className="ld-section ld-juegos" id="juegos">
       <div className="ld-section-inner" style={{position:'relative'}}>
         <span className="ld-eyebrow">Juegos típicos</span>
-        <h2 className="ld-h2">Lo que vas a vivir esa noche</h2>
+        <h2 className="ld-h2">Lo que vas a vivir ese día</h2>
         <p className="ld-lead">
           Los juegos de siempre, los que nuestros abuelos jugaban en sus
           San Juanes. Para chicos, grandes y nostálgicos.
@@ -268,12 +268,11 @@ function LandingFooter() {
           display:'inline-flex',alignItems:'center',justifyContent:'center',
           fontSize:'.7rem',fontWeight:800,fontFamily:'Inter,system-ui,sans-serif'
         }}>SJ</span>
-        San Juan Dice Que Síii · Colegio Torrefuerte · 6° Grado · 2026
+        San Juan Dice Que Si !!! · Colegio Torrefuerte · 6° Grado · 2026
       </div>
       <div className="ld-footer-links">
-        <a href="#">Contacto padres organizadores</a>
-        <a href="#">WhatsApp del comité</a>
-        <a href="#">Términos de preventa</a>
+        <Link to="/tarjetas">Tarjetas</Link>
+        <Link to="/expendio">Expendio</Link>
       </div>
     </footer>
   );

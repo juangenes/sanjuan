@@ -1,27 +1,19 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { getPuestosAdmin, crearPuesto, actualizarPuesto, eliminarPuesto } from '../../api';
 import toast from 'react-hot-toast';
-import {
-  getUsuarios,
-  crearUsuario,
-  actualizarUsuario,
-  resetPasswordUsuario,
-  eliminarUsuario,
-} from '../../api';
 import styles from './Admin.module.css';
 
-const ROLES = ['admin', 'expendio', 'tarjetas'];
+const FORM_VACIO = { codigo: '', nombre: '', responsable: '', activo: true };
 
-const FORM_VACIO = { usuario: '', password: '', rol: 'expendio', nombre: '', activo: true };
-
-export default function AdminUsuarios() {
-  const [usuarios, setUsuarios] = useState([]);
+export default function AdminPuestos() {
+  const [puestos, setPuestos] = useState([]);
   const [nuevo, setNuevo] = useState(FORM_VACIO);
   const [editando, setEditando] = useState(null);
   const navigate = useNavigate();
 
   function cargar() {
-    getUsuarios().then(setUsuarios).catch(() => navigate('/admin'));
+    getPuestosAdmin().then(setPuestos).catch(() => navigate('/admin'));
   }
 
   useEffect(() => { cargar(); }, []);
@@ -29,8 +21,8 @@ export default function AdminUsuarios() {
   async function handleCrear(e) {
     e.preventDefault();
     try {
-      await crearUsuario(nuevo);
-      toast.success('Usuario creado');
+      await crearPuesto(nuevo);
+      toast.success('Puesto creado');
       setNuevo(FORM_VACIO);
       cargar();
     } catch (err) {
@@ -40,9 +32,9 @@ export default function AdminUsuarios() {
 
   async function handleGuardarEdit() {
     try {
-      const { id, usuario, rol, nombre, activo } = editando;
-      await actualizarUsuario(id, { usuario, rol, nombre, activo });
-      toast.success('Usuario actualizado');
+      const { id, codigo, nombre, responsable, activo } = editando;
+      await actualizarPuesto(id, { codigo, nombre, responsable, activo });
+      toast.success('Puesto actualizado');
       setEditando(null);
       cargar();
     } catch (err) {
@@ -50,38 +42,21 @@ export default function AdminUsuarios() {
     }
   }
 
-  async function handleResetPassword(u) {
-    const nueva = window.prompt(`Nueva contraseña para ${u.usuario}:`);
-    if (!nueva) return;
-    if (nueva.length < 6) return toast.error('Mínimo 6 caracteres');
+  async function handleEliminar(p) {
+    if (!window.confirm(`¿Eliminar puesto "${p.nombre}"?`)) return;
     try {
-      await resetPasswordUsuario(u.id, nueva);
-      toast.success('Contraseña actualizada');
-    } catch (err) {
-      toast.error(err.response?.data?.error || 'Error');
-    }
-  }
-
-  async function handleEliminar(u) {
-    if (!window.confirm(`¿Eliminar usuario "${u.usuario}"?`)) return;
-    try {
-      await eliminarUsuario(u.id);
-      toast.success('Usuario eliminado');
+      await eliminarPuesto(p.id);
+      toast.success('Puesto eliminado');
       cargar();
     } catch (err) {
       toast.error(err.response?.data?.error || 'Error al eliminar');
     }
   }
 
-  function formatFecha(f) {
-    if (!f) return '—';
-    return new Date(f).toLocaleString('es-PY', { dateStyle: 'short', timeStyle: 'short' });
-  }
-
   return (
     <div className={styles.panel}>
       <nav className={styles.navbar}>
-        <h1>⛪ San Juan · Usuarios</h1>
+        <h1>⛪ San Juan · Puestos</h1>
         <div className={styles.navLinks}>
           <Link to="/admin/dashboard">Dashboard</Link>
           <Link to="/admin/pedidos">Pedidos</Link>
@@ -94,7 +69,7 @@ export default function AdminUsuarios() {
       </nav>
 
       <div className={styles.contenido}>
-        <h2 style={{ marginBottom: '0.75rem' }}>Crear nuevo usuario</h2>
+        <h2 style={{ marginBottom: '0.75rem' }}>Crear nuevo puesto</h2>
         <form
           onSubmit={handleCrear}
           style={{
@@ -104,32 +79,22 @@ export default function AdminUsuarios() {
           }}
         >
           <input
-            placeholder="usuario"
-            value={nuevo.usuario}
-            onChange={e => setNuevo(n => ({ ...n, usuario: e.target.value }))}
-            required
+            placeholder="código URL (ej: 6a)"
+            value={nuevo.codigo}
+            onChange={e => setNuevo(n => ({ ...n, codigo: e.target.value }))}
             style={inputStyle}
           />
           <input
-            placeholder="nombre (opcional)"
+            placeholder="nombre (ej: 1° Grado)"
             value={nuevo.nombre}
             onChange={e => setNuevo(n => ({ ...n, nombre: e.target.value }))}
+            required
             style={inputStyle}
           />
-          <select
-            value={nuevo.rol}
-            onChange={e => setNuevo(n => ({ ...n, rol: e.target.value }))}
-            style={inputStyle}
-          >
-            {ROLES.map(r => <option key={r} value={r}>{r}</option>)}
-          </select>
           <input
-            type="password"
-            placeholder="contraseña (mín. 6)"
-            value={nuevo.password}
-            onChange={e => setNuevo(n => ({ ...n, password: e.target.value }))}
-            required
-            minLength={6}
+            placeholder="responsable (opcional)"
+            value={nuevo.responsable}
+            onChange={e => setNuevo(n => ({ ...n, responsable: e.target.value }))}
             style={inputStyle}
           />
           <button type="submit" style={btnPrimario}>Crear</button>
@@ -138,40 +103,40 @@ export default function AdminUsuarios() {
         <table>
           <thead>
             <tr>
-              <th>Usuario</th>
+              <th>ID</th>
+              <th>Código</th>
               <th>Nombre</th>
-              <th>Rol</th>
+              <th>Responsable</th>
               <th>Activo</th>
-              <th>Último login</th>
+              <th>Link de consumo</th>
               <th>Acciones</th>
             </tr>
           </thead>
           <tbody>
-            {usuarios.map(u => (
-              editando?.id === u.id ? (
-                <tr key={u.id} style={{ background: '#fffbe6' }}>
+            {puestos.map(p => (
+              editando?.id === p.id ? (
+                <tr key={p.id} style={{ background: '#fffbe6' }}>
+                  <td>{p.id}</td>
                   <td>
                     <input
-                      value={editando.usuario}
-                      onChange={e => setEditando(s => ({ ...s, usuario: e.target.value }))}
+                      value={editando.codigo || ''}
+                      onChange={e => setEditando(s => ({ ...s, codigo: e.target.value }))}
                       style={inputStyle}
                     />
                   </td>
                   <td>
                     <input
-                      value={editando.nombre || ''}
+                      value={editando.nombre}
                       onChange={e => setEditando(s => ({ ...s, nombre: e.target.value }))}
                       style={inputStyle}
                     />
                   </td>
                   <td>
-                    <select
-                      value={editando.rol}
-                      onChange={e => setEditando(s => ({ ...s, rol: e.target.value }))}
+                    <input
+                      value={editando.responsable || ''}
+                      onChange={e => setEditando(s => ({ ...s, responsable: e.target.value }))}
                       style={inputStyle}
-                    >
-                      {ROLES.map(r => <option key={r} value={r}>{r}</option>)}
-                    </select>
+                    />
                   </td>
                   <td>
                     <input
@@ -180,27 +145,31 @@ export default function AdminUsuarios() {
                       onChange={e => setEditando(s => ({ ...s, activo: e.target.checked }))}
                     />
                   </td>
-                  <td>{formatFecha(u.ultimo_login)}</td>
+                  <td>—</td>
                   <td>
                     <button onClick={handleGuardarEdit} style={btnPrimario}>Guardar</button>
                     <button onClick={() => setEditando(null)} style={btnSecundario}>Cancelar</button>
                   </td>
                 </tr>
               ) : (
-                <tr key={u.id}>
-                  <td>{u.usuario}</td>
-                  <td>{u.nombre || '—'}</td>
+                <tr key={p.id}>
+                  <td>{p.id}</td>
+                  <td><strong>{p.codigo || '—'}</strong></td>
+                  <td>{p.nombre}</td>
+                  <td>{p.responsable || '—'}</td>
                   <td>
-                    <span className={`${styles.badge} ${u.rol === 'admin' ? styles.pagado : styles.pendiente}`}>
-                      {u.rol}
+                    <span className={`${styles.badge} ${p.activo ? styles.pagado : styles.pendiente}`}>
+                      {p.activo ? 'Sí' : 'No'}
                     </span>
                   </td>
-                  <td>{u.activo ? 'Sí' : 'No'}</td>
-                  <td>{formatFecha(u.ultimo_login)}</td>
                   <td>
-                    <button onClick={() => setEditando({ ...u })} style={btnSecundario}>Editar</button>
-                    <button onClick={() => handleResetPassword(u)} style={btnSecundario}>Reset pass</button>
-                    <button onClick={() => handleEliminar(u)} style={btnPeligro}>Eliminar</button>
+                    <a href={`/tarjetas/${p.codigo || p.id}`} target="_blank" rel="noreferrer" style={{ color: '#0B2E55' }}>
+                      /tarjetas/{p.codigo || p.id}
+                    </a>
+                  </td>
+                  <td>
+                    <button onClick={() => setEditando({ ...p })} style={btnSecundario}>Editar</button>
+                    <button onClick={() => handleEliminar(p)} style={btnPeligro}>Eliminar</button>
                   </td>
                 </tr>
               )

@@ -1,9 +1,10 @@
 const router = require('express').Router();
 const tarjetaModel = require('../models/tarjeta.model');
-const { authAdmin, authExpendio } = require('../middleware/auth');
+const puestoModel = require('../models/puesto.model');
+const { authAdmin, authTarjetas } = require('../middleware/auth');
 
-// Público (operador de puesto) — ver saldo
-router.get('/:codigo/saldo', authExpendio, async (req, res) => {
+// Público (stand) — ver saldo. Sin login: el consumo está abierto a todos los stands.
+router.get('/:codigo/saldo', async (req, res) => {
   try {
     const tarjeta = await tarjetaModel.buscarPorCodigo(req.params.codigo);
     if (!tarjeta) return res.status(404).json({ error: 'Tarjeta no encontrada' });
@@ -14,11 +15,13 @@ router.get('/:codigo/saldo', authExpendio, async (req, res) => {
   }
 });
 
-// Operador puesto — consumir crédito FIFO
-router.post('/consumir', authExpendio, async (req, res) => {
+// Público (stand) — consumir crédito FIFO. Sin login: abierto a todos los stands.
+router.post('/consumir', async (req, res) => {
   try {
     const { codigo, idpuesto } = req.body;
     if (!codigo || !idpuesto) return res.status(400).json({ error: 'Datos incompletos' });
+    const puesto = await puestoModel.buscarPorId(idpuesto);
+    if (!puesto || !puesto.activo) return res.status(400).json({ error: 'Puesto inválido o inactivo' });
     const tarjeta = await tarjetaModel.buscarPorCodigo(codigo);
     if (!tarjeta) return res.status(404).json({ error: 'Tarjeta no encontrada' });
     const valor = await tarjetaModel.consumir(tarjeta.id, idpuesto);
@@ -29,8 +32,8 @@ router.post('/consumir', authExpendio, async (req, res) => {
   }
 });
 
-// Operador puesto — cargar créditos
-router.post('/cargar', authExpendio, async (req, res) => {
+// Sección Tarjetas (admin/tarjetas) — cargar créditos. Requiere login.
+router.post('/cargar', authTarjetas, async (req, res) => {
   try {
     const { codigo, cantidad, valor_unitario } = req.body;
     if (!codigo || !cantidad || !valor_unitario) return res.status(400).json({ error: 'Datos incompletos' });

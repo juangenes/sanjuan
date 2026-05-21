@@ -53,7 +53,7 @@ export default function Confirmacion() {
   return (
     <div className={styles.pagina}>
       <header className={styles.header}>
-        <h1>San Juan Dice Que Sí</h1>
+        <h1>San Juan Dice Que Si !!!</h1>
       </header>
 
       <div className={styles.card}>

@@ -6,7 +6,9 @@ import styles from './Juegos.module.css';
 
 const VALORES = [5000, 7000];
 
-export default function JuegosPanel() {
+// Panel de operador de Tarjetas: leer una tarjeta, ver su saldo y cargar créditos.
+// El login lo maneja el contenedor (TarjetasOperador); acá `onSalir` cierra sesión.
+export default function JuegosPanel({ onSalir }) {
   const [tarjeta, setTarjeta] = useState(null);
   const [cantidad, setCantidad] = useState('');
   const [valorUnitario, setValorUnitario] = useState(VALORES[0]);
@@ -43,6 +45,7 @@ export default function JuegosPanel() {
       setTarjeta(t => ({ ...t, saldo: res.saldo }));
       setCantidad('');
     } catch (err) {
+      if (err.response?.status === 401) { onSalir?.(); return; }
       toast.error(err.response?.data?.error || 'Error al cargar');
     } finally {
       setCargando(false);
@@ -59,7 +62,8 @@ export default function JuegosPanel() {
   return (
     <div className={styles.pagina}>
       <header className={styles.header}>
-        <h1>💳 Carga de Créditos</h1>
+        <h1>💳 Tarjetas</h1>
+        <button className={styles.btnSecundario} onClick={onSalir} style={{ width: 'auto' }}>Salir</button>
       </header>
 
       <div className={styles.contenido}>
@@ -129,7 +133,7 @@ export default function JuegosPanel() {
             </button>
 
             <button className={styles.btnSecundario} onClick={nuevaBusqueda} disabled={cargando}>
-              Escanear otra tarjeta
+              Leer otra tarjeta
             </button>
           </div>
         )}

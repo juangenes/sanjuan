@@ -3,6 +3,7 @@ const express = require('express');
 const cors = require('cors');
 const path = require('path');
 const { bootstrapUsuarios } = require('./utils/bootstrapUsuarios');
+const { bootstrapPuestos } = require('./utils/bootstrapPuestos');
 
 const app = express();
 app.use(cors());
@@ -16,6 +17,7 @@ app.use('/api/productos', require('./routes/productos.routes'));
 app.use('/api/pedidos',   require('./routes/pedidos.routes'));
 app.use('/api/expendio',  require('./routes/expendio.routes'));
 app.use('/api/tarjetas',  require('./routes/tarjetas.routes'));
+app.use('/api/puestos',   require('./routes/puestos.routes'));
 app.use('/api/bancard',   require('./routes/bancard.routes'));
 app.use('/api/upload',    require('./routes/upload.routes'));
 
@@ -28,5 +30,10 @@ app.listen(PORT, async () => {
     await bootstrapUsuarios();
   } catch (e) {
     console.error('[bootstrap] Error sembrando usuarios:', e.message);
+  }
+  try {
+    await bootstrapPuestos();
+  } catch (e) {
+    console.error('[bootstrap] Error sembrando puestos:', e.message);
   }
 });

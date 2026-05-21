@@ -99,3 +99,33 @@
   color: #0B2E55;
   font-weight: 600;
 }
+
+/* Selector de puestos */
+.selectorTitulo {
+  text-align: center;
+  color: #FFCE00;
+  font-weight: 600;
+  margin: 0 0 1rem;
+}
+
+.puestoList { display: flex; flex-direction: column; gap: 0.6rem; }
+
+.puestoItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: white;
+  color: #0B2E55;
+  text-decoration: none;
+  padding: 1rem 1.2rem;
+  border-radius: 12px;
+  font-size: 1.1rem;
+  font-weight: 700;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.25);
+}
+
+.puestoItem small { display: block; font-size: 0.8rem; font-weight: 400; color: #777; }
+.puestoItem .flecha { color: #E63946; font-size: 1.3rem; }
+
+.selectorVacio { text-align: center; color: #fff; opacity: 0.85; }
+.subtitulo { text-align: center; color: #FFCE00; font-size: 0.95rem; margin: 0.25rem 0 0; }

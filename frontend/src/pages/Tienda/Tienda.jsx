@@ -26,15 +26,13 @@ function DesktopHeader() {
     <header className="td-header">
       <div className="td-header-brand">
         <div>
-          <h1>San Juan Dice Que Síii</h1>
+          <h1>San Juan Dice Que Si !!!</h1>
           <div className="td-header-meta">07 jun 2026 · Colegio Torrefuerte · 11:00 am</div>
         </div>
       </div>
       <nav className="td-header-nav">
         <Link to="/">Inicio</Link>
         <a className="active">Tienda</a>
-        <Link to="/expendio">Cómo retirar</Link>
-        <Link to="/admin">Admin</Link>
       </nav>
     </header>
   );

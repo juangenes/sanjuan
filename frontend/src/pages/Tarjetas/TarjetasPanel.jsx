@@ -1,17 +1,29 @@
-import { useState, useCallback } from 'react';
-import { getSaldo, consumirCredito } from '../../api';
+import { useState, useCallback, useEffect } from 'react';
+import { useParams, useNavigate, Link } from 'react-router-dom';
+import { getSaldo, consumirCredito, getPuestos } from '../../api';
 import QrScanner from '../../components/QrScanner';
 import toast from 'react-hot-toast';
 import styles from './Tarjetas.module.css';
 
 export default function TarjetasPanel() {
+  const { codigo } = useParams();
+  const navigate = useNavigate();
+  const [puesto, setPuesto] = useState(null);
   const [tarjeta, setTarjeta] = useState(null);
   const [cargando, setCargando] = useState(false);
   const [codigoManual, setCodigoManual] = useState('');
   const [modoManual, setModoManual] = useState(false);
 
-  // En producción esto viene del token del operador
-  const IDPUESTO = 1;
+  // El puesto viene de la URL (/tarjetas/:codigo). Validamos contra los activos.
+  useEffect(() => {
+    getPuestos()
+      .then(puestos => {
+        const p = puestos.find(x => String(x.codigo) === String(codigo) || String(x.id) === String(codigo));
+        if (!p) { toast.error('Puesto inválido'); navigate('/tarjetas'); return; }
+        setPuesto(p);
+      })
+      .catch(() => { toast.error('No se pudo validar el puesto'); navigate('/tarjetas'); });
+  }, [codigo]);
 
   const buscarPorCodigo = useCallback(async (codigo) => {
     setCargando(true);
@@ -34,9 +46,10 @@ export default function TarjetasPanel() {
 
   async function handleConsumir() {
     if (!tarjeta || tarjeta.saldo < 1) { toast.error('Sin saldo'); return; }
+    if (!puesto) { toast.error('Puesto no válido'); return; }
     setCargando(true);
     try {
-      const res = await consumirCredito(tarjeta.codigo, IDPUESTO);
+      const res = await consumirCredito(tarjeta.codigo, puesto.id);
       toast.success(`✅ Cobrado Gs. ${Number(res.valor_cobrado).toLocaleString()}. Saldo restante: ${res.saldo_restante}`);
       setTarjeta(t => ({ ...t, saldo: res.saldo_restante }));
     } catch (err) {
@@ -55,7 +68,8 @@ export default function TarjetasPanel() {
   return (
     <div className={styles.pagina}>
       <header className={styles.header}>
-        <h1>🎯 Puesto de Juegos</h1>
+        <h1>🎯 Consumo de Tarjetas</h1>
+        {puesto && <p className={styles.subtitulo}>{puesto.nombre}</p>}
       </header>
 
       <div className={styles.contenido}>
@@ -66,6 +80,9 @@ export default function TarjetasPanel() {
             <button className={styles.btnSecundario} onClick={() => setModoManual(true)}>
               Ingresar código manualmente
             </button>
+            <Link to="/tarjetas" className={styles.btnSecundario} style={{ display: 'block', textAlign: 'center', textDecoration: 'none' }}>
+              ← Cambiar de puesto
+            </Link>
           </div>
         )}
 
