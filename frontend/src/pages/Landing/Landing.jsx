@@ -1,7 +1,17 @@
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { getProductos } from '../../api';
 import './Landing.css';
 
 const TIENDA_PATH = '/tienda';
+
+function fmtGs(n) {
+  return Number(n || 0).toLocaleString('es-PY');
+}
+
+function imgSrc(p) {
+  return p.imagen ? `/img/${p.imagen}` : '/img/placeholder.jpg';
+}
 
 function LandingNav() {
   return (
@@ -152,16 +162,17 @@ function LandingJuegos() {
   );
 }
 
-const COMIDAS = [
-  { img:'/img/asadito_carne.jpg', t:'Asadito de Carne', d:'Brochette al carbón con yopará y mandioca', precio:'25.000', old:'30.000' },
-  { img:'/img/empanada.jpg',      t:'Empanadas Criollas', d:'Fritas, hechas al momento, masa de la abuela', precio:'8.000', old:'10.000' },
-  { img:'/img/mbeju.jpg',         t:'Mbeju', d:'Hecho al instante en sartén caliente', precio:'10.000', old:'12.000' },
-  { img:'/img/choripan.jpg',      t:'Choripán', d:'Con chimichurri casero', precio:'20.000', old:'22.000' },
-  { img:'/img/pajagua.jpg',       t:'Pajagua Mascada', d:'Tortilla de mandioca con carne molida', precio:'12.000' },
-  { img:'/img/vori.jpg',          t:'Vorí Vorí', d:'Caldo caliente con bolitas de maíz, ideal para la noche fría', precio:'15.000' },
-];
-
 function LandingComidas() {
+  const [comidas, setComidas] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    getProductos()
+      .then(productos => setComidas(productos.filter(p => p.categoria === 'COMIDA')))
+      .catch(() => setComidas([]))
+      .finally(() => setLoading(false));
+  }, []);
+
   return (
     <section className="ld-section ld-comidas" id="comidas">
       <div className="ld-section-inner">
@@ -172,30 +183,38 @@ function LandingComidas() {
           en preventa y evitá la cola la noche del evento.
         </p>
         <div className="ld-comidas-grid">
-          {COMIDAS.map(c => (
-            <div className="ld-comida" key={c.t}>
-              <div className="ld-comida-img">
-                <img
-                  src={c.img}
-                  alt={c.t}
-                  onError={(e) => {
-                    e.currentTarget.style.background = 'linear-gradient(135deg,#FFCE00,#FF7F00)';
-                    e.currentTarget.removeAttribute('src');
-                  }}
-                />
-                {c.old && <span className="ld-comida-tag">Preventa</span>}
-              </div>
-              <div className="ld-comida-body">
-                <h4>{c.t}</h4>
-                <p>{c.d}</p>
-                <div className="ld-comida-precio">
-                  Gs. {c.precio}
-                  {c.old && <small>Gs. {c.old}</small>}
+          {comidas.map(c => {
+            const tieneDesc = Number(c.precio_normal) > Number(c.precio_preventa);
+            return (
+              <div className="ld-comida" key={c.idproducto}>
+                <div className="ld-comida-img">
+                  <img
+                    src={imgSrc(c)}
+                    alt={c.titulo}
+                    onError={(e) => {
+                      e.currentTarget.style.background = 'linear-gradient(135deg,#FFCE00,#FF7F00)';
+                      e.currentTarget.removeAttribute('src');
+                    }}
+                  />
+                  {tieneDesc && <span className="ld-comida-tag">Preventa</span>}
+                </div>
+                <div className="ld-comida-body">
+                  <h4>{c.titulo}</h4>
+                  {c.descripcion && <p>{c.descripcion}</p>}
+                  <div className="ld-comida-precio">
+                    Gs. {fmtGs(c.precio_preventa)}
+                    {tieneDesc && <small>Gs. {fmtGs(c.precio_normal)}</small>}
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
+        {!loading && comidas.length === 0 && (
+          <p className="ld-lead" style={{ textAlign: 'center' }}>
+            Pronto vamos a publicar el menú completo. ¡Seguinos atentos!
+          </p>
+        )}
         <div className="ld-comidas-cta">
           <div className="ld-comidas-cta-text">
             <strong>En nuestra fiesta vas a poder disfrutar de todo esto y más</strong>
