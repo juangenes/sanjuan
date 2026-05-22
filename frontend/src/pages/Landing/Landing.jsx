@@ -22,9 +22,10 @@ function LandingNav() {
       </div>
       <div className="ld-nav-links">
         <a href="#tradicion">La tradición</a>
-        <a href="#juegos">Juegos típicos</a>
+        <a href="#juegos">Juegos</a>
         <a href="#comidas">Comidas</a>
         <a href="#info">Cuándo & dónde</a>
+        <Link to="/sorteo" className="ld-nav-rifa">🎟️ Gran Rifa</Link>
       </div>
       <Link to={TIENDA_PATH} className="ld-nav-cta">
         Comprar preventa →
@@ -44,9 +45,9 @@ function LandingHero() {
           </span>
           <h1>San Juan<br/>Dice Que Si <span className="ii">!!!</span></h1>
           <p className="ld-hero-sub">
-            Una noche de fogata, mbeju recién hecho, asaditos al carbón y los
-            juegos de siempre. Como cuando éramos chicos — pero ahora con
-            preventa online y sin filas.
+            Mbeju recién hecho, asaditos al carbón y los juegos de siempre, en
+            una jornada a pleno día para toda la familia. Como cuando éramos
+            chicos — pero ahora con preventa online y sin filas.
           </p>
           <div className="ld-hero-meta">
             <div className="ld-hero-meta-item">
@@ -76,7 +77,7 @@ function LandingHero() {
               San Juan<br/>Dice Que Si <span style={{color:'#fff'}}>!!!</span>
               <span className="anio">06·06·2026</span>
             </div>
-            <div className="ld-hero-poster-bot">Comida · Juegos · Fogata · Música en vivo</div>
+            <div className="ld-hero-poster-bot">Comida · Juegos · Música en vivo</div>
             <div className="ld-hero-badge bg-1">
               <span className="num">−20%</span>
               <span className="lbl">Preventa</span>
@@ -122,29 +123,57 @@ function LandingTradicion() {
   );
 }
 
-const JUEGOS = [
-  { icon:'🔥', t:'Pelota Tatá', d:'La pelota envuelta en trapos y kerosene que vuela encendida en la noche.' },
-  { icon:'🎯', t:'Tata Ári Jehasa', d:'Caminar descalzo sobre las brasas. Solo para los más valientes.' },
-  { icon:'🏃', t:'Carrera Vosá', d:'Carrera con bolsa hasta la meta. Caídas garantizadas, risas también.' },
-  { icon:'🪙', t:'Yvyra Sỹi', d:'Subir el palo enjabonado para alcanzar el premio. Se puede en grupo.' },
-  { icon:'🐸', t:'Sapo', d:'Tirar la moneda en la boca del sapo de bronce. Clásico de clásicos.' },
-  { icon:'🎲', t:'Argollas', d:'Encestar las argollas en las botellas. Suena fácil. No lo es.' },
-  { icon:'⛳', t:'Tiro al Blanco', d:'Apuntá, disparás, ganás. Premios para los mejores.' },
-  { icon:'🔔', t:'Toro Candil', d:'El toro de cuernos encendidos persigue a los más rápidos.' },
+const JUEGOS_STANDS = [
+  { icon:'🐷', grado:'1er Grado', t:'Poner la cola al chanchito' },
+  { icon:'🐔', grado:'2do Grado', t:'La gallinita de los huevos de oro' },
+  { icon:'🌳', grado:'3er Grado', t:'El árbol de la suerte' },
+  { icon:'🏃', grado:'4to Grado', t:'Karrera Vosá' },
+  { icon:'🧠', grado:'5to Grado', t:'Mastermind' },
+  { icon:'⛓️', grado:'6to Grado', t:'Cárcel' },
+  { icon:'🏀', grado:'7mo Grado', t:'Básquet' },
+  { icon:'🫧', grado:'8vo Grado', t:'La burbuja gigante' },
+  { icon:'⚽', grado:'9no Grado', t:'Metegol' },
+  { icon:'💌', grado:'1er Año', t:'Casamiento Koygua y Correo del 💌' },
+  { icon:'🎳', grado:'2do Año', t:'Bowling' },
+  { icon:'🎯', grado:'3er Año', t:'Tiro al blanco' },
+];
+
+const JUEGOS_TIPICOS = [
+  { icon:'🍯', t:'Kambuchi Jejoka', d:'Romper el cántaro de barro con los ojos vendados para ganar el premio escondido.' },
+  { icon:'🍳', t:'Paila Jeherei', d:'Sacar con la boca la moneda de la paila enhollinada. Te ensuciás, pero vale la pena.' },
+];
+
+const JUEGOS_MODERNOS = [
+  { icon:'🎮', t:'Playroom', d:'Una zona de juegos pensada para que los más chicos se diviertan a lo grande.' },
+  { icon:'🎈', t:'Globo Loco', d:'El inflable que pone a prueba el equilibrio de grandes y chicos.' },
 ];
 
 function LandingJuegos() {
   return (
     <section className="ld-section ld-juegos" id="juegos">
       <div className="ld-section-inner" style={{position:'relative'}}>
-        <span className="ld-eyebrow">Juegos típicos</span>
-        <h2 className="ld-h2">Lo que vas a vivir ese día</h2>
+        <span className="ld-eyebrow">Juegos San Juan 2026</span>
+        <h2 className="ld-h2">Un stand de juegos por cada grado</h2>
         <p className="ld-lead">
-          Los juegos de siempre, los que nuestros abuelos jugaban en sus
-          San Juanes. Para chicos, grandes y nostálgicos.
+          Cada curso del colegio arma su propio juego. Pasá por todos los stands,
+          juntá premios y viví el San Juan como se debe.
         </p>
         <div className="ld-juegos-grid">
-          {JUEGOS.map(j => (
+          {JUEGOS_STANDS.map(j => (
+            <div className="ld-juego" key={j.grado}>
+              <div className="ld-juego-icon">{j.icon}</div>
+              <span className="ld-juego-grado">{j.grado}</span>
+              <h4>{j.t}</h4>
+            </div>
+          ))}
+        </div>
+
+        <h3 className="ld-juegos-sub">Juegos típicos</h3>
+        <p className="ld-lead">
+          Los clásicos de siempre, los que no pueden faltar en ningún San Juan.
+        </p>
+        <div className="ld-juegos-grid">
+          {JUEGOS_TIPICOS.map(j => (
             <div className="ld-juego" key={j.t}>
               <div className="ld-juego-icon">{j.icon}</div>
               <h4>{j.t}</h4>
@@ -152,6 +181,22 @@ function LandingJuegos() {
             </div>
           ))}
         </div>
+
+        <h3 className="ld-juegos-sub">Y también algo más moderno</h3>
+        <p className="ld-lead">
+          No son típicos de San Juan, pero buenísimos para que los chicos
+          se diviertan.
+        </p>
+        <div className="ld-juegos-grid">
+          {JUEGOS_MODERNOS.map(j => (
+            <div className="ld-juego" key={j.t}>
+              <div className="ld-juego-icon">{j.icon}</div>
+              <h4>{j.t}</h4>
+              <p>{j.d}</p>
+            </div>
+          ))}
+        </div>
+
         <div className="ld-juegos-cta">
           <Link to={TIENDA_PATH} className="ld-cta-inline">
             Llevá tu tarjeta de juegos en preventa →
@@ -179,8 +224,8 @@ function LandingComidas() {
         <span className="ld-eyebrow">Comidas típicas</span>
         <h2 className="ld-h2">Sabores que solo se sienten en San Juan</h2>
         <p className="ld-lead">
-          Toda la cocina paraguaya servida bajo las estrellas. Reservá tu plato
-          en preventa y evitá la cola la noche del evento.
+          Toda la cocina paraguaya servida en plena fiesta. Reservá tu plato
+          en preventa y evitá la cola el día del evento.
         </p>
         <div className="ld-comidas-grid">
           {comidas.map(c => {
@@ -218,7 +263,7 @@ function LandingComidas() {
         <div className="ld-comidas-cta">
           <div className="ld-comidas-cta-text">
             <strong>En nuestra fiesta vas a poder disfrutar de todo esto y más</strong>
-            <span>Hacé tu pedido por adelantado, pagá online y retirá la noche del evento. Sin colas, con descuento.</span>
+            <span>Hacé tu pedido por adelantado, pagá online y retirá el día del evento. Sin colas, con descuento.</span>
           </div>
           <Link to={TIENDA_PATH} className="ld-btn-primary">
             Hacé tu compra ahora →
@@ -240,7 +285,7 @@ function LandingInfo() {
             <div className="ld-info-card-icon">📅</div>
             <h5>Fecha y hora</h5>
             <div className="ld-info-val">Sábado 6 de junio de 2026</div>
-            <p className="ld-info-sub">Desde las 11:00 am. Almuerzo, juegos para los chicos, fogata al caer el sol.</p>
+            <p className="ld-info-sub">Arrancamos a las 11:00 am. Almuerzo, comidas típicas y juegos para los chicos durante todo el día.</p>
           </div>
           <div className="ld-info-card">
             <div className="ld-info-card-icon">📍</div>

@@ -3,6 +3,7 @@ import { Toaster } from 'react-hot-toast';
 import { CarritoProvider } from './context/CarritoContext';
 
 import Landing from './pages/Landing/Landing';
+import Sorteo from './pages/Sorteo/Sorteo';
 import Tienda from './pages/Tienda/Tienda';
 import Confirmacion from './pages/Tienda/Confirmacion';
 import PagoMock from './pages/Tienda/PagoMock';
@@ -27,6 +28,7 @@ export default function App() {
         <Routes>
           {/* Público (cliente / stands) */}
           <Route path="/" element={<Landing />} />
+          <Route path="/sorteo" element={<Sorteo />} />
           <Route path="/tienda" element={<Tienda />} />
           <Route path="/pedido/:hash" element={<Confirmacion />} />
           <Route path="/pago/mock" element={<PagoMock />} />

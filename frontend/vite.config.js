@@ -5,6 +5,7 @@ import react from '@vitejs/plugin-react'
 export default defineConfig({
   plugins: [react()],
   server: {
+    host: true, // expone el server en la red local (LAN) para probar desde el celular
     proxy: {
       '/api': 'http://localhost:3001',
       '/uploads': 'http://localhost:3001',

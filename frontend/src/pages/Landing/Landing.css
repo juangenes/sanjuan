@@ -40,6 +40,11 @@
 .ld-nav-links{display:flex;gap:1.6rem;font-size:.85rem;font-weight:600;color:var(--ld-azul)}
 .ld-nav-links a{color:inherit;text-decoration:none;opacity:.7;transition:opacity .15s;cursor:pointer}
 .ld-nav-links a:hover{opacity:1}
+.ld-nav-links a.ld-nav-rifa{
+  opacity:1;background:var(--ld-amarillo);color:var(--ld-azul);
+  padding:.3rem .7rem;border-radius:999px;font-weight:800;
+}
+.ld-nav-links a.ld-nav-rifa:hover{filter:brightness(1.05)}
 .ld-nav-cta{
   background:var(--ld-azul);color:#fff;border:none;
   padding:.55rem 1.1rem;border-radius:8px;font-weight:700;font-size:.85rem;
@@ -237,6 +242,14 @@
 }
 .ld-juego h4{margin:0 0 .35rem;font-size:1rem;font-weight:700;color:#fff}
 .ld-juego p{margin:0;font-size:.8rem;line-height:1.5;color:rgba(255,255,255,.65)}
+.ld-juego-grado{
+  display:inline-block;margin-bottom:.3rem;
+  font-size:.7rem;font-weight:800;letter-spacing:.06em;text-transform:uppercase;
+  color:var(--ld-amarillo);
+}
+.ld-juegos-sub{
+  margin:3.2rem 0 .4rem;font-size:1.5rem;font-weight:800;color:var(--ld-amarillo);
+}
 .ld-juegos-cta{margin-top:2.6rem;text-align:center}
 .ld-juegos-cta .ld-cta-inline{background:var(--ld-amarillo);color:var(--ld-azul);box-shadow:0 8px 20px -4px rgba(255,206,0,.4)}
 
