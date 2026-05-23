@@ -18,8 +18,23 @@ export default function AdminProductos() {
     getProductosAdmin().then(setProductos).catch(() => navigate('/admin'));
   }, []);
 
-  function handleGuardado(actualizado) {
-    setProductos(prev => prev.map(p => p.idproducto === actualizado.idproducto ? actualizado : p));
+  const productoVacio = {
+    titulo: '',
+    descripcion: '',
+    imagen: '',
+    categoria: 'COMIDA',
+    activo: 1,
+    precio_preventa: '',
+    precio_normal: '',
+    stock: 0,
+  };
+
+  function handleGuardado(guardado) {
+    setProductos(prev =>
+      prev.some(p => p.idproducto === guardado.idproducto)
+        ? prev.map(p => (p.idproducto === guardado.idproducto ? guardado : p))
+        : [...prev, guardado]
+    );
     setEditando(null);
   }
 
@@ -44,6 +59,22 @@ export default function AdminProductos() {
       </nav>
 
       <div className={styles.contenido}>
+        <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '1rem' }}>
+          <button
+            onClick={() => setEditando({ ...productoVacio })}
+            style={{
+              background: '#0B2E55',
+              color: '#fff',
+              border: 'none',
+              padding: '0.5rem 1rem',
+              borderRadius: 4,
+              cursor: 'pointer',
+              fontWeight: 600,
+            }}
+          >
+            + Nuevo producto
+          </button>
+        </div>
         <table>
           <thead>
             <tr>

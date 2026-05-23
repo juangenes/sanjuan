@@ -1,6 +1,6 @@
 import { useState, useRef } from 'react';
 import toast from 'react-hot-toast';
-import { actualizarProducto, eliminarProducto, subirImagenProducto } from '../../api';
+import { actualizarProducto, crearProducto, eliminarProducto, subirImagenProducto } from '../../api';
 import styles from './ModalEditarProducto.module.css';
 
 function srcDeImagen(imagen) {
@@ -14,6 +14,8 @@ export default function ModalEditarProducto({ producto, onClose, onGuardado, onE
   const [guardando, setGuardando] = useState(false);
   const [eliminando, setEliminando] = useState(false);
   const fileRef = useRef(null);
+
+  const esNuevo = !producto.idproducto;
 
   const set = (campo, valor) => setDatos(d => ({ ...d, [campo]: valor }));
 
@@ -44,9 +46,15 @@ export default function ModalEditarProducto({ producto, onClose, onGuardado, onE
     }
     setGuardando(true);
     try {
-      await actualizarProducto(datos.idproducto, datos);
-      onGuardado(datos);
-      toast.success('Producto actualizado');
+      if (esNuevo) {
+        const { idproducto } = await crearProducto(datos);
+        onGuardado({ ...datos, idproducto });
+        toast.success('Producto creado');
+      } else {
+        await actualizarProducto(datos.idproducto, datos);
+        onGuardado(datos);
+        toast.success('Producto actualizado');
+      }
     } catch (err) {
       toast.error(err.response?.data?.error || 'Error al guardar');
     } finally {
@@ -72,7 +80,7 @@ export default function ModalEditarProducto({ producto, onClose, onGuardado, onE
     <div className={styles.overlay} onClick={e => e.target === e.currentTarget && onClose()}>
       <div className={styles.modal}>
         <header className={styles.header}>
-          <h2>Editar producto</h2>
+          <h2>{esNuevo ? 'Nuevo producto' : 'Editar producto'}</h2>
           <button className={styles.cerrar} onClick={onClose} aria-label="Cerrar">×</button>
         </header>
 
@@ -161,13 +169,17 @@ export default function ModalEditarProducto({ producto, onClose, onGuardado, onE
         </div>
 
         <footer className={styles.footer}>
-          <button
-            className={styles.btnEliminar}
-            onClick={handleEliminar}
-            disabled={eliminando || guardando}
-          >
-            {eliminando ? 'Eliminando...' : 'Eliminar'}
-          </button>
+          {esNuevo ? (
+            <span />
+          ) : (
+            <button
+              className={styles.btnEliminar}
+              onClick={handleEliminar}
+              disabled={eliminando || guardando}
+            >
+              {eliminando ? 'Eliminando...' : 'Eliminar'}
+            </button>
+          )}
           <div className={styles.acciones}>
             <button className={styles.btnCancelar} onClick={onClose} disabled={guardando}>
               Cancelar
