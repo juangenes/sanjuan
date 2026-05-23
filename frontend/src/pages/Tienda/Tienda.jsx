@@ -5,6 +5,10 @@ import { getProductos, crearPedido } from '../../api';
 import { useCarrito } from '../../context/CarritoContext';
 import './tienda-desktop.css';
 
+// Tienda deshabilitada temporalmente: la preventa todavía no está habilitada.
+// Cambiar a true para reactivar el checkout cuando se abra la tienda.
+const TIENDA_HABILITADA = false;
+
 const TABS = [
   { key: 'TODOS', label: 'Todos' },
   { key: 'COMIDA', label: '🍖 Comida' },
@@ -41,7 +45,11 @@ function DesktopHeader() {
 function PromoStrip() {
   return (
     <div className="td-promo">
-      🔥 <span><strong>Preventa abierta</strong> hasta el 4 de junio · descuentos en toda la tienda</span>
+      {TIENDA_HABILITADA ? (
+        <>🔥 <span><strong>Preventa abierta</strong> hasta el 4 de junio · descuentos en toda la tienda</span></>
+      ) : (
+        <>⏳ <span><strong>La preventa abre muy pronto</strong> · mirá el catálogo y volvé para comprar con descuento</span></>
+      )}
     </div>
   );
 }
@@ -174,10 +182,20 @@ function CartSidebar({ items, total, onAdd, onSub, onClear, onCheckout }) {
               <span>Gs. {fmtGs(total)}</span>
             </div>
           </div>
-          <button className="td-cta" onClick={onCheckout}>
-            Confirmar pedido
-            <span className="td-cta-amount">Gs. {fmtGs(total)}</span>
+          <button
+            className="td-cta"
+            onClick={onCheckout}
+            disabled={!TIENDA_HABILITADA}
+            style={!TIENDA_HABILITADA ? { opacity: .55, cursor: 'not-allowed' } : undefined}
+          >
+            {TIENDA_HABILITADA ? 'Confirmar pedido' : 'Disponible próximamente'}
+            {TIENDA_HABILITADA && <span className="td-cta-amount">Gs. {fmtGs(total)}</span>}
           </button>
+          {!TIENDA_HABILITADA && (
+            <div className="td-cart-suggest" style={{ marginTop: '.6rem' }}>
+              ⏳ La preventa todavía no está habilitada. ¡Muy pronto!
+            </div>
+          )}
         </div>
       )}
     </aside>
@@ -200,7 +218,7 @@ function CheckoutModal({ total, items, onClose, onSuccess }) {
     !loading;
 
   async function submit() {
-    if (!valid) return;
+    if (!valid || !TIENDA_HABILITADA) return;
     setLoading(true);
     try {
       const payload = {
@@ -230,7 +248,7 @@ function CheckoutModal({ total, items, onClose, onSuccess }) {
         <div className="td-modal-body">
           <form className="td-form" onSubmit={e => { e.preventDefault(); submit(); }}>
             <div className="td-field">
-              <label className="td-field-required">Apellido familia</label>
+              <label className="td-field-required">Nombre y apellido</label>
               <input
                 value={familia}
                 onChange={e => setFamilia(e.target.value)}
@@ -265,12 +283,12 @@ function CheckoutModal({ total, items, onClose, onSuccess }) {
         <div className="td-modal-foot">
           <button
             className="td-cta"
-            disabled={!valid}
-            style={{ opacity: valid ? 1 : .55, cursor: valid ? 'pointer' : 'not-allowed' }}
+            disabled={!valid || !TIENDA_HABILITADA}
+            style={{ opacity: (valid && TIENDA_HABILITADA) ? 1 : .55, cursor: (valid && TIENDA_HABILITADA) ? 'pointer' : 'not-allowed' }}
             onClick={submit}
           >
-            {loading ? 'Procesando...' : 'Confirmar pedido'}
-            {!loading && <span className="td-cta-amount">Gs. {fmtGs(total)}</span>}
+            {loading ? 'Procesando...' : (TIENDA_HABILITADA ? 'Confirmar pedido' : 'Disponible próximamente')}
+            {!loading && TIENDA_HABILITADA && <span className="td-cta-amount">Gs. {fmtGs(total)}</span>}
           </button>
         </div>
       </div>
