@@ -47,38 +47,57 @@ jobs:
       - name: Configure SSH
         run: |
           mkdir -p ~/.ssh
-          ssh-keyscan -p "${DROPLET_PORT:-22}" -H "$DROPLET_HOST" >> ~/.ssh/known_hosts
+          # Solo escaneamos la clave ed25519 (la que tiene el servidor): una unica
+          # conexion en vez de las ~5 que abre keyscan por defecto. Asi no disparamos
+          # el jail sshd de fail2ban, que antes baneaba la IP del runner a mitad del deploy.
+          ssh-keyscan -t ed25519 -p "${DROPLET_PORT:-22}" -H "$DROPLET_HOST" >> ~/.ssh/known_hosts 2>/dev/null
+          # Sin ControlMaster: la multiplexion era lo que dejaba colgado el rsync cuando
+          # la conexion se caia. Keepalives + ConnectTimeout para fallar rapido, no colgar.
           cat >> ~/.ssh/config <<EOF
           Host droplet
             HostName $DROPLET_HOST
             User $DROPLET_USER
             Port ${DROPLET_PORT:-22}
-            ControlMaster auto
-            ControlPath /tmp/ssh_mux_droplet
-            ControlPersist 10m
+            BatchMode yes
+            ConnectTimeout 30
+            ServerAliveInterval 15
+            ServerAliveCountMax 4
           EOF
-          ssh -fNT droplet
 
       - name: Sync backend source
         run: |
-          rsync -az --delete \
-            -e "ssh -o ControlMaster=no -o ControlPath=/tmp/ssh_mux_droplet" \
-            --exclude 'node_modules' \
-            --exclude '.env' \
-            --exclude 'uploads' \
-            backend/ \
-            "droplet:/var/www/sanjuan/backend/"
+          for intento in 1 2 3; do
+            if rsync -az --delete --timeout=120 \
+                --exclude 'node_modules' \
+                --exclude '.env' \
+                --exclude 'uploads' \
+                backend/ \
+                "droplet:/var/www/sanjuan/backend/"; then
+              exit 0
+            fi
+            echo "rsync backend fallo (intento $intento/3), reintentando en 15s..."
+            sleep 15
+          done
+          echo "rsync backend fallo tras 3 intentos" >&2
+          exit 1
 
       - name: Sync frontend build output
         run: |
-          rsync -az --delete \
-            -e "ssh -o ControlMaster=no -o ControlPath=/tmp/ssh_mux_droplet" \
-            frontend/dist/ \
-            "droplet:/var/www/sanjuan/frontend/dist/"
+          for intento in 1 2 3; do
+            if rsync -az --delete --timeout=120 \
+                frontend/dist/ \
+                "droplet:/var/www/sanjuan/frontend/dist/"; then
+              exit 0
+            fi
+            echo "rsync frontend fallo (intento $intento/3), reintentando en 15s..."
+            sleep 15
+          done
+          echo "rsync frontend fallo tras 3 intentos" >&2
+          exit 1
 
       - name: Install backend deps and restart API
         run: |
-          ssh droplet << 'EOF'
+          ssh droplet 'bash -se' << 'EOF'
             set -e
             cd /var/www/sanjuan/backend
             npm ci --omit=dev
