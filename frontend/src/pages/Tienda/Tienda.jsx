@@ -18,7 +18,8 @@ const TABS = [
 const SECCIONES = TABS.slice(1);
 
 function imgSrc(p) {
-  return p.imagen ? `/img/${p.imagen}` : '/img/placeholder.jpg';
+  if (!p.imagen) return '/img/placeholder.jpg';
+  return p.imagen.startsWith('/') ? p.imagen : `/img/${p.imagen}`;
 }
 
 function fmtGs(n) {
