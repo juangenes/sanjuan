@@ -138,6 +138,9 @@
   font-size:.62rem;font-weight:800;letter-spacing:.06em;
   padding:.22rem .55rem;border-radius:999px;text-transform:uppercase;
 }
+.td-promo-tag--solo{
+  background:var(--tn-azul);color:#fff;
+}
 .td-tag-agotado{
   position:absolute;top:.6rem;right:.6rem;
   background:var(--tn-rojo);color:#fff;

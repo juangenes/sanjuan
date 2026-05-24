@@ -26,7 +26,6 @@ function LandingNav() {
         <a href="#juegos">Juegos</a>
         <a href="#comidas">Comidas</a>
         <a href="#info">Cuándo & dónde</a>
-        <Link to="/sorteo" className="ld-nav-rifa">🎟️ Gran Rifa</Link>
       </div>
       <Link to={TIENDA_PATH} className="ld-nav-cta">
         Comprar preventa →

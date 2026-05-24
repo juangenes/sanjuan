@@ -86,7 +86,10 @@ function Toolbar({ active, onClick, counts, search, onSearch }) {
 
 function ProductCard({ p, qty, onAdd, onSub }) {
   const sin = Number(p.stock) === 0;
-  const tieneDesc = Number(p.precio_normal) > Number(p.precio_preventa);
+  const pv = Number(p.precio_preventa);
+  const pn = Number(p.precio_normal);
+  const tieneDesc = pn > pv;              // preventa con descuento sobre precio normal
+  const soloPreventa = pn === 0 && pv > 0; // solo tiene precio de preventa cargado
   const stockBajo = !sin && Number(p.stock) <= 5;
   return (
     <div className={`td-card ${sin ? 'agotado' : ''} ${qty > 0 ? 'has-qty' : ''}`}>
@@ -98,6 +101,7 @@ function ProductCard({ p, qty, onAdd, onSub }) {
           onError={e => { e.target.src = '/img/placeholder.jpg'; }}
         />
         {tieneDesc && !sin && <span className="td-promo-tag">Preventa</span>}
+        {soloPreventa && !sin && <span className="td-promo-tag td-promo-tag--solo">Solo preventa</span>}
         {sin && <span className="td-tag-agotado">Agotado</span>}
         {stockBajo && <span className="td-stock-low">Quedan {p.stock}</span>}
       </div>
