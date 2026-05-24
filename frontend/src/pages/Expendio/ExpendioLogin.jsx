@@ -28,7 +28,7 @@ export default function ExpendioLogin() {
     <div className={styles.loginPagina}>
       <div className={styles.loginCard}>
         <h1>🍖</h1>
-        <h2>Expendio · San Juan 2025</h2>
+        <h2>Expendio · San Juan 2026</h2>
         <form onSubmit={handleSubmit}>
           <input placeholder="Usuario" value={form.usuario} onChange={e => setForm(f => ({ ...f, usuario: e.target.value }))} required />
           <input type="password" placeholder="Contraseña" value={form.password} onChange={e => setForm(f => ({ ...f, password: e.target.value }))} required />

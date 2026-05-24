@@ -7,7 +7,7 @@ import './tienda-desktop.css';
 
 // Tienda deshabilitada temporalmente: la preventa todavía no está habilitada.
 // Cambiar a true para reactivar el checkout cuando se abra la tienda.
-const TIENDA_HABILITADA = false;
+const TIENDA_HABILITADA = true;
 
 const TABS = [
   { key: 'TODOS', label: 'Todos' },
@@ -33,7 +33,7 @@ function DesktopHeader() {
       <div className="td-header-brand">
         <div>
           <h1>San Juan Dice Que Si !!!</h1>
-          <div className="td-header-meta">07 jun 2026 · Colegio Torrefuerte · 11:00 am</div>
+          <div className="td-header-meta">06 jun 2026 · Colegio Torrefuerte · 11:00 am</div>
         </div>
       </div>
       <nav className="td-header-nav">
