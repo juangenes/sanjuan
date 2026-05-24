@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { QRCodeSVG } from 'qrcode.react';
-import { getPedido, iniciarPago, getRetirosPedido } from '../../api';
+import { getPedido, confirmarPagoMock, getRetirosPedido } from '../../api';
 import toast from 'react-hot-toast';
 import styles from './Confirmacion.module.css';
 
@@ -32,13 +32,15 @@ export default function Confirmacion() {
       .finally(() => setLoading(false));
   }, [hash]);
 
-  async function handlePagar() {
+  async function handleConfirmar() {
     setPagando(true);
     try {
-      const res = await iniciarPago(hash);
-      navigate(res.redirect_url);
+      await confirmarPagoMock(hash);
+      const p = await getPedido(hash);
+      setPedido(p);
+      toast.success('¡Pedido confirmado! (pago simulado)');
     } catch {
-      toast.error('Error al iniciar pago');
+      toast.error('No se pudo confirmar el pedido');
     } finally {
       setPagando(false);
     }
@@ -120,12 +122,11 @@ export default function Confirmacion() {
 
         {pedido.estado === 'PENDIENTE' && (
           <div className={styles.instruccionesPago}>
-            <h3>¿Cómo pagar?</h3>
-            <button className={styles.btnBancard} onClick={handlePagar} disabled={pagando}>
-              {pagando ? 'Redirigiendo...' : '💳 Pagar con Bancard'}
+            <h3>Finalizá tu pedido</h3>
+            <p className={styles.oAlternativa}>🧪 Modo prueba · el pago es simulado, no se cobra nada.</p>
+            <button className={styles.btnBancard} onClick={handleConfirmar} disabled={pagando}>
+              {pagando ? 'Procesando...' : '✅ Confirmar pedido (pago simulado)'}
             </button>
-            <p className={styles.oAlternativa}>— o también —</p>
-            <p>Transferí al alias <strong>0981818031</strong> y enviá el comprobante por WhatsApp.</p>
           </div>
         )}
       </div>
