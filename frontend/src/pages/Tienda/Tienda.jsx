@@ -13,6 +13,7 @@ const TABS = [
   { key: 'TODOS', label: 'Todos' },
   { key: 'COMIDA', label: '🍖 Comida' },
   { key: 'BEBIDA', label: '🥤 Bebidas' },
+  { key: 'POSTRE', label: '🍰 Postres' },
   { key: 'JUEGO', label: '🎯 Juegos' },
 ];
 const SECCIONES = TABS.slice(1);

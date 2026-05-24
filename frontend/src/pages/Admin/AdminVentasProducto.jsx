@@ -7,7 +7,7 @@ const fmtGs = (n) => `Gs. ${Number(n || 0).toLocaleString('es-PY')}`;
 const fmtNum = (n) => Number(n || 0).toLocaleString('es-PY');
 const fmtFecha = (f) => f ? new Date(f).toLocaleDateString('es-PY') : '—';
 
-const CATEGORIAS = ['TODAS', 'COMIDA', 'BEBIDA', 'JUEGO'];
+const CATEGORIAS = ['TODAS', 'COMIDA', 'BEBIDA', 'POSTRE', 'JUEGO'];
 
 export default function AdminVentasProducto() {
   const navigate = useNavigate();

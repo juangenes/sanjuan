@@ -124,6 +124,7 @@ export default function ModalEditarProducto({ producto, onClose, onGuardado, onE
                 <select value={datos.categoria || 'COMIDA'} onChange={e => set('categoria', e.target.value)}>
                   <option>COMIDA</option>
                   <option>BEBIDA</option>
+                  <option>POSTRE</option>
                   <option>JUEGO</option>
                 </select>
               </div>

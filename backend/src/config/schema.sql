@@ -15,7 +15,7 @@ CREATE TABLE IF NOT EXISTS `productos` (
   `precio_preventa` INT(11) NOT NULL DEFAULT 0,
   `precio_normal`   INT(11) NOT NULL DEFAULT 0,
   `activo`          TINYINT(1) DEFAULT 1,
-  `categoria`       ENUM('COMIDA','BEBIDA','JUEGO') NOT NULL DEFAULT 'COMIDA',
+  `categoria`       ENUM('COMIDA','BEBIDA','POSTRE','JUEGO') NOT NULL DEFAULT 'COMIDA',
   `stock`           INT(11) NOT NULL DEFAULT 0,
   PRIMARY KEY (`idproducto`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
