@@ -52,6 +52,20 @@ export default function Confirmacion() {
   const estado = ESTADO_LABEL[pedido.estado] || ESTADO_LABEL.PENDIENTE;
   const codigo = hash.substring(0, 8).toUpperCase();
 
+  // Mensaje pre-cargado para que el cliente avise su pedido a la organización.
+  const linkPedido = `${window.location.origin}/pedido/${hash}`;
+  const lineasItems = (pedido.items || [])
+    .map(i => `• ${i.cantidad}x ${i.titulo}`)
+    .join('\n');
+  const waMsg =
+    `*SAN JUAN DICE QUE SI 2026*\n` +
+    `🛒 Mi pedido ${codigo}\n` +
+    `👤 ${pedido.familia}\n\n` +
+    `${lineasItems}\n\n` +
+    `Total: Gs. ${Number(pedido.total).toLocaleString()}\n\n` +
+    `Ver pedido: ${linkPedido}`;
+  const waHref = `https://wa.me/595981969339?text=${encodeURIComponent(waMsg)}`;
+
   return (
     <div className={styles.pagina}>
       <header className={styles.header}>
@@ -129,6 +143,23 @@ export default function Confirmacion() {
             </button>
           </div>
         )}
+
+        <a
+          href={waHref}
+          target="_blank"
+          rel="noopener noreferrer"
+          style={{
+            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '.5rem',
+            width: '100%', marginTop: '1rem', padding: '.9rem 1rem', borderRadius: '12px',
+            background: '#25D366', color: '#fff', fontWeight: 800, fontSize: '1rem',
+            textDecoration: 'none', boxSizing: 'border-box',
+          }}
+        >
+          📲 Enviar mi pedido por WhatsApp
+        </a>
+        <p style={{ fontSize: '.8rem', color: '#777', textAlign: 'center', marginTop: '.5rem' }}>
+          Avisale a la organización que hiciste tu pedido.
+        </p>
       </div>
 
       <button className={styles.btnVolver} onClick={() => navigate('/')}>
