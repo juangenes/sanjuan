@@ -258,7 +258,7 @@ function CheckoutModal({ total, items, onClose, onSuccess }) {
               <input
                 value={familia}
                 onChange={e => setFamilia(e.target.value)}
-                placeholder="Ej: González Pérez"
+                placeholder="Ej: Juan Pérez"
                 autoFocus
                 autoCapitalize="words"
               />
