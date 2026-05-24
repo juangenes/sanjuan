@@ -96,7 +96,9 @@
   width:100%;padding:.62rem .9rem .62rem 2.4rem;
   border:1.5px solid #e6e0d2;border-radius:12px;
   background:#fff;font-size:.9rem;font-family:inherit;
+  color:#1a1a1a;-webkit-text-fill-color:#1a1a1a;color-scheme:light;
 }
+.td-search input::placeholder{color:#9a9a9a;-webkit-text-fill-color:#9a9a9a;opacity:1}
 .td-search input:focus{outline:none;border-color:var(--tn-azul);box-shadow:0 0 0 3px rgba(11,46,85,.1)}
 .td-search-icon{position:absolute;left:.85rem;top:50%;transform:translateY(-50%);color:#999;pointer-events:none}
 
@@ -333,8 +335,10 @@
 .td-field input{
   padding:.85rem 1rem;border:1.5px solid #e6e0d2;border-radius:12px;
   font-size:1rem;width:100%;font-family:inherit;background:#fff;
+  color:#1a1a1a;-webkit-text-fill-color:#1a1a1a;color-scheme:light;
   transition:border-color .15s, box-shadow .15s;
 }
+.td-field input::placeholder{color:#9a9a9a;-webkit-text-fill-color:#9a9a9a;opacity:1}
 .td-field input:focus{outline:none;border-color:#0B2E55;box-shadow:0 0 0 3px rgba(11,46,85,.1)}
 .td-field-hint{font-size:.74rem;color:#777;margin-top:.3rem}
 .td-field-required::after{content:' *';color:#E63946}
