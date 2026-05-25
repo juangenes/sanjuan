@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { getProductos, crearPedido } from '../../api';
@@ -335,9 +335,23 @@ export default function Tienda() {
   const [activeTab, setActiveTab] = useState('TODOS');
   const [search, setSearch] = useState('');
   const [checkoutOpen, setCheckoutOpen] = useState(false);
+  // En móvil: ¿el carrito ya está a la vista? Si sí, la barra fija deja de
+  // ofrecer "Ver pedido" y pasa a "Confirmar pedido".
+  const [cartInView, setCartInView] = useState(false);
 
   const { items, agregar, quitar, limpiar, total } = useCarrito();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const el = document.getElementById('tdCart');
+    if (!el) return;
+    const obs = new IntersectionObserver(
+      ([entry]) => setCartInView(entry.isIntersecting),
+      { threshold: 0.2 }
+    );
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, []);
 
   useEffect(() => {
     getProductos()
@@ -415,18 +429,22 @@ export default function Tienda() {
         onClear={limpiar}
         onCheckout={() => setCheckoutOpen(true)}
       />
-      {/* Barra sticky solo-móvil: lleva al carrito (que está al pie en pantallas chicas) */}
+      {/* Barra sticky solo-móvil. Antes de llegar al carrito lleva hasta él;
+          una vez que el carrito está a la vista pasa a confirmar el pedido. */}
       {items.length > 0 && (
         <button
           className="td-mobilebar"
           type="button"
-          onClick={() => document.getElementById('tdCart')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+          onClick={() => {
+            if (cartInView) setCheckoutOpen(true);
+            else document.getElementById('tdCart')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          }}
         >
           <span className="td-mobilebar-left">
             <span className="td-mobilebar-emoji">🛒</span>
             {counts.TODOS} {counts.TODOS === 1 ? 'ítem' : 'ítems'} · Gs. {fmtGs(total)}
           </span>
-          <span className="td-mobilebar-cta">Ver pedido →</span>
+          <span className="td-mobilebar-cta">{cartInView ? 'Confirmar pedido' : 'Ver pedido →'}</span>
         </button>
       )}
       {checkoutOpen && (
