@@ -140,7 +140,7 @@ export default function Confirmacion() {
           <div className={styles.instruccionesPago}>
             <h3>Pagá por transferencia</h3>
             <p className={styles.oAlternativa}>
-              Envianos el comprobante de transferencia por WhatsApp. La organización valida tu transferencia y tu pedido será validado.
+              Envianos el comprobante de transferencia por WhatsApp. La organización verifica que tu transferencia se recibió con éxito y ahí tu pedido será validado. Te llegará un mensaje de validación de tu pedido al número de celular que proporcionaste en tu pedido.
             </p>
             <a
               href={waHref}
