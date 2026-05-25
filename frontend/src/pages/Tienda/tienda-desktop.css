@@ -343,6 +343,9 @@
 .td-field-hint{font-size:.74rem;color:#777;margin-top:.3rem}
 .td-field-required::after{content:' *';color:#E63946}
 
+/* ── Barra sticky de carrito (solo móvil) ── */
+.td-mobilebar{display:none}
+
 /* ── Responsive: stack cart below grid on small screens ── */
 @media (max-width: 900px){
   .td-app{
@@ -352,8 +355,33 @@
       "promo"
       "main"
       "cart";
+    /* deja lugar para que la barra fija no tape el final del carrito */
+    padding-bottom:calc(72px + env(safe-area-inset-bottom));
   }
   .td-cart{position:static;height:auto;max-height:none;border-left:none;border-top:1px solid var(--tn-line)}
   .td-header{flex-direction:column;align-items:flex-start;gap:.8rem;padding:1rem 1.2rem}
   .td-main{padding:1.2rem 1.2rem 1.5rem}
+
+  .td-mobilebar{
+    display:flex;align-items:center;justify-content:space-between;gap:.8rem;
+    position:fixed;left:0;right:0;bottom:0;z-index:150;
+    width:100%;border:none;cursor:pointer;font-family:inherit;
+    background:var(--tn-azul);color:#fff;
+    padding:.85rem 1.1rem;
+    padding-bottom:calc(.85rem + env(safe-area-inset-bottom));
+    box-shadow:0 -6px 20px -6px rgba(0,0,0,.45);
+    animation:td-bar-up .25s ease-out;
+  }
+  .td-mobilebar:active{background:var(--tn-azul-2)}
+  .td-mobilebar-left{
+    display:flex;align-items:center;gap:.5rem;
+    font-size:.95rem;font-weight:700;min-width:0;
+  }
+  .td-mobilebar-emoji{font-size:1.15rem}
+  .td-mobilebar-cta{
+    background:var(--tn-amarillo);color:var(--tn-azul);
+    padding:.5rem .9rem;border-radius:999px;
+    font-size:.85rem;font-weight:800;white-space:nowrap;flex-shrink:0;
+  }
+  @keyframes td-bar-up{from{transform:translateY(100%)}to{transform:translateY(0)}}
 }

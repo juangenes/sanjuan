@@ -131,7 +131,7 @@ function ProductCard({ p, qty, onAdd, onSub }) {
 function CartSidebar({ items, total, onAdd, onSub, onClear, onCheckout }) {
   const totalUnits = items.reduce((a, i) => a + i.cantidad, 0);
   return (
-    <aside className="td-cart">
+    <aside className="td-cart" id="tdCart">
       <div className="td-cart-head">
         <h2>
           🛒 Tu pedido
@@ -415,6 +415,20 @@ export default function Tienda() {
         onClear={limpiar}
         onCheckout={() => setCheckoutOpen(true)}
       />
+      {/* Barra sticky solo-móvil: lleva al carrito (que está al pie en pantallas chicas) */}
+      {items.length > 0 && (
+        <button
+          className="td-mobilebar"
+          type="button"
+          onClick={() => document.getElementById('tdCart')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+        >
+          <span className="td-mobilebar-left">
+            <span className="td-mobilebar-emoji">🛒</span>
+            {counts.TODOS} {counts.TODOS === 1 ? 'ítem' : 'ítems'} · Gs. {fmtGs(total)}
+          </span>
+          <span className="td-mobilebar-cta">Ver pedido →</span>
+        </button>
+      )}
       {checkoutOpen && (
         <CheckoutModal
           total={total}

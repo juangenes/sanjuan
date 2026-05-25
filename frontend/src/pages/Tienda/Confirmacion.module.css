@@ -58,6 +58,38 @@
   margin: 0.25rem 0;
 }
 
+.btnDescargar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  width: 100%;
+  margin-top: 0.5rem;
+  padding: 0.75rem 1rem;
+  border: 1.5px solid #0B2E55;
+  border-radius: 12px;
+  background: #fff;
+  color: #0B2E55;
+  font-size: 0.95rem;
+  font-weight: 800;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background 0.15s, transform 0.1s;
+}
+
+.btnDescargar:hover:not(:disabled) {
+  background: rgba(11, 46, 85, 0.06);
+}
+
+.btnDescargar:active:not(:disabled) {
+  transform: scale(0.98);
+}
+
+.btnDescargar:disabled {
+  opacity: 0.6;
+  cursor: progress;
+}
+
 .items {
   margin-top: 1rem;
   border-top: 1px solid #eee;
