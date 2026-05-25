@@ -39,6 +39,10 @@ export default function Confirmacion() {
   const metodo = pedido.metodo_pago || 'TRANSFERENCIA';
   const esInfonet = metodo === 'INFONET';
 
+  // Teléfono del pedido en formato internacional (+595...), sin el 0 inicial.
+  const telDigits = (pedido.contacto || '').replace(/\D/g, '').replace(/^0/, '');
+  const telIntl = telDigits ? `+595${telDigits}` : 'tu celular';
+
   // Texto de estado según método: por transferencia el pedido espera validación manual.
   const estadoTexto = pedido.estado === 'PENDIENTE'
     ? (esInfonet ? 'Pendiente (Infonet)' : 'Pendiente de validación')
@@ -140,7 +144,7 @@ export default function Confirmacion() {
           <div className={styles.instruccionesPago}>
             <h3>Pagá por transferencia</h3>
             <p className={styles.oAlternativa}>
-              Envianos el comprobante de transferencia por WhatsApp. Cuando la organización pueda verificar que tu transferencia se haya recibido con éxito tu pedido será validado. En ese momento recibirás un mensaje de validación de este pedido al número que proporcionaste en tu pedido.
+              Envianos el comprobante de transferencia por WhatsApp. Cuando la organización pueda verificar que tu transferencia se haya recibido con éxito tu pedido será validado. En ese momento recibirás un mensaje de validación al número <strong>{telIntl}</strong>.
             </p>
             <a
               href={waHref}
