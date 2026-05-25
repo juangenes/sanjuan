@@ -212,6 +212,7 @@ function CheckoutModal({ total, items, onClose, onSuccess }) {
   const [familia, setFamilia] = useState('');
   const [telefono, setTelefono] = useState('');
   const [cedula, setCedula] = useState('');
+  const [metodo, setMetodo] = useState('TRANSFERENCIA');
   const [loading, setLoading] = useState(false);
 
   const formatPhone = (v) => {
@@ -231,6 +232,7 @@ function CheckoutModal({ total, items, onClose, onSuccess }) {
         cedula,
         familia,
         contacto: telefono,
+        metodo_pago: metodo,
         items: items.map(i => ({ idproducto: i.idproducto, cantidad: i.cantidad })),
       };
       const resultado = await crearPedido(payload);
@@ -263,6 +265,31 @@ function CheckoutModal({ total, items, onClose, onSuccess }) {
                 autoCapitalize="words"
               />
               <div className="td-field-hint">Para identificar tu pedido al retirar.</div>
+            </div>
+            <div className="td-field">
+              <label className="td-field-required">Método de pago</label>
+              <div style={{ display: 'flex', gap: '.6rem' }}>
+                {[
+                  { key: 'TRANSFERENCIA', label: '🏦 Transferencia', desc: 'Enviás el comprobante por WhatsApp' },
+                  { key: 'INFONET', label: '🧾 Infonet', desc: 'Confirmación automática (próximamente)' },
+                ].map(opt => (
+                  <button
+                    type="button"
+                    key={opt.key}
+                    onClick={() => setMetodo(opt.key)}
+                    style={{
+                      flex: 1, textAlign: 'left', cursor: 'pointer',
+                      padding: '.7rem .8rem', borderRadius: '12px',
+                      border: metodo === opt.key ? '2px solid #0B2E55' : '1.5px solid #e6e0d2',
+                      background: metodo === opt.key ? 'rgba(11,46,85,.06)' : '#fff',
+                      color: '#0B2E55',
+                    }}
+                  >
+                    <div style={{ fontWeight: 800, fontSize: '.9rem' }}>{opt.label}</div>
+                    <div style={{ fontSize: '.72rem', color: '#777', marginTop: '.2rem', whiteSpace: 'normal' }}>{opt.desc}</div>
+                  </button>
+                ))}
+              </div>
             </div>
             <div className="td-field">
               <label className="td-field-required">Teléfono</label>

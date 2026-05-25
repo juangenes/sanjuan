@@ -7,11 +7,11 @@ const { authAdmin } = require('../middleware/auth');
 // Público — crear pedido
 router.post('/', async (req, res) => {
   try {
-    const { cedula, familia, contacto, items } = req.body;
+    const { cedula, familia, contacto, items, metodo_pago } = req.body;
     if (!familia || !contacto || !items?.length) {
       return res.status(400).json({ error: 'Datos incompletos' });
     }
-    const resultado = await pedidoService.crearPedido({ cedula, familia, contacto, items });
+    const resultado = await pedidoService.crearPedido({ cedula, familia, contacto, items, metodo_pago });
     res.status(201).json({ success: true, ...resultado });
   } catch (err) {
     res.status(400).json({ success: false, error: err.message });

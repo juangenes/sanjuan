@@ -4,7 +4,7 @@ const pedidoProductoModel = require('../models/pedidoProducto.model');
 const productoModel = require('../models/producto.model');
 const { generarHash } = require('../utils/hash');
 
-async function crearPedido({ cedula, familia, contacto, items }) {
+async function crearPedido({ cedula, familia, contacto, items, metodo_pago }) {
   const conn = await db.getConnection();
   await conn.beginTransaction();
 
@@ -32,7 +32,7 @@ async function crearPedido({ cedula, familia, contacto, items }) {
     }
 
     // Crear pedido
-    const idpedido = await pedidoModel.crear({ cedula, familia, contacto, total }, conn);
+    const idpedido = await pedidoModel.crear({ cedula, familia, contacto, total, metodo_pago }, conn);
     const fecha = await pedidoModel.obtenerFecha(idpedido, conn);
     const hash = generarHash(idpedido, fecha);
     await pedidoModel.actualizarHash(idpedido, hash, conn);

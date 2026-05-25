@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { QRCodeSVG } from 'qrcode.react';
-import { getPedido, confirmarPagoMock, getRetirosPedido } from '../../api';
+import { getPedido, getRetirosPedido } from '../../api';
 import toast from 'react-hot-toast';
 import styles from './Confirmacion.module.css';
 
@@ -17,7 +17,6 @@ export default function Confirmacion() {
   const [retiros, setRetiros] = useState([]);
   const [tab, setTab] = useState('pedido');
   const [loading, setLoading] = useState(true);
-  const [pagando, setPagando] = useState(false);
 
   useEffect(() => {
     Promise.all([
@@ -32,27 +31,20 @@ export default function Confirmacion() {
       .finally(() => setLoading(false));
   }, [hash]);
 
-  async function handleConfirmar() {
-    setPagando(true);
-    try {
-      await confirmarPagoMock(hash);
-      const p = await getPedido(hash);
-      setPedido(p);
-      toast.success('¡Pedido confirmado! (pago simulado)');
-    } catch {
-      toast.error('No se pudo confirmar el pedido');
-    } finally {
-      setPagando(false);
-    }
-  }
-
   if (loading) return <div className={styles.loading}>Cargando...</div>;
   if (!pedido) return <div className={styles.loading}>Pedido no encontrado</div>;
 
   const estado = ESTADO_LABEL[pedido.estado] || ESTADO_LABEL.PENDIENTE;
   const codigo = hash.substring(0, 8).toUpperCase();
+  const metodo = pedido.metodo_pago || 'TRANSFERENCIA';
+  const esInfonet = metodo === 'INFONET';
 
-  // Mensaje pre-cargado para que el cliente avise su pedido a la organización.
+  // Texto de estado según método: por transferencia el pedido espera validación manual.
+  const estadoTexto = pedido.estado === 'PENDIENTE'
+    ? (esInfonet ? 'Pendiente (Infonet)' : 'Pendiente de validación')
+    : estado.texto;
+
+  // Mensaje pre-cargado para que el cliente avise su transferencia a la organización.
   const linkPedido = `${window.location.origin}/pedido/${hash}`;
   const lineasItems = (pedido.items || [])
     .map(i => `• ${i.cantidad}x ${i.titulo}`)
@@ -63,6 +55,7 @@ export default function Confirmacion() {
     `👤 ${pedido.familia}\n\n` +
     `${lineasItems}\n\n` +
     `Total: Gs. ${Number(pedido.total).toLocaleString()}\n\n` +
+    `Te envío mi transferencia para que me confirmes el pedido.\n` +
     `Ver pedido: ${linkPedido}`;
   const waHref = `https://wa.me/595981969339?text=${encodeURIComponent(waMsg)}`;
 
@@ -74,7 +67,7 @@ export default function Confirmacion() {
 
       <div className={styles.card}>
         <div className={styles.estadoBadge} style={{ background: estado.bg, color: estado.color }}>
-          {estado.texto}
+          {estadoTexto}
         </div>
 
         <div className={styles.qrWrap}>
@@ -134,32 +127,42 @@ export default function Confirmacion() {
           </div>
         )}
 
-        {pedido.estado === 'PENDIENTE' && (
+        {pedido.estado === 'PENDIENTE' && esInfonet && (
           <div className={styles.instruccionesPago}>
-            <h3>Finalizá tu pedido</h3>
-            <p className={styles.oAlternativa}>🧪 Modo prueba · el pago es simulado, no se cobra nada.</p>
-            <button className={styles.btnBancard} onClick={handleConfirmar} disabled={pagando}>
-              {pagando ? 'Procesando...' : '✅ Confirmar pedido (pago simulado)'}
-            </button>
+            <h3>Pago automático con Infonet</h3>
+            <p className={styles.oAlternativa}>
+              ⚙️ La confirmación por Infonet es automática y todavía está <strong>en implementación</strong>. No disponible en esta prueba.
+            </p>
           </div>
         )}
 
-        <a
-          href={waHref}
-          target="_blank"
-          rel="noopener noreferrer"
-          style={{
-            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '.5rem',
-            width: '100%', marginTop: '1rem', padding: '.9rem 1rem', borderRadius: '12px',
-            background: '#25D366', color: '#fff', fontWeight: 800, fontSize: '1rem',
-            textDecoration: 'none', boxSizing: 'border-box',
-          }}
-        >
-          📲 Enviar mi pedido por WhatsApp
-        </a>
-        <p style={{ fontSize: '.8rem', color: '#777', textAlign: 'center', marginTop: '.5rem' }}>
-          Avisale a la organización que hiciste tu pedido.
-        </p>
+        {pedido.estado === 'PENDIENTE' && !esInfonet && (
+          <div className={styles.instruccionesPago}>
+            <h3>Pagá por transferencia</h3>
+            <p className={styles.oAlternativa}>
+              Transferí al alias <strong>0981818031</strong> y envianos el comprobante por WhatsApp. La organización valida tu pedido y vas a verlo acá como <strong>Pagado</strong>.
+            </p>
+            <a
+              href={waHref}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '.5rem',
+                width: '100%', marginTop: '1rem', padding: '.9rem 1rem', borderRadius: '12px',
+                background: '#25D366', color: '#fff', fontWeight: 800, fontSize: '1rem',
+                textDecoration: 'none', boxSizing: 'border-box',
+              }}
+            >
+              📲 Enviar mi transferencia por WhatsApp
+            </a>
+          </div>
+        )}
+
+        {pedido.estado === 'PAGADO' && (
+          <p style={{ textAlign: 'center', color: '#155724', fontWeight: 700, marginTop: '1rem' }}>
+            ✅ La organización validó tu pedido. Mostrá este código/QR al retirar.
+          </p>
+        )}
       </div>
 
       <button className={styles.btnVolver} onClick={() => navigate('/')}>

@@ -1,11 +1,11 @@
 const db = require('../config/db');
 
 async function crear(datos, conn) {
-  const { cedula, familia, contacto, total } = datos;
+  const { cedula, familia, contacto, total, metodo_pago } = datos;
   const [result] = await (conn || db).query(
-    `INSERT INTO pedidos (cedula, familia, contacto, total, hash, estado)
-     VALUES (?, ?, ?, ?, '', 'PENDIENTE')`,
-    [cedula, familia, contacto, total]
+    `INSERT INTO pedidos (cedula, familia, contacto, total, metodo_pago, hash, estado)
+     VALUES (?, ?, ?, ?, ?, '', 'PENDIENTE')`,
+    [cedula, familia, contacto, total, metodo_pago || null]
   );
   return result.insertId;
 }
@@ -25,7 +25,7 @@ async function actualizarHash(idpedido, hash, conn) {
 
 async function listarTodos() {
   const [rows] = await db.query(
-    `SELECT idpedido, hash, fecha, cedula, familia, contacto, total, estado
+    `SELECT idpedido, hash, fecha, cedula, familia, contacto, total, metodo_pago, estado
      FROM pedidos ORDER BY idpedido DESC`
   );
   return rows;
