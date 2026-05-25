@@ -140,7 +140,7 @@ export default function Confirmacion() {
           <div className={styles.instruccionesPago}>
             <h3>Pagá por transferencia</h3>
             <p className={styles.oAlternativa}>
-              Transferí al alias <strong>0981818031</strong> y envianos el comprobante por WhatsApp. La organización valida tu pedido y vas a verlo acá como <strong>Pagado</strong>.
+              Envianos el comprobante de transferencia por WhatsApp. La organización valida tu transferencia y tu pedido será validado.
             </p>
             <a
               href={waHref}
