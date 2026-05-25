@@ -78,10 +78,6 @@ function LandingHero() {
               <span className="anio">06·06·2026</span>
             </div>
             <div className="ld-hero-poster-bot">Comida · Juegos · Música en vivo</div>
-            <div className="ld-hero-badge bg-1">
-              <span className="num">−20%</span>
-              <span className="lbl">Preventa</span>
-            </div>
           </div>
         </div>
       </div>

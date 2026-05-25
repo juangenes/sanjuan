@@ -12,7 +12,10 @@ function getPool() {
       database: process.env.DB_NAME || 'sanjuan',
       user: process.env.DB_USER,
       password: process.env.DB_PASS,
-      timezone: '-03:00',
+      // La BD (droplet) corre en UTC y las columnas TIMESTAMP se guardan/leen en UTC.
+      // Le indicamos a mysql2 que interprete los datetime como UTC para construir
+      // el instante correcto; el frontend lo convierte a hora local (Asunción) al mostrar.
+      timezone: 'Z',
       waitForConnections: true,
       connectionLimit: 10,
     });

@@ -73,7 +73,7 @@ export default function AdminPedidos() {
               <tr key={p.idpedido}>
                 <td>{p.idpedido}</td>
                 <td><a href={`/pedido/${p.hash}`} target="_blank">{p.hash.substring(0,8).toUpperCase()}</a></td>
-                <td style={{ fontSize: '0.85rem' }}>{new Date(p.fecha).toLocaleString('es-PY')}</td>
+                <td style={{ fontSize: '0.85rem' }}>{new Date(p.fecha).toLocaleString('es-PY', { timeZone: 'America/Asuncion' })}</td>
                 <td>{p.familia}</td>
                 <td>Gs. {Number(p.total).toLocaleString()}</td>
                 <td><span className={`${styles.badge} ${styles[p.estado.toLowerCase()]}`}>{p.estado}</span></td>
