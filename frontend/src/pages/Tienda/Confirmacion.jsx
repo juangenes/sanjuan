@@ -80,7 +80,7 @@ export default function Confirmacion() {
         </div>
 
         <div className={styles.datosPedido}>
-          <p><strong>Familia:</strong> {pedido.familia}</p>
+          <p><strong>Nombre:</strong> {pedido.familia}</p>
           <p><strong>Contacto:</strong> {pedido.contacto}</p>
           <p><strong>Total:</strong> Gs. {Number(pedido.total).toLocaleString()}</p>
         </div>
