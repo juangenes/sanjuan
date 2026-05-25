@@ -41,7 +41,7 @@ export default function ExpendioBoleta() {
 
         <div className={styles.pedidoInfo}>
           <div><span className={styles.label}>Código:</span> {hash.substring(0, 8).toUpperCase()}</div>
-          <div><span className={styles.label}>Familia:</span> {pedido.familia}</div>
+          <div><span className={styles.label}>Nombre:</span> {pedido.familia}</div>
           <div><span className={styles.label}>Cédula:</span> {pedido.cedula}</div>
         </div>
 

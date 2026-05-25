@@ -9,9 +9,9 @@ function waLink(p) {
   const link = `https://sanjuandicequesi.com/pedido/${p.hash}`;
   let msg;
   if (p.estado === 'PAGADO') {
-    msg = `*SAN JUAN DICE QUE SI 2026*\n\n✅ Tu pedido ${codigo} (familia ${p.familia}) ha sido VALIDADO.\nTotal: Gs. ${Number(p.total).toLocaleString()}\n\nVer pedido: ${link}`;
+    msg = `*SAN JUAN DICE QUE SI 2026*\n\n✅ Tu pedido ${codigo} (${p.familia})ha sido VALIDADO.\nTotal: Gs. ${Number(p.total).toLocaleString()}\n\nVer pedido: ${link}`;
   } else {
-    msg = `*SAN JUAN DICE QUE SI 2026*\n\n🔔 Tu pedido ${codigo} (familia ${p.familia}) está PENDIENTE DE PAGO.\nTotal: Gs. ${Number(p.total).toLocaleString()}\n\n💸 Transferí al alias 0981818031 y enviá comprobante por WhatsApp.\n\nVer pedido: ${link}`;
+    msg = `*SAN JUAN DICE QUE SI 2026*\n\n🔔 Tu pedido ${codigo} (${p.familia})está PENDIENTE DE PAGO.\nTotal: Gs. ${Number(p.total).toLocaleString()}\n\n💸 Transferí al alias 0981818031 y enviá comprobante por WhatsApp.\n\nVer pedido: ${link}`;
   }
   const num = p.contacto.replace(/\D/g, '').replace(/^0/, '');
   return `https://wa.me/595${num}?text=${encodeURIComponent(msg)}`;
@@ -66,7 +66,7 @@ export default function AdminPedidos() {
 
         <table>
           <thead>
-            <tr><th>#</th><th>Código</th><th>Fecha</th><th>Familia</th><th>Total</th><th>Estado</th><th>Acciones</th></tr>
+            <tr><th>#</th><th>Código</th><th>Fecha</th><th>Nombre</th><th>Total</th><th>Estado</th><th>Acciones</th></tr>
           </thead>
           <tbody>
             {filtrados.map(p => (

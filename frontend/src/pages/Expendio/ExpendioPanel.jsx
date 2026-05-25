@@ -147,7 +147,7 @@ export default function ExpendioPanel() {
                 <h2 className={styles.listaTitulo}>Pedidos pagados ({pedidosLista.length})</h2>
                 <input
                   type="text"
-                  placeholder="Filtrar familia, cédula o código..."
+                  placeholder="Filtrar nombre, cédula o código..."
                   value={filtro}
                   onChange={e => setFiltro(e.target.value)}
                   className={styles.filtroInput}
