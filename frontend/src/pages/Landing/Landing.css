@@ -197,22 +197,11 @@
   display:grid;grid-template-columns:1fr 1fr;gap:3.2rem;align-items:center;
 }
 .ld-tradicion-visual{
-  position:relative;aspect-ratio:1/1;border-radius:18px;overflow:hidden;
-  background:linear-gradient(135deg,var(--ld-rojo),#b8232f);
+  position:relative;aspect-ratio:1131/1600;max-width:440px;margin-inline:auto;
+  border-radius:18px;overflow:hidden;
   box-shadow:0 20px 50px -16px rgba(0,0,0,.3);
 }
-.ld-tradicion-visual img{width:100%;height:100%;object-fit:cover;mix-blend-mode:luminosity;opacity:.85}
-.ld-tradicion-visual::after{
-  content:'';position:absolute;inset:0;
-  background:linear-gradient(0deg, rgba(11,46,85,.4) 0%, transparent 60%);
-}
-.ld-tradicion-overlay{
-  position:absolute;left:1.2rem;bottom:1.2rem;right:1.2rem;
-  font-family:'Caveat Brush','Bebas Neue',sans-serif;
-  color:var(--ld-amarillo);font-size:1.6rem;line-height:1.05;
-  text-shadow:0 2px 12px rgba(0,0,0,.5);
-  z-index:1;
-}
+.ld-tradicion-visual img{width:100%;height:100%;object-fit:cover}
 
 /* JUEGOS — grid de cards */
 .ld-juegos{background:var(--ld-azul);color:#fff;position:relative;overflow:hidden}

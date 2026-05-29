@@ -111,11 +111,10 @@ function LandingTradicion() {
           </div>
           <div className="ld-tradicion-visual">
             <img
-              src="/img/sjdicequesi.jpg"
-              alt="Fiesta de San Juan"
+              src="/img/flyer.jpg"
+              alt="Flyer San Juan Dice Que Si"
               onError={(e) => { e.currentTarget.style.display = 'none'; }}
             />
-            <div className="ld-tradicion-overlay">"Lo bueno se vive,<br/>se comparte y se come"</div>
           </div>
         </div>
       </div>
