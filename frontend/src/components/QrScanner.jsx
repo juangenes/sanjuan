@@ -1,9 +1,10 @@
 import { useEffect, useRef } from 'react';
-import { Html5QrcodeScanner } from 'html5-qrcode';
+import { Html5Qrcode } from 'html5-qrcode';
 
+// Escáner de QR que arranca directo con la cámara trasera (facingMode: environment).
+// No mostramos el selector de cámaras: el operador no tiene que elegir nada.
 export default function QrScanner({ onDetected, fps = 20, qrbox = 250 }) {
   const containerRef = useRef(null);
-  const scannerRef = useRef(null);
   const handledRef = useRef(false);
 
   useEffect(() => {
@@ -11,26 +12,34 @@ export default function QrScanner({ onDetected, fps = 20, qrbox = 250 }) {
     const id = `qr-reader-${Math.random().toString(36).slice(2)}`;
     if (containerRef.current) containerRef.current.id = id;
 
-    const scanner = new Html5QrcodeScanner(
-      id,
-      { fps, qrbox: { width: qrbox, height: qrbox }, rememberLastUsedCamera: true },
-      false
-    );
-    scannerRef.current = scanner;
+    const html5Qr = new Html5Qrcode(id, /* verbose */ false);
+    let detenido = false;
 
-    scanner.render(
-      (decodedText) => {
-        if (handledRef.current) return;
-        handledRef.current = true;
-        try { scanner.clear(); } catch { /* noop */ }
-        onDetected(decodedText.trim().toUpperCase());
-      },
-      () => { /* errores de frame: silenciar */ }
-    );
-
-    return () => {
-      try { scanner.clear(); } catch { /* noop */ }
+    const detener = () => {
+      if (detenido) return;
+      detenido = true;
+      // stop() falla si el escáner nunca llegó a arrancar: lo silenciamos.
+      return html5Qr.stop().then(() => html5Qr.clear()).catch(() => { /* noop */ });
     };
+
+    html5Qr
+      .start(
+        { facingMode: 'environment' },
+        { fps, qrbox: { width: qrbox, height: qrbox } },
+        (decodedText) => {
+          if (handledRef.current) return;
+          handledRef.current = true;
+          Promise.resolve(detener()).finally(() => {
+            onDetected(decodedText.trim().toUpperCase());
+          });
+        },
+        () => { /* errores de frame: silenciar */ }
+      )
+      .catch((err) => {
+        console.error('No se pudo iniciar la cámara trasera', err);
+      });
+
+    return () => { detener(); };
   }, [fps, qrbox, onDetected]);
 
   return <div ref={containerRef} style={{ width: '100%' }} />;

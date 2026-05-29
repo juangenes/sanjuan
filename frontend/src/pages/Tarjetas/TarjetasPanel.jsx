@@ -51,7 +51,8 @@ export default function TarjetasPanel() {
     try {
       const res = await consumirCredito(tarjeta.codigo, puesto.id);
       toast.success(`✅ Cobrado Gs. ${Number(res.valor_cobrado).toLocaleString()}. Saldo restante: ${res.saldo_restante}`);
-      setTarjeta(t => ({ ...t, saldo: res.saldo_restante }));
+      // Un cobro = una lectura: volvemos al escáner para que haya que leer otra vez (evita doble cobro).
+      nuevaBusqueda();
     } catch (err) {
       toast.error(err.response?.data?.error || 'Error al consumir');
     } finally {
@@ -69,7 +70,7 @@ export default function TarjetasPanel() {
     <div className={styles.pagina}>
       <header className={styles.header}>
         <h1>🎯 Consumo de Tarjetas</h1>
-        {puesto && <p className={styles.subtitulo}>{puesto.nombre}</p>}
+        {puesto && <p className={styles.puestoNombre}>{puesto.nombre}</p>}
       </header>
 
       <div className={styles.contenido}>

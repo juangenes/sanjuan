@@ -5,7 +5,24 @@
   text-align: center;
   padding: 1rem;
 }
-.header h1 { margin: 0; color: #FFCE00; font-size: 1.4rem; }
+.header h1 {
+  margin: 0;
+  color: #FFCE00;
+  font-size: 1rem;
+  font-weight: 600;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  opacity: 0.95;
+}
+
+/* Nombre del puesto-juego (incluye el grado): lo más visible de la pantalla */
+.puestoNombre {
+  margin: 0.4rem 0 0;
+  color: #fff;
+  font-size: 1.75rem;
+  font-weight: 800;
+  line-height: 1.2;
+}
 
 .contenido { padding: 1.5rem; max-width: 400px; margin: 0 auto; }
 
@@ -128,4 +145,3 @@
 .puestoItem .flecha { color: #E63946; font-size: 1.3rem; }
 
 .selectorVacio { text-align: center; color: #fff; opacity: 0.85; }
-.subtitulo { text-align: center; color: #FFCE00; font-size: 0.95rem; margin: 0.25rem 0 0; }
