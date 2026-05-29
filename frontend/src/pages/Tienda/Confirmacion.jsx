@@ -82,6 +82,9 @@ export default function Confirmacion() {
   const codigo = hash.substring(0, 8).toUpperCase();
   const metodo = pedido.metodo_pago || 'TRANSFERENCIA';
   const esInfonet = metodo === 'INFONET';
+  // Pago con QR de Bancard aún pendiente: el QR de pago es lo principal,
+  // el QR de retiro y el comprobante se muestran recién cuando está pagado.
+  const esperandoPagoQr = esInfonet && pedido.estado === 'PENDIENTE';
 
   // Teléfono del pedido en formato internacional (+595...), sin el 0 inicial.
   const telDigits = (pedido.contacto || '').replace(/\D/g, '').replace(/^0/, '');
@@ -276,23 +279,51 @@ export default function Confirmacion() {
           {estadoTexto}
         </div>
 
-        <div className={styles.qrWrap}>
-          <QRCodeSVG value={JSON.stringify({ hash, idpedido: pedido.idpedido })} size={180} />
-          <p className={styles.codigo}>Código: <strong>{codigo}</strong></p>
-        </div>
+        {esperandoPagoQr ? (
+          /* Pago con QR de Bancard pendiente: el QR de pago es lo principal */
+          <div className={styles.pagoQrBox}>
+            <h3 className={styles.pagoQrTitulo}>Pagá tu pedido</h3>
+            <p className={styles.pagoQrMonto}>Gs. {Number(pedido.total).toLocaleString()}</p>
+            {qrPago ? (
+              <>
+                <div className={styles.qrWrap}>
+                  <QRCodeSVG value={qrPago} size={220} />
+                </div>
+                <p className={styles.oAlternativa}>
+                  Abrí <strong>Pago Móvil</strong> (o la app de tu banco) y escaneá este código.
+                  La pantalla se actualiza sola cuando se acredite.
+                </p>
+                <div className={styles.esperandoPago}>⏳ Esperando confirmación del pago…</div>
+              </>
+            ) : qrError ? (
+              <p className={styles.oAlternativa}>
+                ⚠️ No pudimos generar el QR de pago en este momento. Recargá la página o intentá nuevamente.
+              </p>
+            ) : (
+              <p className={styles.oAlternativa}>Generando QR de pago…</p>
+            )}
+          </div>
+        ) : (
+          <>
+            <div className={styles.qrWrap}>
+              <QRCodeSVG value={JSON.stringify({ hash, idpedido: pedido.idpedido })} size={180} />
+              <p className={styles.codigo}>Código: <strong>{codigo}</strong></p>
+            </div>
 
-        {/* QR oculto en <canvas> para poder exportar el comprobante como imagen */}
-        <div ref={qrCanvasRef} style={{ position: 'absolute', left: '-9999px', top: 0 }} aria-hidden="true">
-          <QRCodeCanvas value={JSON.stringify({ hash, idpedido: pedido.idpedido })} size={480} />
-        </div>
+            {/* QR oculto en <canvas> para poder exportar el comprobante como imagen */}
+            <div ref={qrCanvasRef} style={{ position: 'absolute', left: '-9999px', top: 0 }} aria-hidden="true">
+              <QRCodeCanvas value={JSON.stringify({ hash, idpedido: pedido.idpedido })} size={480} />
+            </div>
 
-        <button
-          className={styles.btnDescargar}
-          onClick={descargarComprobante}
-          disabled={descargando}
-        >
-          {descargando ? 'Generando...' : '⬇️ Descargar comprobante'}
-        </button>
+            <button
+              className={styles.btnDescargar}
+              onClick={descargarComprobante}
+              disabled={descargando}
+            >
+              {descargando ? 'Generando...' : '⬇️ Descargar comprobante'}
+            </button>
+          </>
+        )}
 
         <div className={styles.datosPedido}>
           <p><strong>Nombre:</strong> {pedido.familia}</p>
@@ -342,35 +373,6 @@ export default function Confirmacion() {
                   </span>
                 </div>
               ))
-            )}
-          </div>
-        )}
-
-        {pedido.estado === 'PENDIENTE' && esInfonet && (
-          <div className={styles.instruccionesPago}>
-            <h3>Pagá escaneando el QR</h3>
-            {qrPago ? (
-              <>
-                <div className={styles.qrWrap}>
-                  <QRCodeSVG value={qrPago} size={200} />
-                </div>
-                <p className={styles.oAlternativa}>
-                  Abrí <strong>Pago Móvil</strong> (o la app de tu banco), escaneá este código y confirmá el pago.
-                  Esta pantalla se actualiza sola cuando se acredite.
-                </p>
-                <div style={{
-                  marginTop: '.75rem', textAlign: 'center', fontWeight: 700,
-                  color: '#856404', background: '#fff3cd', borderRadius: '10px', padding: '.7rem',
-                }}>
-                  ⏳ Esperando confirmación del pago…
-                </div>
-              </>
-            ) : qrError ? (
-              <p className={styles.oAlternativa}>
-                ⚠️ No pudimos generar el QR de pago en este momento. Recargá la página o intentá nuevamente más tarde.
-              </p>
-            ) : (
-              <p className={styles.oAlternativa}>Generando QR de pago…</p>
             )}
           </div>
         )}
