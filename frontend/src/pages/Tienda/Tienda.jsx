@@ -212,7 +212,7 @@ function CheckoutModal({ total, items, onClose, onSuccess }) {
   const [familia, setFamilia] = useState('');
   const [telefono, setTelefono] = useState('');
   const [cedula, setCedula] = useState('');
-  const [metodo, setMetodo] = useState('TRANSFERENCIA');
+  const [metodo, setMetodo] = useState('INFONET');
   const [loading, setLoading] = useState(false);
 
   const formatPhone = (v) => {
@@ -270,8 +270,8 @@ function CheckoutModal({ total, items, onClose, onSuccess }) {
               <label className="td-field-required">Método de pago</label>
               <div style={{ display: 'flex', gap: '.6rem' }}>
                 {[
-                  { key: 'TRANSFERENCIA', label: '🏦 Transferencia', desc: 'Enviás el comprobante por WhatsApp' },
                   { key: 'INFONET', label: '🧾 Pago con QR', desc: 'Escaneás un QR y se confirma al instante' },
+                  { key: 'TRANSFERENCIA', label: '🏦 Transferencia', desc: 'Enviás el comprobante por WhatsApp' },
                 ].map(opt => (
                   <button
                     type="button"
