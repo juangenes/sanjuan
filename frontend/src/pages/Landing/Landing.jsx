@@ -4,6 +4,10 @@ import { getProductos } from '../../api';
 import './Landing.css';
 
 const TIENDA_PATH = '/tienda';
+const MAPS_URL =
+  'https://www.google.com/maps/search/?api=1&query=-25.31670230890569%2C-57.51481211053011';
+const MAPS_EMBED_URL =
+  'https://maps.google.com/maps?q=-25.31670230890569,-57.51481211053011&z=16&output=embed';
 
 function fmtGs(n) {
   return Number(n || 0).toLocaleString('es-PY');
@@ -288,6 +292,14 @@ function LandingInfo() {
             <h5>Ubicación</h5>
             <div className="ld-info-val">Colegio Torrefuerte</div>
             <p className="ld-info-sub">Patio principal del colegio. Estacionamiento habilitado para padres y familias.</p>
+            <a
+              className="ld-maps-link"
+              href={MAPS_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              📍 Cómo llegar →
+            </a>
           </div>
           <div className="ld-info-card">
             <div className="ld-info-card-icon">💳</div>
@@ -295,6 +307,23 @@ function LandingInfo() {
             <div className="ld-info-val">Bancard, transferencia o efectivo</div>
             <p className="ld-info-sub">Preventa online con descuento. Mostrás el QR y retirás.</p>
           </div>
+        </div>
+        <div className="ld-map">
+          <iframe
+            title="Ubicación Colegio Torrefuerte"
+            src={MAPS_EMBED_URL}
+            loading="lazy"
+            allowFullScreen
+            referrerPolicy="no-referrer-when-downgrade"
+          />
+          <a
+            className="ld-map-overlay"
+            href={MAPS_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            Abrir en Google Maps →
+          </a>
         </div>
       </div>
     </section>
