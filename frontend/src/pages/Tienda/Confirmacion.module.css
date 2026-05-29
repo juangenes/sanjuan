@@ -54,6 +54,18 @@
   font-size: 0.95rem;
 }
 
+.codigoTop {
+  text-align: center;
+  font-size: 1rem;
+  color: #0B2E55;
+  margin: 0 0 1rem;
+}
+
+.codigoTop strong {
+  font-size: 1.15rem;
+  letter-spacing: 0.5px;
+}
+
 .datosPedido p {
   margin: 0.25rem 0;
 }

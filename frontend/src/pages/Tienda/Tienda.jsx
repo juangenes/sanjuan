@@ -271,7 +271,7 @@ function CheckoutModal({ total, items, onClose, onSuccess }) {
               <div style={{ display: 'flex', gap: '.6rem' }}>
                 {[
                   { key: 'TRANSFERENCIA', label: '🏦 Transferencia', desc: 'Enviás el comprobante por WhatsApp' },
-                  { key: 'INFONET', label: '🧾 Infonet', desc: 'Confirmación automática (próximamente)' },
+                  { key: 'INFONET', label: '🧾 Pago con QR', desc: 'Escaneás un QR con Pago Móvil y se confirma al instante' },
                 ].map(opt => (
                   <button
                     type="button"

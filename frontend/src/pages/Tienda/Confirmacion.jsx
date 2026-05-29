@@ -105,7 +105,7 @@ export default function Confirmacion() {
     `🛒 Mi pedido ${codigo}\n` +
     `👤 ${pedido.familia}\n\n` +
     `${lineasItems}\n\n` +
-    `Total: Gs. ${Number(pedido.total).toLocaleString()}\n\n` +
+    `Total: Gs. ${Number(pedido.total).toLocaleString('es-PY')}\n\n` +
     `Te envío mi transferencia para que me confirmes el pedido.\n` +
     `Ver pedido: ${linkPedido}`;
   const waHref = `https://wa.me/${WHATSAPP_ORG}?text=${encodeURIComponent(waMsg)}`;
@@ -283,7 +283,7 @@ export default function Confirmacion() {
           /* Pago con QR de Bancard pendiente: el QR de pago es lo principal */
           <div className={styles.pagoQrBox}>
             <h3 className={styles.pagoQrTitulo}>Pagá tu pedido</h3>
-            <p className={styles.pagoQrMonto}>Gs. {Number(pedido.total).toLocaleString()}</p>
+            <p className={styles.pagoQrMonto}>Gs. {Number(pedido.total).toLocaleString('es-PY')}</p>
             {qrPago ? (
               <>
                 <div className={styles.qrWrap}>
@@ -305,10 +305,9 @@ export default function Confirmacion() {
           </div>
         ) : (
           <>
-            <div className={styles.qrWrap}>
-              <QRCodeSVG value={JSON.stringify({ hash, idpedido: pedido.idpedido })} size={180} />
-              <p className={styles.codigo}>Código: <strong>{codigo}</strong></p>
-            </div>
+            {/* El QR de retiro no se muestra en pantalla (nadie lo escanea acá);
+                va dentro del comprobante descargable. Solo mostramos el código. */}
+            <p className={styles.codigoTop}>Código de pedido: <strong>{codigo}</strong></p>
 
             {/* QR oculto en <canvas> para poder exportar el comprobante como imagen */}
             <div ref={qrCanvasRef} style={{ position: 'absolute', left: '-9999px', top: 0 }} aria-hidden="true">
@@ -320,7 +319,7 @@ export default function Confirmacion() {
               onClick={descargarComprobante}
               disabled={descargando}
             >
-              {descargando ? 'Generando...' : '⬇️ Descargar comprobante'}
+              {descargando ? 'Generando tu pedido...' : '⬇️ Descargá tu pedido'}
             </button>
           </>
         )}
@@ -328,7 +327,7 @@ export default function Confirmacion() {
         <div className={styles.datosPedido}>
           <p><strong>Nombre:</strong> {pedido.familia}</p>
           <p><strong>Contacto:</strong> {pedido.contacto}</p>
-          <p><strong>Total:</strong> Gs. {Number(pedido.total).toLocaleString()}</p>
+          <p><strong>Total:</strong> Gs. {Number(pedido.total).toLocaleString('es-PY')}</p>
         </div>
 
         <div className={styles.tabsRow}>
@@ -351,7 +350,7 @@ export default function Confirmacion() {
             {pedido.items?.map(item => (
               <div key={item.id} className={styles.itemLinea}>
                 <span>{item.cantidad}x {item.titulo}</span>
-                <span>Gs. {Number(item.subtotal).toLocaleString()}</span>
+                <span>Gs. {Number(item.subtotal).toLocaleString('es-PY')}</span>
               </div>
             ))}
           </div>
