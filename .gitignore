@@ -6,3 +6,6 @@ dist/
 backend/uploads/*
 !backend/uploads/.gitkeep
 !backend/uploads/productos/
+
+# Doc con credenciales de la integración Bancard — NO debe subirse al repo
+docs/bancard-integracion.md
