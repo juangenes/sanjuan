@@ -175,9 +175,6 @@ function CartSidebar({ items, total, onAdd, onSub, onClear, onCheckout }) {
       </div>
       {items.length > 0 && (
         <div className="td-cart-foot">
-          <div className="td-cart-suggest">
-            💡 <span><strong>¿Querés agregar algo más?</strong> Seguí navegando el catálogo →</span>
-          </div>
           <div className="td-cart-totals">
             <div className="td-cart-tot-row">
               <span>Subtotal ({totalUnits} u.)</span>
@@ -429,22 +426,19 @@ export default function Tienda() {
         onClear={limpiar}
         onCheckout={() => setCheckoutOpen(true)}
       />
-      {/* Barra sticky solo-móvil. Antes de llegar al carrito lleva hasta él;
-          una vez que el carrito está a la vista pasa a confirmar el pedido. */}
-      {items.length > 0 && (
+      {/* Barra sticky solo-móvil: lleva hasta el carrito. Una vez que el
+          carrito está a la vista desaparece para no confundir al usuario. */}
+      {items.length > 0 && !cartInView && (
         <button
           className="td-mobilebar"
           type="button"
-          onClick={() => {
-            if (cartInView) setCheckoutOpen(true);
-            else document.getElementById('tdCart')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-          }}
+          onClick={() => document.getElementById('tdCart')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
         >
           <span className="td-mobilebar-left">
             <span className="td-mobilebar-emoji">🛒</span>
             {counts.TODOS} {counts.TODOS === 1 ? 'ítem' : 'ítems'} · Gs. {fmtGs(total)}
           </span>
-          <span className="td-mobilebar-cta">{cartInView ? 'Confirmar pedido' : 'Ver pedido →'}</span>
+          <span className="td-mobilebar-cta">Ver pedido →</span>
         </button>
       )}
       {checkoutOpen && (
