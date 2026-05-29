@@ -65,6 +65,11 @@ export const eliminarPuesto = (id) => api.delete(`/puestos/${id}`).then(r => r.d
 export const iniciarPago = (hash) => api.post('/bancard/iniciar', { hash }).then(r => r.data);
 export const confirmarPagoMock = (hash) => api.post('/bancard/confirmar-mock', { hash }).then(r => r.data);
 
+// Bancard QR (Infonet)
+export const generarQrBancard = (hash) => api.post('/bancard/qr', { hash }).then(r => r.data);
+export const getEstadoBancard = (hash) => api.get(`/bancard/estado/${hash}`).then(r => r.data);
+export const revertirBancard = (hash) => api.post('/bancard/revertir', { hash }).then(r => r.data);
+
 // Usuarios
 export const getUsuarios = () => api.get('/usuarios').then(r => r.data.usuarios);
 export const crearUsuario = (datos) => api.post('/usuarios', datos).then(r => r.data);

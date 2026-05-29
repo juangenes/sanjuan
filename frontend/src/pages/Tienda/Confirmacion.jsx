@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { QRCodeSVG, QRCodeCanvas } from 'qrcode.react';
-import { getPedido, getRetirosPedido } from '../../api';
+import { getPedido, getRetirosPedido, generarQrBancard, getEstadoBancard } from '../../api';
 import toast from 'react-hot-toast';
 import styles from './Confirmacion.module.css';
 
@@ -22,6 +22,8 @@ export default function Confirmacion() {
   const [tab, setTab] = useState('pedido');
   const [loading, setLoading] = useState(true);
   const [descargando, setDescargando] = useState(false);
+  const [qrPago, setQrPago] = useState(null);   // cadena EMVCo del QR de Bancard
+  const [qrError, setQrError] = useState(false);
   const qrCanvasRef = useRef(null);
 
   useEffect(() => {
@@ -36,6 +38,42 @@ export default function Confirmacion() {
       .catch(() => toast.error('Pedido no encontrado'))
       .finally(() => setLoading(false));
   }, [hash]);
+
+  // Pago con QR de Bancard (Infonet): genera el QR y hace polling del estado
+  // mientras el pedido siga pendiente. Al confirmarse, la pantalla se actualiza sola.
+  useEffect(() => {
+    if (!pedido) return;
+    const metodo = pedido.metodo_pago || 'TRANSFERENCIA';
+    if (metodo !== 'INFONET' || pedido.estado !== 'PENDIENTE') return;
+
+    let cancelado = false;
+    let timer;
+
+    generarQrBancard(hash)
+      .then((r) => {
+        if (cancelado) return;
+        if (r.ya_pagado) { setPedido(p => ({ ...p, estado: 'PAGADO' })); return; }
+        if (r.qr_data) setQrPago(r.qr_data);
+        else setQrError(true);
+      })
+      .catch(() => { if (!cancelado) setQrError(true); });
+
+    async function poll() {
+      try {
+        const r = await getEstadoBancard(hash);
+        if (cancelado) return;
+        if (r.pagado) {
+          setPedido(p => ({ ...p, estado: 'PAGADO' }));
+          toast.success('¡Pago confirmado!');
+          return; // se acreditó: dejamos de pollear
+        }
+      } catch { /* reintentamos en el próximo ciclo */ }
+      if (!cancelado) timer = setTimeout(poll, 4000);
+    }
+    timer = setTimeout(poll, 4000);
+
+    return () => { cancelado = true; clearTimeout(timer); };
+  }, [pedido?.idpedido, pedido?.estado, pedido?.metodo_pago, hash]);
 
   if (loading) return <div className={styles.loading}>Cargando...</div>;
   if (!pedido) return <div className={styles.loading}>Pedido no encontrado</div>;
@@ -310,10 +348,30 @@ export default function Confirmacion() {
 
         {pedido.estado === 'PENDIENTE' && esInfonet && (
           <div className={styles.instruccionesPago}>
-            <h3>Pago automático con Infonet</h3>
-            <p className={styles.oAlternativa}>
-              ⚙️ La confirmación por Infonet es automática y todavía está <strong>en implementación</strong>. No disponible en esta prueba.
-            </p>
+            <h3>Pagá escaneando el QR</h3>
+            {qrPago ? (
+              <>
+                <div className={styles.qrWrap}>
+                  <QRCodeSVG value={qrPago} size={200} />
+                </div>
+                <p className={styles.oAlternativa}>
+                  Abrí <strong>Pago Móvil</strong> (o la app de tu banco), escaneá este código y confirmá el pago.
+                  Esta pantalla se actualiza sola cuando se acredite.
+                </p>
+                <div style={{
+                  marginTop: '.75rem', textAlign: 'center', fontWeight: 700,
+                  color: '#856404', background: '#fff3cd', borderRadius: '10px', padding: '.7rem',
+                }}>
+                  ⏳ Esperando confirmación del pago…
+                </div>
+              </>
+            ) : qrError ? (
+              <p className={styles.oAlternativa}>
+                ⚠️ No pudimos generar el QR de pago en este momento. Recargá la página o intentá nuevamente más tarde.
+              </p>
+            ) : (
+              <p className={styles.oAlternativa}>Generando QR de pago…</p>
+            )}
           </div>
         )}
 

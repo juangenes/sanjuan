@@ -9,6 +9,7 @@ export default function ModalCheckout({ onClose }) {
   const { items, total, limpiar } = useCarrito();
   const navigate = useNavigate();
   const [form, setForm] = useState({ cedula: '', familia: '', contacto: '' });
+  const [metodo, setMetodo] = useState('TRANSFERENCIA');
   const [loading, setLoading] = useState(false);
 
   const handleChange = e => setForm(f => ({ ...f, [e.target.name]: e.target.value }));
@@ -23,6 +24,7 @@ export default function ModalCheckout({ onClose }) {
     try {
       const payload = {
         ...form,
+        metodo_pago: metodo,
         items: items.map(i => ({
           idproducto: i.idproducto,
           cantidad: i.cantidad,
@@ -65,6 +67,24 @@ export default function ModalCheckout({ onClose }) {
 
           <label>Teléfono de contacto *</label>
           <input name="contacto" value={form.contacto} onChange={handleChange} placeholder="Ej: 0981-123456" required />
+
+          <label>¿Cómo querés pagar?</label>
+          <div className={styles.metodoRow}>
+            <button
+              type="button"
+              className={`${styles.metodoBtn} ${metodo === 'TRANSFERENCIA' ? styles.metodoActivo : ''}`}
+              onClick={() => setMetodo('TRANSFERENCIA')}
+            >
+              🏦 Transferencia
+            </button>
+            <button
+              type="button"
+              className={`${styles.metodoBtn} ${metodo === 'INFONET' ? styles.metodoActivo : ''}`}
+              onClick={() => setMetodo('INFONET')}
+            >
+              📱 Pago con QR
+            </button>
+          </div>
 
           <button type="submit" className={styles.btnEnviar} disabled={loading}>
             {loading ? 'Procesando...' : 'Confirmar Pedido →'}

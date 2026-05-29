@@ -68,6 +68,44 @@ async function marcarPagado(id) {
   await db.query("UPDATE pedidos SET estado = 'PAGADO' WHERE idpedido = ?", [id]);
 }
 
+// ----- Bancard / QR -----
+
+async function buscarPorHookAlias(hookAlias) {
+  const [rows] = await db.query(
+    'SELECT * FROM pedidos WHERE bancard_hook_alias = ?', [hookAlias]
+  );
+  return rows[0] || null;
+}
+
+// Guarda los datos del QR recién generado en el pedido.
+async function guardarQrBancard(id, { hookAlias, qrData, qrUrl }) {
+  await db.query(
+    `UPDATE pedidos
+     SET bancard_hook_alias = ?, bancard_qr_data = ?, bancard_qr_url = ?, bancard_status = 'GENERATED'
+     WHERE idpedido = ?`,
+    [hookAlias, qrData, qrUrl || null, id]
+  );
+}
+
+// Confirma el pago desde el callback: marca PAGADO y guarda datos de Bancard.
+async function marcarPagadoBancard(id, { ticket, authorization } = {}) {
+  await db.query(
+    `UPDATE pedidos
+     SET estado = 'PAGADO', bancard_status = 'confirmed',
+         bancard_ticket = ?, bancard_authorization = ?
+     WHERE idpedido = ?`,
+    [ticket || null, authorization || null, id]
+  );
+}
+
+// Marca el resultado crudo de Bancard sin tocar el estado del pedido
+// (pago fallido, reversa, etc.).
+async function actualizarStatusBancard(id, status) {
+  await db.query(
+    'UPDATE pedidos SET bancard_status = ? WHERE idpedido = ?', [status, id]
+  );
+}
+
 async function resumenDashboard() {
   const [rows] = await db.query(`
     SELECT
@@ -143,4 +181,4 @@ async function ventasPorProductoDetalle({ desde, hasta } = {}) {
   return { productos, totales };
 }
 
-module.exports = { crear, obtenerFecha, actualizarHash, listarTodos, listarPagados, buscarPorHash, buscarPorId, marcarPagado, resumenDashboard, resumenPorProducto, ventasPorProductoDetalle };
+module.exports = { crear, obtenerFecha, actualizarHash, listarTodos, listarPagados, buscarPorHash, buscarPorId, marcarPagado, buscarPorHookAlias, guardarQrBancard, marcarPagadoBancard, actualizarStatusBancard, resumenDashboard, resumenPorProducto, ventasPorProductoDetalle };

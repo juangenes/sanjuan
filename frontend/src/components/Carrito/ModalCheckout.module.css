@@ -71,6 +71,30 @@
   box-sizing: border-box;
 }
 
+.metodoRow {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 0.25rem;
+}
+
+.metodoBtn {
+  flex: 1;
+  padding: 0.7rem 0.5rem;
+  border: 1.5px solid #ddd;
+  border-radius: 8px;
+  background: #fff;
+  color: #555;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.metodoActivo {
+  border-color: #0B2E55;
+  background: #0B2E55;
+  color: #fff;
+}
+
 .btnEnviar {
   background: #0B2E55;
   color: white;
