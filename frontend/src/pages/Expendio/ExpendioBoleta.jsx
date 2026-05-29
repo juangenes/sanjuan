@@ -1,25 +1,18 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { getBoleta, getPedidoExpendio } from '../../api';
+import { getBoleta } from '../../api';
 import styles from './ExpendioBoleta.module.css';
 
 export default function ExpendioBoleta() {
   const { hash, idot } = useParams();
   const navigate = useNavigate();
   const [boleta, setBoleta] = useState(null);
-  const [pedidoStatus, setPedidoStatus] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    Promise.all([
-      getBoleta(hash, idot),
-      getPedidoExpendio(hash).catch(() => null),
-    ])
-      .then(([b, p]) => {
-        setBoleta(b);
-        setPedidoStatus(p);
-      })
+    getBoleta(hash, idot)
+      .then(setBoleta)
       .catch(() => setError('Boleta no encontrada'))
       .finally(() => setLoading(false));
   }, [hash, idot]);
@@ -55,34 +48,6 @@ export default function ExpendioBoleta() {
             </li>
           ))}
         </ul>
-
-        {pedidoStatus && (
-          <>
-            <h3 className={styles.secTitulo}>Saldo restante del pedido</h3>
-            <table className={styles.saldoTabla}>
-              <thead>
-                <tr>
-                  <th>Producto</th>
-                  <th>Pedido</th>
-                  <th>Entregado</th>
-                  <th>Saldo</th>
-                </tr>
-              </thead>
-              <tbody>
-                {pedidoStatus.items.map(item => (
-                  <tr key={item.idproducto}>
-                    <td>{item.titulo}</td>
-                    <td>{item.cantidad}</td>
-                    <td style={{ color: '#22c55e', fontWeight: '700' }}>{item.entregado}</td>
-                    <td style={{ color: item.pendiente > 0 ? '#E63946' : '#22c55e', fontWeight: '700' }}>
-                      {item.pendiente}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </>
-        )}
 
         <div className={styles.acciones}>
           <button onClick={() => window.print()} className={styles.btnImprimir}>Imprimir</button>
