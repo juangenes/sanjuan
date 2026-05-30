@@ -1,6 +1,8 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { getPedidosAdmin, marcarPagado } from '../../api';
+import { QRCodeCanvas } from 'qrcode.react';
+import { getPedidosAdmin, marcarPagado, getPedido } from '../../api';
+import { compartirComprobante } from '../../utils/comprobante';
 import toast from 'react-hot-toast';
 import styles from './Admin.module.css';
 
@@ -20,6 +22,10 @@ function waLink(p) {
 export default function AdminPedidos() {
   const [pedidos, setPedidos] = useState([]);
   const [filtro, setFiltro] = useState('TODOS');
+  // Pedido (completo, con ítems) cuya imagen de comprobante se está por compartir.
+  const [imgPedido, setImgPedido] = useState(null);
+  const [imgBusy, setImgBusy] = useState(null); // idpedido en proceso
+  const qrRef = useRef(null);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -35,6 +41,46 @@ export default function AdminPedidos() {
       toast.error(err.response?.data?.error || 'Error');
     }
   }
+
+  // La lista de admin no trae ítems: traemos el pedido completo y lo dejamos en
+  // estado para que se renderice el QR oculto. El efecto de abajo arma la imagen.
+  async function handleEnviarImagen(p) {
+    setImgBusy(p.idpedido);
+    try {
+      const full = await getPedido(p.hash);
+      setImgPedido(full);
+    } catch {
+      toast.error('No se pudo cargar el pedido');
+      setImgBusy(null);
+    }
+  }
+
+  // Cuando hay un pedido seleccionado, el QR oculto ya está en el DOM; esperamos
+  // dos frames para que qrcode.react lo dibuje y compartimos la imagen.
+  useEffect(() => {
+    if (!imgPedido) return;
+    let cancel = false;
+    const raf = requestAnimationFrame(() => requestAnimationFrame(async () => {
+      if (cancel) return;
+      const qrCanvas = qrRef.current?.querySelector('canvas');
+      if (!qrCanvas) { toast.error('No se pudo generar la imagen'); setImgBusy(null); setImgPedido(null); return; }
+      try {
+        const res = await compartirComprobante(imgPedido, qrCanvas);
+        if (cancel) return;
+        // Desktop (sin compartir nativo): se descargó el PNG. Abrimos el chat de
+        // WhatsApp del cliente para que el admin adjunte la imagen descargada.
+        if (res === 'downloaded') {
+          window.open(waLink(imgPedido), '_blank');
+          toast.success('Imagen descargada. Adjuntala en el chat de WhatsApp.');
+        }
+      } catch {
+        if (!cancel) toast.error('No se pudo generar la imagen');
+      } finally {
+        if (!cancel) { setImgBusy(null); setImgPedido(null); }
+      }
+    }));
+    return () => { cancel = true; cancelAnimationFrame(raf); };
+  }, [imgPedido]);
 
   const filtrados = filtro === 'TODOS' ? pedidos : pedidos.filter(p => p.estado === filtro);
 
@@ -81,12 +127,28 @@ export default function AdminPedidos() {
                   {p.estado === 'PENDIENTE' && (
                     <button className={styles.btnPagar} onClick={() => handlePagar(p.idpedido)}>✓ Pagar</button>
                   )}
-                  <a className={styles.btnWa} href={waLink(p)} target="_blank" title="WhatsApp">WA</a>
+                  <a className={styles.btnWa} href={waLink(p)} target="_blank" title="Enviar mensaje por WhatsApp">WA</a>
+                  <button
+                    className={styles.btnWa}
+                    onClick={() => handleEnviarImagen(p)}
+                    disabled={imgBusy === p.idpedido}
+                    title="Compartir imagen del comprobante por WhatsApp"
+                  >
+                    {imgBusy === p.idpedido ? '…' : '🖼'}
+                  </button>
                 </td>
               </tr>
             ))}
           </tbody>
         </table>
+      </div>
+
+      {/* QR de retiro oculto: se renderiza solo cuando hay un pedido seleccionado,
+          para poder dibujarlo dentro de la imagen del comprobante. */}
+      <div ref={qrRef} style={{ position: 'absolute', left: '-9999px', top: 0 }} aria-hidden="true">
+        {imgPedido && (
+          <QRCodeCanvas value={JSON.stringify({ hash: imgPedido.hash, idpedido: imgPedido.idpedido })} size={480} />
+        )}
       </div>
     </div>
   );
