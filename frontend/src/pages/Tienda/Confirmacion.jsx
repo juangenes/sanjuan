@@ -205,7 +205,8 @@ export default function Confirmacion() {
       const boxY = y;
       ctx.fillStyle = '#e8f8ee';
       const lines = [
-        'Pagá por transferencia y enviá el',
+        'Transferí el monto de tu pedido al',
+        'Alias 0981352935 y luego enviá el',
         'comprobante por WhatsApp al:',
       ];
       const boxH = 28 + lines.length * 20 + 30 + 16;
@@ -380,7 +381,7 @@ export default function Confirmacion() {
           <div className={styles.instruccionesPago}>
             <h3>Pagá por transferencia</h3>
             <p className={styles.oAlternativa}>
-              Envianos el comprobante de transferencia por WhatsApp. Cuando la organización pueda verificar que tu transferencia se haya recibido con éxito tu pedido será validado. En ese momento recibirás un mensaje de validación al número <strong>{telIntl}</strong>.
+              Transferí el monto de tu pedido al alias <strong>0981352935</strong> y envianos el comprobante por WhatsApp. Cuando la organización pueda verificar que tu transferencia se haya recibido con éxito tu pedido será validado. En ese momento recibirás un mensaje de validación al número <strong>{telIntl}</strong>.
             </p>
             <a
               href={waHref}
