@@ -11,7 +11,7 @@ function waLink(p) {
   if (p.estado === 'PAGADO') {
     msg = `*SAN JUAN DICE QUE SI 2026*\n\n✅ Tu pedido ${codigo} (${p.familia})ha sido VALIDADO.\nTotal: Gs. ${Number(p.total).toLocaleString()}\n\nVer pedido: ${link}`;
   } else {
-    msg = `*SAN JUAN DICE QUE SI 2026*\n\n🔔 Tu pedido ${codigo} (${p.familia})está PENDIENTE DE PAGO.\nTotal: Gs. ${Number(p.total).toLocaleString()}\n\n💸 Transferí al alias 0981818031 y enviá comprobante por WhatsApp.\n\nVer pedido: ${link}`;
+    msg = `*SAN JUAN DICE QUE SI 2026*\n\n🔔 Tu pedido ${codigo} (${p.familia})está PENDIENTE DE PAGO.\nTotal: Gs. ${Number(p.total).toLocaleString()}\n\n💸 Transferí al alias 0981352935 y enviá comprobante por WhatsApp.\n\nVer pedido: ${link}`;
   }
   const num = p.contacto.replace(/\D/g, '').replace(/^0/, '');
   return `https://wa.me/595${num}?text=${encodeURIComponent(msg)}`;

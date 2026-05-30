@@ -11,8 +11,8 @@ const ESTADO_LABEL = {
 };
 
 // WhatsApp de la organización para recibir el comprobante de transferencia.
-const WHATSAPP_ORG = '595981969339';
-const WHATSAPP_ORG_FMT = '+595 981 969 339';
+const WHATSAPP_ORG = '595981120287';
+const WHATSAPP_ORG_FMT = '+595 981 120 287';
 
 export default function Confirmacion() {
   const { hash } = useParams();

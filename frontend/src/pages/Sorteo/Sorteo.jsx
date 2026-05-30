@@ -4,13 +4,13 @@ import './Sorteo.css';
 
 // ⚠️ CONFIGURÁ TU NÚMERO DE WHATSAPP AQUÍ (formato internacional, sin + ni espacios).
 // Ej: Paraguay 0981 123 456  ->  '595981123456'
-const WHATSAPP = '595981969339';
+const WHATSAPP = '595981120287';
 
 // Precio por rifa (Gs.)
 const PRECIO_RIFA = 20000;
 
 // Alias al que se transfiere el pago
-const ALIAS_TRANSFERENCIA = 'CI 4027285';
+const ALIAS_TRANSFERENCIA = '0981352935';
 
 const PREMIOS = [
   {
