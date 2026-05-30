@@ -120,3 +120,36 @@ tr:last-child td { border-bottom: none; }
   font-size: 0.85rem;
   margin-left: 0.3rem;
 }
+
+/* ── Responsive (móvil) ─────────────────────────────────────────────── */
+@media (max-width: 768px) {
+  /* Navbar: título arriba, enlaces que envuelven debajo */
+  .navbar {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+    padding: 0.75rem;
+  }
+  .navbar h1 { font-size: 1rem; }
+  .navLinks {
+    flex-wrap: wrap;
+    gap: 0.5rem 0.9rem;
+    width: 100%;
+  }
+  .navLinks a { font-size: 0.85rem; }
+
+  .contenido { padding: 0.75rem; }
+
+  /* Tablas: scroll horizontal propio en vez de desbordar la página */
+  table {
+    display: block;
+    overflow-x: auto;
+    white-space: nowrap;
+    -webkit-overflow-scrolling: touch;
+    border-radius: 8px;
+  }
+  th, td { padding: 0.5rem 0.6rem; }
+
+  /* Botones de acción algo más chicos para no estirar la fila */
+  .btnPagar, .btnWa { font-size: 0.8rem; padding: 0.3rem 0.5rem; }
+}
