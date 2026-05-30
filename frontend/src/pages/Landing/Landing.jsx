@@ -18,6 +18,62 @@ function imgSrc(p) {
   return p.imagen.startsWith('/') ? p.imagen : `/img/${p.imagen}`;
 }
 
+// 6 de junio de 2026, 11:00 hora de Paraguay (UTC-03)
+const COUNTDOWN_TARGET = new Date('2026-06-06T11:00:00-03:00').getTime();
+
+function getRemaining() {
+  const diff = COUNTDOWN_TARGET - Date.now();
+  if (diff <= 0) return { done: true, dias: 0, horas: 0, minutos: 0, segundos: 0 };
+  const seg = Math.floor(diff / 1000);
+  return {
+    done: false,
+    dias: Math.floor(seg / 86400),
+    horas: Math.floor((seg % 86400) / 3600),
+    minutos: Math.floor((seg % 3600) / 60),
+    segundos: seg % 60,
+  };
+}
+
+const pad = (n) => String(n).padStart(2, '0');
+
+function Countdown() {
+  const [t, setT] = useState(getRemaining);
+
+  useEffect(() => {
+    const id = setInterval(() => setT(getRemaining()), 1000);
+    return () => clearInterval(id);
+  }, []);
+
+  if (t.done) {
+    return (
+      <div className="ld-countdown ld-countdown-done">
+        <span className="ld-countdown-live">¡Llegó el gran día!</span>
+      </div>
+    );
+  }
+
+  const units = [
+    { label: 'Días', value: t.dias },
+    { label: 'Horas', value: pad(t.horas) },
+    { label: 'Min', value: pad(t.minutos) },
+    { label: 'Seg', value: pad(t.segundos) },
+  ];
+
+  return (
+    <div className="ld-countdown">
+      <span className="ld-countdown-caption">⏳ Falta para el gran día</span>
+      <div className="ld-countdown-grid">
+        {units.map((u) => (
+          <div className="ld-countdown-cell" key={u.label}>
+            <span className="ld-countdown-num">{u.value}</span>
+            <span className="ld-countdown-label">{u.label}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function LandingNav() {
   return (
     <nav className="ld-nav">
@@ -43,6 +99,7 @@ function LandingHero() {
     <section className="ld-hero">
       <div className="ld-hero-inner">
         <div>
+          <Countdown />
           <span className="ld-hero-tag">
             <span className="ld-hero-tag-dot" />
             Edición 2026 · Colegio Torrefuerte
