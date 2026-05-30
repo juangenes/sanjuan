@@ -48,7 +48,7 @@ function PromoStrip() {
   return (
     <div className="td-promo">
       {TIENDA_HABILITADA ? (
-        <>🔥 <span><strong>Preventa abierta</strong> hasta el 4 de junio · descuentos en toda la tienda</span></>
+        <>🔥 <span><strong>Preventa abierta</strong> hasta el 5/06/2026 inclusive · descuentos en toda la tienda</span></>
       ) : (
         <>⏳ <span><strong>La preventa abre muy pronto</strong> · mirá el catálogo y volvé para comprar con descuento</span></>
       )}

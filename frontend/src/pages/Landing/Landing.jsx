@@ -123,12 +123,12 @@ function LandingTradicion() {
 }
 
 const JUEGOS_STANDS = [
-  { icon:'🐷', grado:'1er Grado', t:'Poner la cola al chanchito' },
+  { icon:'🐷', grado:'1er Grado', t:'Reto de Puntería' },
   { icon:'🐔', grado:'2do Grado', t:'La gallinita de los huevos de oro' },
   { icon:'🌳', grado:'3er Grado', t:'El árbol de la suerte' },
   { icon:'🏃', grado:'4to Grado', t:'Karrera Vosá' },
   { icon:'🧠', grado:'5to Grado', t:'Mastermind' },
-  { icon:'⛓️', grado:'6to Grado', t:'Cárcel' },
+  { icon:'⛓️', grado:'6to Grado', t:'Cárcel y Sala de Videojuegos' },
   { icon:'🏀', grado:'7mo Grado', t:'Básquet' },
   { icon:'🫧', grado:'8vo Grado', t:'La burbuja gigante' },
   { icon:'⚽', grado:'9no Grado', t:'Metegol' },
@@ -143,7 +143,6 @@ const JUEGOS_TIPICOS = [
 ];
 
 const JUEGOS_MODERNOS = [
-  { icon:'🎮', t:'Playroom', d:'Una zona de juegos pensada para que los más chicos se diviertan a lo grande.' },
   { icon:'🎈', t:'Globo Loco', d:'El inflable que pone a prueba el equilibrio de grandes y chicos.' },
 ];
 
@@ -335,7 +334,7 @@ function LandingFinal() {
       <div className="ld-final-inner">
         <h2>Nos vemos el 6 de junio</h2>
         <p>
-          Reservá tu comida y tus tarjetas de juegos antes del 4 de junio y
+          Reservá tu comida y tus tarjetas de juegos hasta el 5/06/2026 inclusive y
           aprovechá los precios de preventa. Toda la recaudación es para el
           viaje de fin de curso del 6° Grado — la cantidad es limitada.
         </p>
