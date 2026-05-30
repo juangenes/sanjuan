@@ -209,7 +209,7 @@ function CheckoutModal({ total, items, onClose, onSuccess }) {
   const [familia, setFamilia] = useState('');
   const [telefono, setTelefono] = useState('');
   const [cedula, setCedula] = useState('');
-  const [metodo, setMetodo] = useState('INFONET');
+  const [metodo, setMetodo] = useState('TRANSFERENCIA');
   const [loading, setLoading] = useState(false);
 
   const formatPhone = (v) => {
@@ -267,7 +267,9 @@ function CheckoutModal({ total, items, onClose, onSuccess }) {
               <label className="td-field-required">Método de pago</label>
               <div style={{ display: 'flex', gap: '.6rem' }}>
                 {[
-                  { key: 'INFONET', label: '🧾 Pago con QR', desc: 'Escaneás un QR y se confirma al instante' },
+                  // TEMPORAL: opción de Pago con QR (Infonet/Bancard) oculta hasta tener
+                  // credenciales de producción. Rehabilitar al recibir credenciales (se espera lunes). No borrar.
+                  // { key: 'INFONET', label: '🧾 Pago con QR', desc: 'Escaneás un QR y se confirma al instante' },
                   { key: 'TRANSFERENCIA', label: '🏦 Transferencia', desc: 'Enviás el comprobante; la confirmación no es inmediata' },
                 ].map(opt => (
                   <button
