@@ -9,7 +9,14 @@ const RTS_URL = (import.meta.env.VITE_RTS_URL || 'https://rts.nuova.com.py').rep
 // `resource`. `onStatus(connected)` (opcional) reporta el estado de conexión.
 // Re-suscribe automáticamente en cada reconexión. Devuelve cleanup.
 export function suscribirScope(scope, resource, onEvent, onStatus) {
-  const socket = io(`${RTS_URL}/planning`, { withCredentials: true });
+  // El namespace /planning del RTS exige `idlogin` en el handshake (auth estilo
+  // SAR) o desconecta. Mandamos uno sintético e identificable: no emitimos
+  // presence:join ni heartbeats, así que no figuramos en la presencia de SAR
+  // (y el TTL limpia el registro a los 75s sin cortar el socket).
+  const socket = io(`${RTS_URL}/planning`, {
+    withCredentials: true,
+    auth: { idlogin: `sanjuan-${scope}`, usuario: 'sanjuan-despacho', name: 'San Juan Despacho' },
+  });
 
   // 'connect' se dispara en cada (re)conexión: re-emitimos la suscripción
   // porque el servidor no conserva la room tras una reconexión.
