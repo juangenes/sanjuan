@@ -235,9 +235,20 @@ export default function Confirmacion() {
         {pedido.estado === 'PENDIENTE' && !esInfonet && (
           <div className={styles.instruccionesPago}>
             <h3>AHORA TENÉS QUE ENVIAR TU COMPROBANTE DE TRANSFERENCIA</h3>
-            <p className={styles.oAlternativa} style={{ fontSize: '1.15rem', fontWeight: 700, textAlign: 'center', margin: '.5rem 0' }}>
-              Transferí al alias <strong>+595981352935</strong>
-            </p>
+            <div
+              style={{
+                display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '.25rem',
+                margin: '1rem 0', padding: '1rem', borderRadius: '14px',
+                background: '#fff8e1', border: '2px dashed #f0a500',
+              }}
+            >
+              <span style={{ fontSize: '.85rem', fontWeight: 700, letterSpacing: '.05em', color: '#8a6d00' }}>
+                ALIAS
+              </span>
+              <strong style={{ fontSize: '1.6rem', fontWeight: 900, letterSpacing: '.02em', color: '#1a1a1a' }}>
+                +595981352935
+              </strong>
+            </div>
             <p className={styles.oAlternativa} style={{ fontSize: '1.1rem', fontWeight: 700, textAlign: 'center', margin: '.5rem 0' }}>
               Luego hacé click en el siguiente botón 👇
             </p>
@@ -246,13 +257,15 @@ export default function Confirmacion() {
               target="_blank"
               rel="noopener noreferrer"
               style={{
-                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '.5rem',
-                width: '100%', marginTop: '1rem', padding: '.9rem 1rem', borderRadius: '12px',
-                background: '#25D366', color: '#fff', fontWeight: 800, fontSize: '1rem',
-                textDecoration: 'none', boxSizing: 'border-box',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '.6rem',
+                width: '100%', marginTop: '1rem', padding: '1.1rem 1rem', borderRadius: '14px',
+                background: 'linear-gradient(180deg, #2bdd6e 0%, #1ebd5a 100%)', color: '#fff',
+                fontWeight: 900, fontSize: '1.35rem', letterSpacing: '.03em', textTransform: 'uppercase',
+                textDecoration: 'none', boxSizing: 'border-box', border: 'none',
+                boxShadow: '0 6px 0 #149246, 0 8px 18px rgba(0,0,0,.25)', cursor: 'pointer',
               }}
             >
-              📲 Enviar mi transferencia por WhatsApp
+              📲 CLICK AQUÍ
             </a>
           </div>
         )}
