@@ -68,6 +68,18 @@ async function marcarPagado(id) {
   await db.query("UPDATE pedidos SET estado = 'PAGADO' WHERE idpedido = ?", [id]);
 }
 
+// Edita los datos de contacto del pedido (no toca total ni ítems).
+async function actualizarDatos(id, { cedula, familia, contacto }) {
+  await db.query(
+    'UPDATE pedidos SET cedula = ?, familia = ?, contacto = ? WHERE idpedido = ?',
+    [cedula || null, familia, contacto, id]
+  );
+}
+
+async function cambiarEstado(id, estado) {
+  await db.query('UPDATE pedidos SET estado = ? WHERE idpedido = ?', [estado, id]);
+}
+
 // ----- Bancard / QR -----
 
 async function buscarPorHookAlias(hookAlias) {
@@ -181,4 +193,4 @@ async function ventasPorProductoDetalle({ desde, hasta } = {}) {
   return { productos, totales };
 }
 
-module.exports = { crear, obtenerFecha, actualizarHash, listarTodos, listarPagados, buscarPorHash, buscarPorId, marcarPagado, buscarPorHookAlias, guardarQrBancard, marcarPagadoBancard, actualizarStatusBancard, resumenDashboard, resumenPorProducto, ventasPorProductoDetalle };
+module.exports = { crear, obtenerFecha, actualizarHash, listarTodos, listarPagados, buscarPorHash, buscarPorId, marcarPagado, actualizarDatos, cambiarEstado, buscarPorHookAlias, guardarQrBancard, marcarPagadoBancard, actualizarStatusBancard, resumenDashboard, resumenPorProducto, ventasPorProductoDetalle };

@@ -1,10 +1,12 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { QRCodeCanvas } from 'qrcode.react';
-import { getPedidosAdmin, marcarPagado, getPedido } from '../../api';
+import { getPedidosAdmin, marcarPagado, cambiarEstadoPedido, getPedido } from '../../api';
 import { compartirComprobante } from '../../utils/comprobante';
 import toast from 'react-hot-toast';
 import styles from './Admin.module.css';
+import ModalConfirmar from './ModalConfirmar';
+import ModalEditarPedido from './ModalEditarPedido';
 
 function waLink(p) {
   const codigo = p.hash.substring(0, 8).toUpperCase();
@@ -22,6 +24,8 @@ function waLink(p) {
 export default function AdminPedidos() {
   const [pedidos, setPedidos] = useState([]);
   const [filtro, setFiltro] = useState('TODOS');
+  const [confirmar, setConfirmar] = useState(null); // config del modal de confirmación
+  const [editando, setEditando] = useState(null);   // pedido en edición
   // Pedido (completo, con ítems) cuya imagen de comprobante se está por compartir.
   const [imgPedido, setImgPedido] = useState(null);
   const [imgBusy, setImgBusy] = useState(null); // idpedido en proceso
@@ -32,14 +36,75 @@ export default function AdminPedidos() {
     getPedidosAdmin().then(setPedidos).catch(() => navigate('/admin'));
   }, []);
 
-  async function handlePagar(id) {
-    try {
-      await marcarPagado(id);
-      setPedidos(prev => prev.map(p => p.idpedido === id ? { ...p, estado: 'PAGADO' } : p));
-      toast.success('Pedido marcado como pagado');
-    } catch (err) {
-      toast.error(err.response?.data?.error || 'Error');
-    }
+  // Aplica un cambio de estado al pedido `id` localmente (sin recargar la lista).
+  function aplicarEstado(id, estado) {
+    setPedidos(prev => prev.map(p => p.idpedido === id ? { ...p, estado } : p));
+  }
+
+  function pedirPagar(p) {
+    setConfirmar({
+      titulo: 'Marcar como pagado',
+      mensaje: (
+        <>¿Confirmás que el pedido <strong>#{p.idpedido}</strong> de <strong>{p.familia}</strong> (Gs. {Number(p.total).toLocaleString()}) está pagado?</>
+      ),
+      textoConfirmar: '✓ Marcar pagado',
+      onConfirm: async () => {
+        try {
+          await marcarPagado(p.idpedido);
+          aplicarEstado(p.idpedido, 'PAGADO');
+          toast.success('Pedido marcado como pagado');
+          setConfirmar(null);
+        } catch (err) {
+          toast.error(err.response?.data?.error || 'Error');
+        }
+      },
+    });
+  }
+
+  function pedirAnular(p) {
+    setConfirmar({
+      titulo: 'Anular pedido',
+      mensaje: (
+        <>¿Anular el pedido <strong>#{p.idpedido}</strong> de <strong>{p.familia}</strong>? Dejará de contar en los totales. Podés restaurarlo después.</>
+      ),
+      textoConfirmar: 'Anular',
+      peligro: true,
+      onConfirm: async () => {
+        try {
+          await cambiarEstadoPedido(p.idpedido, 'ANULADO');
+          aplicarEstado(p.idpedido, 'ANULADO');
+          toast.success('Pedido anulado');
+          setConfirmar(null);
+        } catch (err) {
+          toast.error(err.response?.data?.error || 'Error');
+        }
+      },
+    });
+  }
+
+  function pedirRestaurar(p) {
+    setConfirmar({
+      titulo: 'Restaurar pedido',
+      mensaje: (
+        <>¿Restaurar el pedido <strong>#{p.idpedido}</strong> de <strong>{p.familia}</strong>? Volverá al estado PENDIENTE.</>
+      ),
+      textoConfirmar: 'Restaurar',
+      onConfirm: async () => {
+        try {
+          await cambiarEstadoPedido(p.idpedido, 'PENDIENTE');
+          aplicarEstado(p.idpedido, 'PENDIENTE');
+          toast.success('Pedido restaurado');
+          setConfirmar(null);
+        } catch (err) {
+          toast.error(err.response?.data?.error || 'Error');
+        }
+      },
+    });
+  }
+
+  function handleEditado(actualizado) {
+    setPedidos(prev => prev.map(p => p.idpedido === actualizado.idpedido ? { ...p, ...actualizado } : p));
+    setEditando(null);
   }
 
   // La lista de admin no trae ítems: traemos el pedido completo y lo dejamos en
@@ -101,7 +166,7 @@ export default function AdminPedidos() {
 
       <div className={styles.contenido}>
         <div style={{ marginBottom: '1rem', display: 'flex', gap: '0.5rem' }}>
-          {['TODOS', 'PENDIENTE', 'PAGADO'].map(f => (
+          {['TODOS', 'PENDIENTE', 'PAGADO', 'ANULADO'].map(f => (
             <button key={f} onClick={() => setFiltro(f)}
               style={{ padding: '0.4rem 1rem', borderRadius: '20px', border: 'none', cursor: 'pointer',
                 background: filtro === f ? '#0B2E55' : '#ddd', color: filtro === f ? 'white' : '#333' }}>
@@ -125,7 +190,13 @@ export default function AdminPedidos() {
                 <td><span className={`${styles.badge} ${styles[p.estado.toLowerCase()]}`}>{p.estado}</span></td>
                 <td>
                   {p.estado === 'PENDIENTE' && (
-                    <button className={styles.btnPagar} onClick={() => handlePagar(p.idpedido)}>✓ Pagar</button>
+                    <button className={styles.btnPagar} onClick={() => pedirPagar(p)}>✓ Pagar</button>
+                  )}
+                  <button className={styles.btnEditar} onClick={() => setEditando(p)} title="Editar datos del pedido">✎</button>
+                  {p.estado === 'ANULADO' ? (
+                    <button className={styles.btnRestaurar} onClick={() => pedirRestaurar(p)} title="Restaurar pedido">↺</button>
+                  ) : (
+                    <button className={styles.btnAnular} onClick={() => pedirAnular(p)} title="Anular pedido">✕</button>
                   )}
                   <a className={styles.btnWa} href={waLink(p)} target="_blank" title="Enviar mensaje por WhatsApp">WA</a>
                   <button
@@ -150,6 +221,18 @@ export default function AdminPedidos() {
           <QRCodeCanvas value={JSON.stringify({ hash: imgPedido.hash, idpedido: imgPedido.idpedido })} size={480} />
         )}
       </div>
+
+      {confirmar && (
+        <ModalConfirmar {...confirmar} onClose={() => setConfirmar(null)} />
+      )}
+
+      {editando && (
+        <ModalEditarPedido
+          pedido={editando}
+          onClose={() => setEditando(null)}
+          onGuardado={handleEditado}
+        />
+      )}
     </div>
   );
 }

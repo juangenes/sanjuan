@@ -99,6 +99,7 @@ tr:last-child td { border-bottom: none; }
 }
 .pendiente { background: #fff3cd; color: #856404; }
 .pagado { background: #d4edda; color: #155724; }
+.anulado { background: #f8d7da; color: #721c24; }
 
 .btnPagar {
   background: #22c55e;
@@ -112,6 +113,39 @@ tr:last-child td { border-bottom: none; }
 
 .btnWa {
   background: #25D366;
+  color: white;
+  border: none;
+  padding: 0.35rem 0.6rem;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  margin-left: 0.3rem;
+}
+
+.btnEditar {
+  background: #0B2E55;
+  color: white;
+  border: none;
+  padding: 0.35rem 0.6rem;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  margin-left: 0.3rem;
+}
+
+.btnAnular {
+  background: #E63946;
+  color: white;
+  border: none;
+  padding: 0.35rem 0.6rem;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  margin-left: 0.3rem;
+}
+
+.btnRestaurar {
+  background: #6c757d;
   color: white;
   border: none;
   padding: 0.35rem 0.6rem;
@@ -151,5 +185,5 @@ tr:last-child td { border-bottom: none; }
   th, td { padding: 0.5rem 0.6rem; }
 
   /* Botones de acción algo más chicos para no estirar la fila */
-  .btnPagar, .btnWa { font-size: 0.8rem; padding: 0.3rem 0.5rem; }
+  .btnPagar, .btnWa, .btnEditar, .btnAnular, .btnRestaurar { font-size: 0.8rem; padding: 0.3rem 0.5rem; }
 }

@@ -64,6 +64,50 @@ router.post('/:id/pagar', authAdmin, async (req, res) => {
   }
 });
 
+const ESTADOS_VALIDOS = ['PENDIENTE', 'PAGADO', 'ANULADO'];
+
+// Admin — editar datos de contacto del pedido (nombre, contacto, cédula)
+router.put('/:id', authAdmin, async (req, res) => {
+  try {
+    const pedido = await pedidoModel.buscarPorId(req.params.id);
+    if (!pedido) return res.status(404).json({ error: 'Pedido no encontrado' });
+    const { cedula, familia, contacto, estado } = req.body;
+    if (!familia?.trim() || !contacto?.trim()) {
+      return res.status(400).json({ error: 'Nombre y contacto son obligatorios' });
+    }
+    if (estado && !ESTADOS_VALIDOS.includes(estado)) {
+      return res.status(400).json({ error: 'Estado inválido' });
+    }
+    await pedidoModel.actualizarDatos(req.params.id, {
+      cedula: cedula?.trim() || null,
+      familia: familia.trim(),
+      contacto: contacto.trim(),
+    });
+    if (estado && estado !== pedido.estado) {
+      await pedidoModel.cambiarEstado(req.params.id, estado);
+    }
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Admin — cambiar estado (anular / restaurar / pagar)
+router.post('/:id/estado', authAdmin, async (req, res) => {
+  try {
+    const { estado } = req.body;
+    if (!ESTADOS_VALIDOS.includes(estado)) {
+      return res.status(400).json({ error: 'Estado inválido' });
+    }
+    const pedido = await pedidoModel.buscarPorId(req.params.id);
+    if (!pedido) return res.status(404).json({ error: 'Pedido no encontrado' });
+    await pedidoModel.cambiarEstado(req.params.id, estado);
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // Admin — dashboard resumen
 router.get('/admin/resumen', authAdmin, async (req, res) => {
   try {
