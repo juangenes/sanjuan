@@ -67,6 +67,20 @@
   font-weight: 600;
 }
 
+.valorFijo {
+  width: 100%;
+  padding: 0.7rem;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  margin-bottom: 1rem;
+  box-sizing: border-box;
+  background: #f1f5f9;
+  text-align: center;
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: #0B2E55;
+}
+
 .select, .inputCantidad {
   width: 100%;
   padding: 0.7rem;

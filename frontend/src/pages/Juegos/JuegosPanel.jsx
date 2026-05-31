@@ -4,14 +4,13 @@ import QrScanner from '../../components/QrScanner';
 import toast from 'react-hot-toast';
 import styles from './Juegos.module.css';
 
-const VALORES = [5000, 7000];
+const VALOR_UNITARIO = 8000;
 
 // Panel de operador de Tarjetas: leer una tarjeta, ver su saldo y cargar créditos.
 // El login lo maneja el contenedor (TarjetasOperador); acá `onSalir` cierra sesión.
 export default function JuegosPanel({ onSalir }) {
   const [tarjeta, setTarjeta] = useState(null);
   const [cantidad, setCantidad] = useState('');
-  const [valorUnitario, setValorUnitario] = useState(VALORES[0]);
   const [cargando, setCargando] = useState(false);
   const [codigoManual, setCodigoManual] = useState('');
   const [modoManual, setModoManual] = useState(false);
@@ -40,8 +39,8 @@ export default function JuegosPanel({ onSalir }) {
     if (!n || n < 1) { toast.error('Ingresá una cantidad válida'); return; }
     setCargando(true);
     try {
-      const res = await cargarCredito(tarjeta.codigo, n, valorUnitario);
-      toast.success(`✅ Cargados ${n} créditos de Gs. ${valorUnitario.toLocaleString()}. Saldo: ${res.saldo}`);
+      const res = await cargarCredito(tarjeta.codigo, n, VALOR_UNITARIO);
+      toast.success(`✅ Cargados ${n} créditos de Gs. ${VALOR_UNITARIO.toLocaleString()}. Saldo: ${res.saldo}`);
       setTarjeta(t => ({ ...t, saldo: res.saldo }));
       setCantidad('');
     } catch (err) {
@@ -104,15 +103,7 @@ export default function JuegosPanel({ onSalir }) {
             </div>
 
             <label className={styles.label}>Valor unitario</label>
-            <select
-              className={styles.select}
-              value={valorUnitario}
-              onChange={e => setValorUnitario(Number(e.target.value))}
-            >
-              {VALORES.map(v => (
-                <option key={v} value={v}>Gs. {v.toLocaleString()}</option>
-              ))}
-            </select>
+            <div className={styles.valorFijo}>Gs. {VALOR_UNITARIO.toLocaleString()}</div>
 
             <label className={styles.label}>Cantidad de créditos</label>
             <input
