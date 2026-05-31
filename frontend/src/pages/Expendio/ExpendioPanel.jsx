@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { getPedidoExpendio, registrarEntrega, getHistorialExpendio, getPedidosExpendio } from '../../api';
+import { getPedidoExpendio, registrarEntrega, getHistorialExpendio, getPedidosExpendio, getEstaciones } from '../../api';
 import toast from 'react-hot-toast';
 import styles from './Expendio.module.css';
 
@@ -14,11 +14,13 @@ export default function ExpendioPanel() {
   const [tab, setTab] = useState('entregar');
   const [cargando, setCargando] = useState(false);
   const [cargandoLista, setCargandoLista] = useState(true);
+  const [estaciones, setEstaciones] = useState([]);
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
 
   useEffect(() => {
     cargarLista();
+    getEstaciones().then(setEstaciones).catch(() => {});
     // Deep-link desde la pantalla de estación: /expendio/panel?hash=XXXX abre
     // el pedido directo para entregarlo.
     const h = searchParams.get('hash');
@@ -132,7 +134,19 @@ export default function ExpendioPanel() {
     <div className={styles.pagina}>
       <header className={styles.header}>
         <h1>🍖 Expendio</h1>
-        <div style={{ display: 'flex', gap: '0.5rem' }}>
+        <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', alignItems: 'center' }}>
+          {estaciones.map(e => (
+            <a
+              key={e.id}
+              href={`/expendio/estacion/${e.id}`}
+              target="_blank"
+              rel="noreferrer"
+              className={styles.btnSalir}
+              style={{ background: '#1d4ed8', textDecoration: 'none', display: 'inline-block' }}
+            >
+              🖥 {e.label}
+            </a>
+          ))}
           <button onClick={() => navigate('/expendio/scan')} className={styles.btnSalir} style={{ background: '#0a7d2c' }}>📷 Lector</button>
           <button onClick={() => { localStorage.clear(); navigate('/expendio'); }} className={styles.btnSalir}>Salir</button>
         </div>
