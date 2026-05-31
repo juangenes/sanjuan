@@ -93,7 +93,6 @@ export default function AdminVentasProducto() {
               <option value="ingresos">Ingresos</option>
               <option value="unidades">Unidades</option>
               <option value="pedidos">Pedidos</option>
-              <option value="familias">Familias</option>
             </select>
           </div>
           <button onClick={cargar} className={styles.btnPagar} style={{ background: '#0B2E55', padding: '0.5rem 1rem' }}>Aplicar</button>
@@ -120,10 +119,6 @@ export default function AdminVentasProducto() {
             <h3>Productos vendidos</h3>
             <div className={styles.valor}>{fmtNum(totales.productos_distintos)}</div>
           </div>
-          <div className={styles.cardStat}>
-            <h3>Familias</h3>
-            <div className={styles.valor}>{fmtNum(totales.familias)}</div>
-          </div>
         </div>
 
         {error && (
@@ -143,7 +138,6 @@ export default function AdminVentasProducto() {
                 <th>Cat.</th>
                 <th style={{ textAlign: 'right' }}>Unidades</th>
                 <th style={{ textAlign: 'right' }}>Pedidos</th>
-                <th style={{ textAlign: 'right' }}>Familias</th>
                 <th style={{ textAlign: 'right' }}>Ingresos</th>
                 <th style={{ textAlign: 'right' }}>% Part.</th>
                 <th style={{ textAlign: 'right' }}>Precio prom.</th>
@@ -174,7 +168,6 @@ export default function AdminVentasProducto() {
                     <td><span style={{ fontSize: '0.75rem', color: '#666' }}>{p.categoria}</span></td>
                     <td style={{ textAlign: 'right' }}>{fmtNum(unidades)}</td>
                     <td style={{ textAlign: 'right' }}>{fmtNum(p.pedidos)}</td>
-                    <td style={{ textAlign: 'right' }}>{fmtNum(p.familias)}</td>
                     <td style={{ textAlign: 'right', fontWeight: 600 }}>{fmtGs(ingresos)}</td>
                     <td style={{ textAlign: 'right' }}>{participacion.toFixed(1)}%</td>
                     <td style={{ textAlign: 'right' }}>{fmtGs(precioProm)}</td>
@@ -188,7 +181,7 @@ export default function AdminVentasProducto() {
                 );
               })}
               {filtrados.length === 0 && (
-                <tr><td colSpan={12} style={{ textAlign: 'center', padding: '2rem', color: '#999' }}>Sin resultados</td></tr>
+                <tr><td colSpan={11} style={{ textAlign: 'center', padding: '2rem', color: '#999' }}>Sin resultados</td></tr>
               )}
             </tbody>
           </table>

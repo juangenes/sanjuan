@@ -161,7 +161,6 @@ async function ventasPorProductoDetalle({ desde, hasta } = {}) {
       p.precio_normal,
       COALESCE(SUM(pp.cantidad), 0)    AS unidades,
       COUNT(DISTINCT pp.idpedido)      AS pedidos,
-      COUNT(DISTINCT ped.cedula)       AS familias,
       COALESCE(SUM(pp.subtotal), 0)    AS ingresos,
       COALESCE(SUM(ent.entregado), 0)  AS entregadas,
       MIN(ped.fecha)                   AS primera_venta,
@@ -178,17 +177,27 @@ async function ventasPorProductoDetalle({ desde, hasta } = {}) {
     ORDER BY ingresos DESC, p.titulo
   `, params);
 
-  const [[totales]] = await db.query(`
+  // Totales de pedidos: contar y sumar SOLO sobre pedidos (sin join a
+  // pedidos_productos, que multiplicaría ped.total por cada línea de producto).
+  const [[totPedidos]] = await db.query(`
     SELECT
-      COUNT(DISTINCT ped.idpedido)      AS pedidos,
-      COUNT(DISTINCT ped.cedula)        AS familias,
-      COALESCE(SUM(ped.total), 0)       AS monto,
-      COALESCE(SUM(pp.cantidad), 0)     AS unidades,
-      COUNT(DISTINCT pp.idproducto)     AS productos_distintos
+      COUNT(*)                    AS pedidos,
+      COALESCE(SUM(ped.total), 0) AS monto
     FROM pedidos ped
-    LEFT JOIN pedidos_productos pp ON pp.idpedido = ped.idpedido
     WHERE ${whereSql}
   `, params);
+
+  // Agregados a nivel de producto (sí requieren el join).
+  const [[totProductos]] = await db.query(`
+    SELECT
+      COALESCE(SUM(pp.cantidad), 0) AS unidades,
+      COUNT(DISTINCT pp.idproducto) AS productos_distintos
+    FROM pedidos_productos pp
+    JOIN pedidos ped ON ped.idpedido = pp.idpedido
+    WHERE ${whereSql}
+  `, params);
+
+  const totales = { ...totPedidos, ...totProductos };
 
   return { productos, totales };
 }
