@@ -50,6 +50,9 @@ export const registrarEntrega = (hash, items) => api.post('/expendio/entregar', 
 export const getBoleta = (hash, idot) => api.get(`/expendio/boleta/${hash}/${idot}`).then(r => r.data.boleta);
 export const getHistorialExpendio = (hash) => api.get(`/expendio/historial/${hash}`).then(r => r.data.historial);
 
+// Caja (POS físico) — toma un pedido nuevo, lo cobra y lo deja PAGADO
+export const tomarPedidoCaja = (payload) => api.post('/caja/pedido', payload).then(r => r.data.pedido);
+
 // Retiros públicos (cliente)
 export const getRetirosPedido = (hash) => api.get(`/pedidos/${hash}/retiros`).then(r => r.data.retiros);
 

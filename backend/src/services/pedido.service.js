@@ -4,12 +4,21 @@ const pedidoProductoModel = require('../models/pedidoProducto.model');
 const productoModel = require('../models/producto.model');
 const { generarHash } = require('../utils/hash');
 
-async function crearPedido({ cedula, familia, contacto, items, metodo_pago }) {
+const METODOS_COBRO = ['EFECTIVO', 'QR', 'TARJETA', 'TRANSFERENCIA'];
+
+// Crea un pedido. `opts`:
+//   lista: 'preventa' (default, precio con descuento) | 'normal' (precio del día)
+//   cobro: { metodo, recibido, operador } → cobra en el acto y deja el pedido PAGADO
+//          (caja del día). Si es null, queda PENDIENTE (preventa / tienda online).
+async function crearPedido({ cedula, familia, contacto, items, metodo_pago }, opts = {}) {
+  const lista = opts.lista === 'normal' ? 'normal' : 'preventa';
+  const cobro = opts.cobro || null;
+
   const conn = await db.getConnection();
   await conn.beginTransaction();
 
   try {
-    // Validar stock y calcular total
+    // Validar stock y calcular total según la lista de precios elegida
     let total = 0;
     const itemsValidados = [];
 
@@ -20,7 +29,9 @@ async function crearPedido({ cedula, familia, contacto, items, metodo_pago }) {
       if (producto.stock < item.cantidad) {
         throw new Error(`Stock insuficiente para ${producto.titulo}. Disponible: ${producto.stock}`);
       }
-      const precio = producto.precio_preventa || producto.precio_normal;
+      const precio = lista === 'normal'
+        ? (Number(producto.precio_normal) || Number(producto.precio_preventa))
+        : (Number(producto.precio_preventa) || Number(producto.precio_normal));
       const subtotal = precio * item.cantidad;
       total += subtotal;
       itemsValidados.push({
@@ -29,6 +40,20 @@ async function crearPedido({ cedula, familia, contacto, items, metodo_pago }) {
         precio_unitario: precio,
         subtotal,
       });
+    }
+
+    // Cobro inmediato (caja): validar contra el total recién calculado
+    let vuelto = 0;
+    let recibidoNum = null;
+    if (cobro) {
+      if (!METODOS_COBRO.includes(cobro.metodo)) throw new Error('Método de cobro inválido');
+      if (cobro.metodo === 'EFECTIVO') {
+        recibidoNum = Number(cobro.recibido);
+        if (!Number.isFinite(recibidoNum) || recibidoNum < total) {
+          throw new Error('El monto recibido no cubre el total del pedido');
+        }
+        vuelto = recibidoNum - total;
+      }
     }
 
     // Crear pedido
@@ -43,8 +68,17 @@ async function crearPedido({ cedula, familia, contacto, items, metodo_pago }) {
       await productoModel.actualizarStock(item.idproducto, item.cantidad, conn);
     }
 
+    // Si fue cobrado en caja, dejarlo PAGADO con los datos del cobro
+    if (cobro) {
+      await pedidoModel.registrarCobro(
+        idpedido,
+        { metodo: cobro.metodo, recibido: recibidoNum, operador: cobro.operador },
+        conn
+      );
+    }
+
     await conn.commit();
-    return { idpedido, hash, total };
+    return { idpedido, hash, total, vuelto };
   } catch (err) {
     await conn.rollback();
     throw err;
@@ -60,4 +94,4 @@ async function obtenerPedidoPublico(hash) {
   return { ...pedido, items };
 }
 
-module.exports = { crearPedido, obtenerPedidoPublico };
+module.exports = { crearPedido, obtenerPedidoPublico, METODOS_COBRO };

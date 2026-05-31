@@ -1,0 +1,86 @@
+/* --- Campos del modal de cobro (reusa el .td-modal de la tienda) --- */
+.campo { margin-bottom: 1rem; }
+.campo label { display: block; font-size: 0.85rem; color: #555; margin-bottom: 0.35rem; font-weight: 600; }
+.campo input {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1.5px solid #e6e0d2;
+  border-radius: 12px;
+  font-size: 1rem;
+  box-sizing: border-box;
+}
+
+.metodos { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; margin-bottom: 1rem; }
+.metodoBtn {
+  padding: 0.8rem;
+  border: 2px solid #e6e0d2;
+  background: white;
+  border-radius: 12px;
+  cursor: pointer;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #0B2E55;
+}
+.metodoActivo { border-color: #0a7d2c; background: #f0fdf4; color: #0a7d2c; }
+
+.efectivo { margin-bottom: 0.5rem; }
+.efectivo label { display: block; font-size: 0.85rem; color: #555; margin-bottom: 0.3rem; font-weight: 600; }
+.inputMonto {
+  width: 100%;
+  padding: 0.8rem;
+  border: 2px solid #ccc;
+  border-radius: 12px;
+  font-size: 1.6rem;
+  font-weight: 800;
+  text-align: right;
+  box-sizing: border-box;
+}
+.vuelto { margin-top: 0.5rem; font-weight: 800; color: #0a7d2c; text-align: right; font-size: 1.15rem; }
+.vueltoNeg { color: #E63946; }
+
+/* --- Pantalla de éxito (post-cobro) --- */
+.pagina { min-height: 100vh; background: #f4f6f8; font-family: 'Segoe UI', sans-serif; }
+.exitoWrap { display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 1rem; }
+.exitoCard {
+  background: white;
+  border-radius: 18px;
+  box-shadow: 0 8px 30px rgba(0,0,0,.12);
+  padding: 2rem;
+  text-align: center;
+  max-width: 380px;
+  width: 100%;
+}
+.exitoCheck {
+  width: 64px; height: 64px;
+  margin: 0 auto 1rem;
+  border-radius: 50%;
+  background: #0a7d2c;
+  color: white;
+  font-size: 2rem;
+  display: flex; align-items: center; justify-content: center;
+}
+.exitoCard h2 { margin: 0 0 1.25rem; color: #0B2E55; }
+.exitoLabel { font-size: 0.8rem; letter-spacing: 0.1em; text-transform: uppercase; color: #888; margin: 0 0 0.25rem; }
+.exitoCodigo {
+  font-family: monospace;
+  font-size: 2.6rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  color: #0B2E55;
+  background: #eef3f9;
+  border-radius: 12px;
+  padding: 0.6rem 0;
+}
+.exitoVuelto { margin-top: 1rem; font-size: 1.3rem; font-weight: 800; color: #0a7d2c; }
+.exitoNota { color: #666; font-size: 0.9rem; margin: 1.25rem 0; }
+.btnNuevo {
+  width: 100%;
+  background: #0B2E55;
+  color: white;
+  border: none;
+  padding: 1rem;
+  border-radius: 12px;
+  font-size: 1.1rem;
+  font-weight: 800;
+  cursor: pointer;
+}

@@ -23,6 +23,7 @@ async function bootstrapUsuarios() {
   const seeds = [
     { usuario: 'admin', password: process.env.ADMIN_PASS, rol: 'admin', nombre: 'Administrador' },
     { usuario: 'expendio', password: process.env.EXPENDIO_PASS, rol: 'expendio', nombre: 'Expendio' },
+    { usuario: 'caja', password: process.env.CAJA_PASS, rol: 'caja', nombre: 'Caja' },
   ].filter(s => s.password);
 
   if (seeds.length === 0) {

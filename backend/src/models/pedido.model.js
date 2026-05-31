@@ -68,6 +68,29 @@ async function marcarPagado(id) {
   await db.query("UPDATE pedidos SET estado = 'PAGADO' WHERE idpedido = ?", [id]);
 }
 
+// Pedidos PENDIENTES para cobrar en caja (los más viejos primero: orden de llegada).
+async function listarPendientes() {
+  const [rows] = await db.query(
+    `SELECT idpedido, hash, fecha, cedula, familia, contacto, total, metodo_pago
+     FROM pedidos
+     WHERE estado = 'PENDIENTE'
+     ORDER BY fecha ASC`
+  );
+  return rows;
+}
+
+// Cobro en caja: marca PAGADO y registra cómo/quién/cuándo se cobró.
+// `recibido` es el efectivo entregado por el cliente (para el vuelto); puede ser null.
+async function registrarCobro(id, { metodo, recibido, operador }, conn) {
+  await (conn || db).query(
+    `UPDATE pedidos
+     SET estado = 'PAGADO',
+         cobro_metodo = ?, cobro_recibido = ?, cobro_fecha = NOW(), cobro_operador = ?
+     WHERE idpedido = ?`,
+    [metodo, recibido ?? null, operador || null, id]
+  );
+}
+
 // Edita los datos de contacto del pedido (no toca total ni ítems).
 async function actualizarDatos(id, { cedula, familia, contacto }) {
   await db.query(
@@ -203,4 +226,4 @@ async function ventasPorProductoDetalle({ desde, hasta } = {}) {
   return { productos, totales };
 }
 
-module.exports = { crear, obtenerFecha, actualizarHash, listarTodos, listarPagados, buscarPorHash, buscarPorId, marcarPagado, actualizarDatos, cambiarEstado, buscarPorHookAlias, guardarQrBancard, marcarPagadoBancard, actualizarStatusBancard, resumenDashboard, resumenPorProducto, ventasPorProductoDetalle };
+module.exports = { crear, obtenerFecha, actualizarHash, listarTodos, listarPagados, listarPendientes, buscarPorHash, buscarPorId, marcarPagado, registrarCobro, actualizarDatos, cambiarEstado, buscarPorHookAlias, guardarQrBancard, marcarPagadoBancard, actualizarStatusBancard, resumenDashboard, resumenPorProducto, ventasPorProductoDetalle };
