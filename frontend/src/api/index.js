@@ -2,6 +2,9 @@ import axios from 'axios';
 
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL || '/api',
+  // Evita que una request colgada (p. ej. un lock en la base) deje la UI en
+  // "Procesando..." para siempre: a los 20s falla y el modal muestra el error.
+  timeout: 20000,
 });
 
 api.interceptors.request.use(config => {
