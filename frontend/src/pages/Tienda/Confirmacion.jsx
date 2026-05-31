@@ -244,7 +244,12 @@ export default function Confirmacion() {
 
         {pedido.estado === 'PENDIENTE' && !esInfonet && (
           <div className={styles.instruccionesPago}>
-            <h3>AHORA HACÉ LA TRANSFERENCIA</h3>
+            <h3>
+              AHORA HACÉ LA TRANSFERENCIA POR EL MONTO DE<br />
+              <span style={{ fontSize: '1.6rem', fontWeight: 900, color: '#0a7d2c' }}>
+                Gs. {Number(pedido.total).toLocaleString('es-PY')}
+              </span>
+            </h3>
             <button
               type="button"
               onClick={copiarAlias}
