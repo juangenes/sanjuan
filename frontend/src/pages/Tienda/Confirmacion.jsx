@@ -110,6 +110,16 @@ export default function Confirmacion() {
     `Ver pedido: ${linkPedido}`;
   const waHref = `https://wa.me/${WHATSAPP_ORG}?text=${encodeURIComponent(waMsg)}`;
 
+  async function copiarAlias() {
+    const alias = '+595981352935';
+    try {
+      await navigator.clipboard.writeText(alias);
+      toast.success('Alias copiado');
+    } catch {
+      toast.error('No se pudo copiar');
+    }
+  }
+
   async function descargarComprobante() {
     const wrap = qrCanvasRef.current;
     const qrCanvas = wrap?.tagName === 'CANVAS' ? wrap : wrap?.querySelector('canvas');
@@ -235,11 +245,14 @@ export default function Confirmacion() {
         {pedido.estado === 'PENDIENTE' && !esInfonet && (
           <div className={styles.instruccionesPago}>
             <h3>AHORA HACÉ LA TRANSFERENCIA</h3>
-            <div
+            <button
+              type="button"
+              onClick={copiarAlias}
               style={{
                 display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '.25rem',
-                margin: '1rem 0', padding: '1rem', borderRadius: '14px',
-                background: '#fff8e1', border: '2px dashed #f0a500',
+                width: '100%', margin: '1rem 0', padding: '1rem', borderRadius: '14px',
+                background: '#fff8e1', border: '2px dashed #f0a500', cursor: 'pointer',
+                boxSizing: 'border-box',
               }}
             >
               <span style={{ fontSize: '.85rem', fontWeight: 700, letterSpacing: '.05em', color: '#8a6d00' }}>
@@ -248,7 +261,10 @@ export default function Confirmacion() {
               <strong style={{ fontSize: '1.6rem', fontWeight: 900, letterSpacing: '.02em', color: '#1a1a1a' }}>
                 +595981352935
               </strong>
-            </div>
+              <span style={{ fontSize: '.8rem', fontWeight: 700, color: '#8a6d00' }}>
+                📋 Tocá para copiar
+              </span>
+            </button>
             <p className={styles.oAlternativa} style={{ fontSize: '1.1rem', fontWeight: 700, textAlign: 'center', margin: '.5rem 0' }}>
               ENVIÁ TU COMPROBANTE AL SIGUIENTE ENLACE 👇
             </p>
