@@ -47,6 +47,10 @@ export default function AdminDashboard() {
             <div className={styles.valor} style={{ color: '#f59e0b' }}>{dashboard.pendientes}</div>
           </div>
           <div className={styles.cardStat}>
+            <h3>Anulados</h3>
+            <div className={styles.valor} style={{ color: '#dc2626' }}>{dashboard.anulados}</div>
+          </div>
+          <div className={styles.cardStat}>
             <h3>Monto Pagado</h3>
             <div className={styles.valor} style={{ fontSize: '1.2rem' }}>Gs. {Number(dashboard.monto_pagado).toLocaleString()}</div>
           </div>

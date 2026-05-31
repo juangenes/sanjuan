@@ -121,9 +121,10 @@ async function actualizarStatusBancard(id, status) {
 async function resumenDashboard() {
   const [rows] = await db.query(`
     SELECT
-      COUNT(*) AS total_pedidos,
+      SUM(CASE WHEN estado <> 'ANULADO' THEN 1 ELSE 0 END) AS total_pedidos,
       SUM(CASE WHEN estado = 'PAGADO' THEN 1 ELSE 0 END) AS pagados,
       SUM(CASE WHEN estado = 'PENDIENTE' THEN 1 ELSE 0 END) AS pendientes,
+      SUM(CASE WHEN estado = 'ANULADO' THEN 1 ELSE 0 END) AS anulados,
       SUM(CASE WHEN estado = 'PAGADO' THEN total ELSE 0 END) AS monto_pagado,
       SUM(CASE WHEN estado = 'PENDIENTE' THEN total ELSE 0 END) AS monto_pendiente
     FROM pedidos
