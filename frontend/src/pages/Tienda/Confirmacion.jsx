@@ -234,7 +234,7 @@ export default function Confirmacion() {
 
         {pedido.estado === 'PENDIENTE' && !esInfonet && (
           <div className={styles.instruccionesPago}>
-            <h3>AHORA TENÉS QUE ENVIAR TU COMPROBANTE DE TRANSFERENCIA</h3>
+            <h3>AHORA HACÉ LA TRANSFERENCIA</h3>
             <div
               style={{
                 display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '.25rem',
@@ -250,7 +250,7 @@ export default function Confirmacion() {
               </strong>
             </div>
             <p className={styles.oAlternativa} style={{ fontSize: '1.1rem', fontWeight: 700, textAlign: 'center', margin: '.5rem 0' }}>
-              Luego hacé click en el siguiente botón 👇
+              ENVIÁ TU COMPROBANTE AL SIGUIENTE ENLACE 👇
             </p>
             <a
               href={waHref}
