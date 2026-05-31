@@ -1,6 +1,18 @@
 const pedidoModel = require('../models/pedido.model');
 const pedidoProductoModel = require('../models/pedidoProducto.model');
 const entregaModel = require('../models/entrega.model');
+const envioModel = require('../models/envioExpendio.model');
+const { notificarEntidad } = require('../utils/rtsClient');
+
+// Estaciones de despacho (fijas). Agregar/quitar editando esta lista.
+const ESTACIONES = [
+  { id: 'exp1', label: 'Expendio 1' },
+  { id: 'exp2', label: 'Expendio 2' },
+  { id: 'exp3', label: 'Expendio 3' },
+];
+const esEstacionValida = (id) => ESTACIONES.some(e => e.id === id);
+// Nombre de la room en el RTS para una estación.
+const scopeDe = (estacion) => `sanjuan-${estacion}`;
 
 async function obtenerPedidoParaExpendio(hash) {
   const pedido = await pedidoModel.buscarPorHash(hash);
@@ -60,4 +72,39 @@ async function obtenerHistorial(hash) {
   return historial;
 }
 
-module.exports = { obtenerPedidoParaExpendio, registrarEntrega, obtenerBoleta, obtenerHistorial };
+// Rutea un pedido (escaneado) a una estación: valida que esté PAGADO, lo agrega
+// a la cola (DB = fuente de verdad) y avisa al RTS para que la pantalla de esa
+// estación lo muestre al instante. Si el RTS falla, el envío igual queda en cola.
+async function enviarAEstacion(hash, estacion, operador) {
+  if (!esEstacionValida(estacion)) throw new Error('Estación inválida');
+  const pedido = await pedidoModel.buscarPorHash(hash);
+  if (!pedido) throw new Error('Pedido no encontrado');
+  if (pedido.estado !== 'PAGADO') throw new Error('El pedido no está pagado');
+
+  const envioId = await envioModel.crear(pedido.idpedido, estacion, operador);
+
+  await notificarEntidad({
+    resource: 'expendio',
+    action: 'enviado',
+    id: pedido.idpedido,
+    scope: scopeDe(estacion),
+    actor: { usuario: operador },
+    meta: { envioId, hash: pedido.hash, familia: pedido.familia, estacion },
+  });
+
+  return { envioId, hash: pedido.hash, familia: pedido.familia, estacion };
+}
+
+async function obtenerCola(estacion) {
+  if (!esEstacionValida(estacion)) throw new Error('Estación inválida');
+  return envioModel.listarCola(estacion);
+}
+
+async function atenderEnvio(id) {
+  await envioModel.marcarAtendido(id);
+}
+
+module.exports = {
+  obtenerPedidoParaExpendio, registrarEntrega, obtenerBoleta, obtenerHistorial,
+  ESTACIONES, enviarAEstacion, obtenerCola, atenderEnvio,
+};

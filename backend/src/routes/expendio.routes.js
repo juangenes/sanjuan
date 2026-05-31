@@ -60,4 +60,43 @@ router.get('/historial/:hash', async (req, res) => {
   }
 });
 
+// --- Despacho por estaciones (lector QR → cola de estación) ---
+
+// Listado de estaciones disponibles
+router.get('/estaciones', (req, res) => {
+  res.json({ success: true, estaciones: expendioService.ESTACIONES });
+});
+
+// Rutear un pedido escaneado a una estación
+router.post('/enviar', async (req, res) => {
+  try {
+    const { hash, estacion } = req.body;
+    if (!hash || !estacion) return res.status(400).json({ error: 'Datos incompletos' });
+    const envio = await expendioService.enviarAEstacion(hash, estacion, req.user.usuario);
+    res.json({ success: true, envio });
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+// Cola pendiente de una estación (se carga al montar la pantalla)
+router.get('/cola/:estacion', async (req, res) => {
+  try {
+    const cola = await expendioService.obtenerCola(req.params.estacion);
+    res.json({ success: true, cola });
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+// Marcar un envío como atendido (sale de la cola)
+router.post('/cola/:id/atendido', async (req, res) => {
+  try {
+    await expendioService.atenderEnvio(Number(req.params.id));
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 module.exports = router;

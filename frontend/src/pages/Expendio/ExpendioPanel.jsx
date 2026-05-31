@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { getPedidoExpendio, registrarEntrega, getHistorialExpendio, getPedidosExpendio } from '../../api';
 import toast from 'react-hot-toast';
 import styles from './Expendio.module.css';
@@ -15,9 +15,15 @@ export default function ExpendioPanel() {
   const [cargando, setCargando] = useState(false);
   const [cargandoLista, setCargandoLista] = useState(true);
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
 
   useEffect(() => {
     cargarLista();
+    // Deep-link desde la pantalla de estación: /expendio/panel?hash=XXXX abre
+    // el pedido directo para entregarlo.
+    const h = searchParams.get('hash');
+    if (h) abrirPedido(h);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   async function cargarLista() {
@@ -126,7 +132,10 @@ export default function ExpendioPanel() {
     <div className={styles.pagina}>
       <header className={styles.header}>
         <h1>🍖 Expendio</h1>
-        <button onClick={() => { localStorage.clear(); navigate('/expendio'); }} className={styles.btnSalir}>Salir</button>
+        <div style={{ display: 'flex', gap: '0.5rem' }}>
+          <button onClick={() => navigate('/expendio/scan')} className={styles.btnSalir} style={{ background: '#0a7d2c' }}>📷 Lector</button>
+          <button onClick={() => { localStorage.clear(); navigate('/expendio'); }} className={styles.btnSalir}>Salir</button>
+        </div>
       </header>
 
       <div className={styles.contenido}>

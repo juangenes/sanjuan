@@ -17,6 +17,8 @@ import AdminPuestos from './pages/Admin/AdminPuestos';
 import ExpendioLogin from './pages/Expendio/ExpendioLogin';
 import ExpendioPanel from './pages/Expendio/ExpendioPanel';
 import ExpendioBoleta from './pages/Expendio/ExpendioBoleta';
+import ExpendioScan from './pages/Expendio/ExpendioScan';
+import ExpendioEstacion from './pages/Expendio/ExpendioEstacion';
 import CajaLogin from './pages/Caja/CajaLogin';
 import CajaPanel from './pages/Caja/CajaPanel';
 import TarjetasOperador from './pages/Tarjetas/TarjetasOperador';
@@ -44,6 +46,8 @@ export default function App() {
           <Route path="/expendio" element={<ExpendioLogin />} />
           <Route path="/expendio/panel" element={<ExpendioPanel />} />
           <Route path="/expendio/boleta/:hash/:idot" element={<ExpendioBoleta />} />
+          <Route path="/expendio/scan" element={<ExpendioScan />} />
+          <Route path="/expendio/estacion/:estacion" element={<ExpendioEstacion />} />
 
           {/* Caja — POS físico (cobro/confirmación) */}
           <Route path="/caja" element={<CajaLogin />} />

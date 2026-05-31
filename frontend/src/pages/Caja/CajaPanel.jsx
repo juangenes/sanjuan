@@ -108,6 +108,7 @@ export default function CajaPanel() {
       if (getTicketeraIP()) {
         await imprimirTicketPedido({
           codigo,
+          hash: pedido.hash,
           nombre,
           total: pedido.total,
           metodo,

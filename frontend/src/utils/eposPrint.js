@@ -49,6 +49,13 @@ function construirEposBody(comandos) {
       partes.push(`<cut type="feed"/>`);
       continue;
     }
+    if (c.qr) {
+      // QR centrado y vuelta a alineación izquierda para lo que siga.
+      partes.push(`<text align="center"/>`);
+      partes.push(`<symbol type="qrcode_model_2" level="level_l" width="6" height="6" size="0">${esc(c.qr)}</symbol>`);
+      partes.push(`<text align="left"/>`);
+      continue;
+    }
     const attrs = [];
     if (c.align) attrs.push(`align="${c.align}"`);     // left | center | right
     if (c.bold) attrs.push(`em="true"`);
@@ -149,8 +156,9 @@ export async function imprimirBoleta(boleta, meta) {
 }
 
 // Imprime el TICKET DE PEDIDO que se lleva el comensal (su comprobante para
-// retirar en expendio). `data` = { codigo, nombre, total, metodo, recibido,
+// retirar en expendio). `data` = { codigo, hash, nombre, total, metodo, recibido,
 // vuelto, operador, items:[{ titulo, cantidad, subtotal }] }.
+// El QR (hash completo) lo escanea el lector del expendio para rutear el pedido.
 export async function imprimirTicketPedido(data) {
   const ip = getTicketeraIP();
   if (!ip) {
@@ -167,6 +175,7 @@ export async function imprimirTicketPedido(data) {
     { text: 'SAN JUAN DICE QUE SI', align: 'center', bold: true, dw: true },
     { text: 'Ticket de Pedido', align: 'center' },
     { text: separador() },
+    ...(data.hash ? [{ qr: data.hash }] : []),
     { text: 'CODIGO DE RETIRO', align: 'center' },
     { text: data.codigo, align: 'center', bold: true, dw: true, dh: true },
     { text: separador() },
