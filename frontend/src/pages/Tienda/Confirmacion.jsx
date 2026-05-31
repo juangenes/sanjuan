@@ -234,9 +234,12 @@ export default function Confirmacion() {
 
         {pedido.estado === 'PENDIENTE' && !esInfonet && (
           <div className={styles.instruccionesPago}>
-            <h3>Pagá por transferencia</h3>
-            <p className={styles.oAlternativa}>
-              Transferí el monto de tu pedido al alias <strong>0981352935</strong> y envianos el comprobante por WhatsApp. Cuando la organización pueda verificar que tu transferencia se haya recibido con éxito tu pedido será validado. En ese momento recibirás un mensaje de validación al número <strong>{telIntl}</strong>.
+            <h3>AHORA TENÉS QUE ENVIAR TU COMPROBANTE DE TRANSFERENCIA</h3>
+            <p className={styles.oAlternativa} style={{ fontSize: '1.15rem', fontWeight: 700, textAlign: 'center', margin: '.5rem 0' }}>
+              Transferí al alias <strong>+595981352935</strong>
+            </p>
+            <p className={styles.oAlternativa} style={{ fontSize: '1.1rem', fontWeight: 700, textAlign: 'center', margin: '.5rem 0' }}>
+              Luego hacé click en el siguiente botón 👇
             </p>
             <a
               href={waHref}
