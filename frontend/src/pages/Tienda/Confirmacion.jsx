@@ -270,6 +270,9 @@ export default function Confirmacion() {
                 📋 Tocá para copiar
               </span>
             </button>
+            <p style={{ fontSize: '.85rem', color: '#777', textAlign: 'center', margin: '0 0 .5rem' }}>
+              Banco Sudameris · Titular: Juan Genes
+            </p>
             <p className={styles.oAlternativa} style={{ fontSize: '1.1rem', fontWeight: 700, textAlign: 'center', margin: '.5rem 0' }}>
               ENVIÁ TU COMPROBANTE AL SIGUIENTE ENLACE 👇
             </p>
