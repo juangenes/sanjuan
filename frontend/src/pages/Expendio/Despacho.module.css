@@ -60,33 +60,88 @@
 }
 .ultimo { background: #f0fdf4; color: #166534; padding: 0.8rem 1rem; border-radius: 10px; font-size: 1rem; }
 
-/* --- Estación (cola) --- */
-.colaWrap { max-width: 900px; margin: 0 auto; padding: 1rem; }
-.vacio { text-align: center; color: #888; padding: 4rem 1rem; }
-.vacioEmoji { font-size: 3rem; margin-bottom: 0.5rem; opacity: 0.6; }
+/* --- Estación: layout maestro-detalle --- */
+.split {
+  display: flex;
+  gap: 1rem;
+  padding: 1rem;
+  max-width: 1100px;
+  margin: 0 auto;
+  align-items: flex-start;
+}
 
-.tarjetas {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
-  gap: 0.9rem;
-}
-.tarjeta {
-  background: white; border-radius: 14px; padding: 1rem;
+/* Lista (maestro) */
+.lista {
+  width: 320px;
+  flex-shrink: 0;
+  background: white;
+  border-radius: 14px;
   box-shadow: 0 2px 8px rgba(0,0,0,.08);
-  border-left: 6px solid #f0a500;
+  overflow: hidden;
 }
-.tarjCodigo {
-  font-family: monospace; font-size: 0.85rem; color: #0B2E55;
+.listaHead {
+  padding: 0.8rem 1rem; font-weight: 800; color: #0B2E55;
+  background: #eef3f9; border-bottom: 1px solid #e3eaf3;
+}
+.listaVacia { padding: 2.5rem 1rem; text-align: center; color: #999; }
+.item {
+  display: block; width: 100%; text-align: left;
+  background: white; border: none; border-bottom: 1px solid #f0f0f0;
+  border-left: 5px solid transparent;
+  padding: 0.75rem 1rem; cursor: pointer;
+}
+.item:hover { background: #f8fafc; }
+.itemSel { background: #fff8e1; border-left-color: #f0a500; }
+.itemTop { display: flex; justify-content: space-between; align-items: center; }
+.itemCodigo {
+  font-family: monospace; font-size: 0.78rem; color: #0B2E55;
+  background: #eef3f9; padding: 0.1rem 0.4rem; border-radius: 4px;
+}
+.itemHora { font-size: 0.78rem; color: #999; }
+.itemFamilia { font-size: 1.05rem; font-weight: 800; color: #1a1a1a; margin: 0.3rem 0 0.1rem; }
+.itemMeta { font-size: 0.82rem; color: #666; }
+
+/* Detalle */
+.detalle {
+  flex: 1; min-width: 0;
+  background: white;
+  border-radius: 14px;
+  box-shadow: 0 2px 8px rgba(0,0,0,.08);
+  padding: 1.25rem;
+  min-height: 320px;
+}
+.detVacio { color: #999; text-align: center; padding: 4rem 1rem; font-size: 1.05rem; }
+.detHead { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem; }
+.detCodigo {
+  font-family: monospace; font-size: 0.9rem; color: #0B2E55;
   background: #eef3f9; display: inline-block; padding: 0.15rem 0.5rem; border-radius: 5px;
 }
-.tarjFamilia { font-size: 1.2rem; font-weight: 800; color: #1a1a1a; margin: 0.5rem 0 0.25rem; }
-.tarjMeta { display: flex; justify-content: space-between; color: #666; font-size: 0.85rem; margin-bottom: 0.8rem; }
-.tarjAcciones { display: flex; gap: 0.5rem; }
-.btnVer {
-  flex: 1; text-align: center; text-decoration: none;
-  background: #0B2E55; color: white; padding: 0.6rem; border-radius: 9px; font-weight: 700;
+.detFamilia { font-size: 1.6rem; font-weight: 900; color: #1a1a1a; margin-top: 0.4rem; }
+.detTitulo { font-size: 0.8rem; font-weight: 800; color: #999; letter-spacing: 0.05em; margin-bottom: 0.5rem; }
+.detItems { list-style: none; margin: 0 0 1.25rem; padding: 0; }
+.detItem {
+  display: flex; align-items: center; gap: 0.9rem;
+  padding: 0.7rem 0; border-bottom: 1px dashed #eee;
 }
-.btnAtender {
-  flex: 1; background: #0a7d2c; color: white; border: none;
-  padding: 0.6rem; border-radius: 9px; font-weight: 700; cursor: pointer;
+.detItemListo { opacity: 0.5; }
+.detCant {
+  min-width: 2.2rem; height: 2.2rem;
+  display: flex; align-items: center; justify-content: center;
+  background: #0B2E55; color: white; border-radius: 8px;
+  font-size: 1.2rem; font-weight: 900; flex-shrink: 0;
+}
+.detItemListo .detCant { background: #22c55e; }
+.detNombre { flex: 1; font-size: 1.15rem; font-weight: 600; }
+.detYa { font-size: 0.8rem; color: #22c55e; font-weight: 700; }
+.btnEntregar {
+  width: 100%;
+  background: #0a7d2c; color: white; border: none;
+  padding: 1rem; border-radius: 12px;
+  font-size: 1.2rem; font-weight: 800; cursor: pointer;
+}
+.btnEntregar:disabled { background: #9bbfa6; cursor: not-allowed; }
+
+@media (max-width: 720px) {
+  .split { flex-direction: column; }
+  .lista { width: 100%; }
 }
