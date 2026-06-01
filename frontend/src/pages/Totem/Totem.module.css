@@ -1,0 +1,158 @@
+/* Pantallas propias del tótem de autoservicio. El menú reusa tienda-desktop.css;
+   acá van solo las pantallas full-screen: inicio (idle), pago (QR) y éxito. */
+
+/* --- Inicio / atrae al cliente --- */
+.idle {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(160deg, #0B2E55 0%, #08203c 100%);
+  color: #fff;
+  cursor: pointer;
+  user-select: none;
+  font-family: 'Segoe UI', sans-serif;
+}
+.idleInner { text-align: center; padding: 2rem; }
+.idleEmoji { font-size: 5rem; line-height: 1; }
+.idleTitulo {
+  font-size: clamp(2.5rem, 7vw, 5rem);
+  font-weight: 900;
+  letter-spacing: 0.02em;
+  margin: 1rem 0 0.5rem;
+  line-height: 1.05;
+}
+.idleSub {
+  font-size: clamp(1.1rem, 3vw, 1.8rem);
+  font-weight: 700;
+  color: #f0a500;
+  text-transform: uppercase;
+  letter-spacing: 0.2em;
+  margin: 0 0 2.5rem;
+}
+.idleCta {
+  display: inline-block;
+  font-size: clamp(1.1rem, 3vw, 1.6rem);
+  font-weight: 800;
+  background: #f0a500;
+  color: #0B2E55;
+  padding: 1.1rem 2rem;
+  border-radius: 999px;
+  box-shadow: 0 8px 0 #b87d00, 0 12px 24px rgba(0,0,0,.35);
+  animation: pulse 1.8s ease-in-out infinite;
+}
+@keyframes pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.04); }
+}
+.cfgIp {
+  position: absolute;
+  top: 12px; right: 12px;
+  width: 40px; height: 40px;
+  border: none; border-radius: 50%;
+  background: rgba(255,255,255,.1);
+  color: rgba(255,255,255,.5);
+  font-size: 1.1rem;
+  cursor: pointer;
+}
+
+/* --- Pago (QR de Bancard) --- */
+.pagoPagina {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f4f6f8;
+  padding: 1rem;
+  font-family: 'Segoe UI', sans-serif;
+}
+.pagoCard {
+  background: #fff;
+  border-radius: 22px;
+  box-shadow: 0 10px 40px rgba(0,0,0,.15);
+  padding: 2rem 2.25rem;
+  text-align: center;
+  max-width: 460px;
+  width: 100%;
+}
+.pagoTitulo { margin: 0 0 0.25rem; color: #0B2E55; font-size: 1.6rem; }
+.pagoMonto { margin: 0 0 1.25rem; font-size: 2.2rem; font-weight: 900; color: #0a7d2c; }
+.qrWrap {
+  display: inline-block;
+  background: #fff;
+  padding: 16px;
+  border-radius: 16px;
+  box-shadow: 0 2px 12px rgba(0,0,0,.12);
+}
+.pagoAyuda { color: #555; font-size: 1rem; margin: 1.1rem 0 0.5rem; }
+.pagoEsperando { color: #856404; font-weight: 700; margin: 0.5rem 0 1rem; }
+.pagoError { color: #E63946; font-weight: 700; margin: 1.25rem 0; }
+.btnCancelar {
+  width: 100%;
+  background: #fff;
+  color: #E63946;
+  border: 2px solid #f3c6ca;
+  padding: 0.9rem;
+  border-radius: 14px;
+  font-size: 1.05rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+.ttl { color: #aaa; font-size: 0.8rem; margin: 0.75rem 0 0; }
+
+/* --- Éxito (código de retiro) --- */
+.exitoPagina {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f4f6f8;
+  padding: 1rem;
+  cursor: pointer;
+  font-family: 'Segoe UI', sans-serif;
+}
+.exitoCard {
+  background: #fff;
+  border-radius: 22px;
+  box-shadow: 0 10px 40px rgba(0,0,0,.15);
+  padding: 2.25rem;
+  text-align: center;
+  max-width: 440px;
+  width: 100%;
+}
+.exitoCheck {
+  width: 80px; height: 80px;
+  margin: 0 auto 1rem;
+  border-radius: 50%;
+  background: #0a7d2c;
+  color: #fff;
+  font-size: 2.6rem;
+  display: flex; align-items: center; justify-content: center;
+}
+.exitoCard h2 { margin: 0 0 1.5rem; color: #0B2E55; }
+.exitoLabel { font-size: 0.85rem; letter-spacing: 0.1em; text-transform: uppercase; color: #888; margin: 0 0 0.4rem; }
+.exitoCodigo {
+  font-family: monospace;
+  font-size: 3.4rem;
+  font-weight: 900;
+  letter-spacing: 0.1em;
+  color: #0B2E55;
+  background: #eef3f9;
+  border-radius: 14px;
+  padding: 0.8rem 0;
+}
+.exitoNota { color: #555; font-size: 1rem; margin: 1.5rem 0; }
+.btnNuevo {
+  width: 100%;
+  background: #0B2E55;
+  color: #fff;
+  border: none;
+  padding: 1.1rem;
+  border-radius: 14px;
+  font-size: 1.15rem;
+  font-weight: 800;
+  cursor: pointer;
+}

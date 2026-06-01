@@ -21,6 +21,7 @@ import ExpendioScan from './pages/Expendio/ExpendioScan';
 import ExpendioEstacion from './pages/Expendio/ExpendioEstacion';
 import CajaLogin from './pages/Caja/CajaLogin';
 import CajaPanel from './pages/Caja/CajaPanel';
+import TotemPanel from './pages/Totem/TotemPanel';
 import TarjetasOperador from './pages/Tarjetas/TarjetasOperador';
 import TarjetasPanel from './pages/Tarjetas/TarjetasPanel';
 
@@ -52,6 +53,9 @@ export default function App() {
           {/* Caja — POS físico (cobro/confirmación) */}
           <Route path="/caja" element={<CajaLogin />} />
           <Route path="/caja/panel" element={<CajaPanel />} />
+
+          {/* Tótem — autoservicio (pantalla táctil, pago con QR Bancard) */}
+          <Route path="/totem" element={<TotemPanel />} />
 
           {/* Admin — oculto, se entra tecleando /admin (sin links en ninguna página) */}
           <Route path="/admin" element={<AdminLogin />} />

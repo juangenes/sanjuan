@@ -1,6 +1,7 @@
 const router = require('express').Router();
 const pedidoModel = require('../models/pedido.model');
 const bancard = require('../services/bancard.service');
+const { notificarDespacho } = require('../utils/rtsClient');
 
 // ───────────────────────────────────────────────────────────────────────────
 // Pago con QR de Bancard/Infonet (método de pago 'INFONET').
@@ -123,6 +124,9 @@ router.post('/callback', async (req, res) => {
           ticket: payment.ticket_number != null ? String(payment.ticket_number) : null,
           authorization: payment.authorization_code || null,
         });
+        // Pago QR acreditado (tienda online / tótem): avisar al panel de despacho
+        // en vivo, igual que hace la caja al cobrar.
+        notificarDespacho({ motivo: 'bancard', hash: pedido.hash });
       }
     } else {
       // Pago rechazado: registramos el resultado, el pedido sigue PENDIENTE.

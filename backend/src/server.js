@@ -17,6 +17,7 @@ app.use('/api/productos', require('./routes/productos.routes'));
 app.use('/api/pedidos',   require('./routes/pedidos.routes'));
 app.use('/api/expendio',  require('./routes/expendio.routes'));
 app.use('/api/caja',      require('./routes/caja.routes'));
+app.use('/api/totem',     require('./routes/totem.routes'));
 app.use('/api/tarjetas',  require('./routes/tarjetas.routes'));
 app.use('/api/puestos',   require('./routes/puestos.routes'));
 app.use('/api/bancard',   require('./routes/bancard.routes'));

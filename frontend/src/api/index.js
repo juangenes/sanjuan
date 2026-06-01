@@ -59,6 +59,9 @@ export const atenderEnvio = (id) => api.post(`/expendio/cola/${id}/atendido`).th
 // Caja (POS físico) — toma un pedido nuevo, lo cobra y lo deja PAGADO
 export const tomarPedidoCaja = (payload) => api.post('/caja/pedido', payload).then(r => r.data.pedido);
 
+// Tótem autoservicio — crea un pedido PENDIENTE (precio normal, pago QR Bancard)
+export const crearPedidoTotem = (payload) => api.post('/totem/pedido', payload).then(r => r.data.pedido);
+
 // Retiros públicos (cliente)
 export const getRetirosPedido = (hash) => api.get(`/pedidos/${hash}/retiros`).then(r => r.data.retiros);
 
