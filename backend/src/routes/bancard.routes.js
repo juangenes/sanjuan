@@ -43,6 +43,17 @@ router.post('/qr', async (req, res) => {
     }
 
     const amount = Math.round(Number(pedido.total));
+
+    // MOCKUP: no llamamos a Bancard. Generamos un QR ficticio (igual de visible
+    // en pantalla) y programamos la confirmación automática del pago.
+    if (mockHabilitado()) {
+      const hookAlias = `MOCK-${pedido.idpedido}-${Date.now()}`;
+      const qrData = `MOCK|${hash}|Gs${amount}`;
+      await pedidoModel.guardarQrBancard(pedido.idpedido, { hookAlias, qrData, qrUrl: null });
+      programarConfirmacionMock(pedido.idpedido);
+      return res.json({ success: true, mock: true, hook_alias: hookAlias, qr_data: qrData, url: null });
+    }
+
     const { qr_express, supported_clients } = await bancard.generarQr({
       amount,
       description: `Pedido ${hash.substring(0, 8).toUpperCase()} - San Juan`,
@@ -121,28 +132,10 @@ router.post('/callback', async (req, res) => {
 
     const exito = payment.status === 'confirmed' && payment.response_code === '00';
     if (exito) {
-      if (pedido.estado !== 'PAGADO') {
-        await pedidoModel.marcarPagadoBancard(pedido.idpedido, {
-          ticket: payment.ticket_number != null ? String(payment.ticket_number) : null,
-          authorization: payment.authorization_code || null,
-        });
-        // Pago QR acreditado (tótem): consumo inmediato → disparar la comanda a
-        // RETIRO con todos los ítems (la cocina imprime y prepara; el comensal
-        // retira mostrando el QR de su celular). Defensivo: si falla, el pago igual
-        // quedó confirmado y la comanda puede re-dispararse desde caja.
-        try {
-          const items = await pedidoProductoModel.obtenerPorPedido(pedido.idpedido);
-          await expendioService.registrarEntrega(
-            pedido.hash,
-            items.map(i => ({ idproducto: i.idproducto, cantidad: i.cantidad })),
-            'totem'
-          );
-        } catch (e) {
-          console.error('[bancard] pago OK pero no se disparó la comanda a retiro:', e.message);
-          // Avisar al menos al panel de despacho para que aparezca el pedido pagado.
-          notificarDespacho({ motivo: 'bancard', hash: pedido.hash });
-        }
-      }
+      await confirmarPagoPedido(pedido, {
+        ticket: payment.ticket_number != null ? String(payment.ticket_number) : null,
+        authorization: payment.authorization_code || null,
+      });
     } else {
       // Pago rechazado: registramos el resultado, el pedido sigue PENDIENTE.
       await pedidoModel.actualizarStatusBancard(pedido.idpedido, 'failed');
@@ -177,6 +170,12 @@ router.post('/revertir', async (req, res) => {
     // paralelo, respondemos error y no confirmamos una venta cancelada.
     await pedidoModel.actualizarStatusBancard(pedido.idpedido, 'revert_requested');
 
+    // MOCKUP: no hay nada que reversar en Bancard; lo dejamos como reversado.
+    if (mockHabilitado()) {
+      await pedidoModel.actualizarStatusBancard(pedido.idpedido, 'reverted');
+      return res.json({ success: true, mock: true, reverse: 'reverted' });
+    }
+
     const { httpStatus, body } = await bancard.revertir(pedido.bancard_hook_alias);
     const reverseStatus = body?.reverse?.status || body?.payment?.status || body?.status;
     await pedidoModel.actualizarStatusBancard(pedido.idpedido, 'reverted');
@@ -187,6 +186,54 @@ router.post('/revertir', async (req, res) => {
     res.status(502).json({ success: false, error: 'No se pudo reversar el pago' });
   }
 });
+
+// Confirma el pago de un pedido: lo marca PAGADO con los datos de Bancard y
+// dispara la comanda a RETIRO (consumo inmediato del tótem). Lo usan tanto el
+// callback real de Bancard como el auto-confirm del mockup, para no divergir.
+// Defensivo: si falla el disparo de la comanda, el pago igual queda confirmado
+// y al menos se avisa al panel de despacho.
+async function confirmarPagoPedido(pedido, { ticket = null, authorization = null } = {}) {
+  if (pedido.estado === 'PAGADO') return;
+  await pedidoModel.marcarPagadoBancard(pedido.idpedido, { ticket, authorization });
+  try {
+    const items = await pedidoProductoModel.obtenerPorPedido(pedido.idpedido);
+    await expendioService.registrarEntrega(
+      pedido.hash,
+      items.map(i => ({ idproducto: i.idproducto, cantidad: i.cantidad })),
+      'totem'
+    );
+  } catch (e) {
+    console.error('[bancard] pago OK pero no se disparó la comanda a retiro:', e.message);
+    notificarDespacho({ motivo: 'bancard', hash: pedido.hash });
+  }
+}
+
+// ───────────────────────────────────────────────────────────────────────────
+// MODO MOCKUP (BANCARD_MOCK=true): no llamamos a Bancard. Se genera un QR
+// ficticio y el pago se "confirma" solo tras un retardo, para poder ver TODO el
+// proceso (QR → espera → pagado → comanda) sin depender del sandbox externo.
+// ───────────────────────────────────────────────────────────────────────────
+function mockHabilitado() {
+  return String(process.env.BANCARD_MOCK).toLowerCase() === 'true';
+}
+
+// Programa la confirmación automática del pago simulado. Re-lee el pedido antes
+// de confirmar para respetar una cancelación/reversa hecha mientras esperaba.
+function programarConfirmacionMock(idpedido) {
+  const delay = Number(process.env.BANCARD_MOCK_DELAY_MS) || 6000;
+  const t = setTimeout(async () => {
+    try {
+      const pedido = await pedidoModel.buscarPorId(idpedido);
+      if (!pedido || pedido.estado === 'PAGADO') return;
+      if (pedido.bancard_status === 'revert_requested' || pedido.bancard_status === 'reverted') return;
+      await confirmarPagoPedido(pedido, { ticket: `MOCK${idpedido}`, authorization: 'MOCK-OK' });
+      console.log(`[bancard][mock] Pago simulado confirmado para pedido ${idpedido}`);
+    } catch (e) {
+      console.error('[bancard][mock] Error confirmando pago simulado:', e.message);
+    }
+  }, delay);
+  if (typeof t.unref === 'function') t.unref(); // no mantener vivo el proceso por el timer
+}
 
 // Valida el Basic Auth del callback contra BANCARD_CALLBACK_USER/PASS.
 // Si no están configuradas, no se exige (útil al inicio de la integración).
