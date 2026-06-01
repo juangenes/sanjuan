@@ -1,12 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
-import {
-  getEstaciones, getColaEstacion, atenderEnvio,
-  getPedidoExpendio, registrarEntrega, getBoleta,
-} from '../../api';
+import { getEstaciones, getColaEstacion, atenderEnvio, getBoleta } from '../../api';
 import { suscribirScope } from '../../utils/rtsSocket';
 import { imprimirBoleta, getTicketeraIP } from '../../utils/eposPrint';
+import EntregaCard from './EntregaCard';
 import styles from './Despacho.module.css';
 
 export default function ExpendioEstacion() {
@@ -14,10 +12,7 @@ export default function ExpendioEstacion() {
   const [cola, setCola] = useState([]);
   const [label, setLabel] = useState(estacion);
   const [online, setOnline] = useState(false);
-  const [sel, setSel] = useState(null);        // envío seleccionado { id, hash }
-  const [detalle, setDetalle] = useState(null); // pedido con items
-  const [cargandoDet, setCargandoDet] = useState(false);
-  const [entregando, setEntregando] = useState(false);
+  const [sel, setSel] = useState(null); // envío seleccionado { id, hash }
   const navigate = useNavigate();
   const colaRef = useRef(0);
 
@@ -52,60 +47,29 @@ export default function ExpendioEstacion() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [estacion]);
 
-  async function seleccionar(envio) {
-    setSel(envio);
-    setDetalle(null);
-    setCargandoDet(true);
-    try {
-      const ped = await getPedidoExpendio(envio.hash);
-      setDetalle(ped);
-    } catch (err) {
-      toast.error(err.response?.data?.error || 'No se pudo abrir el pedido');
-      setSel(null);
-    } finally {
-      setCargandoDet(false);
-    }
-  }
-
   function quitarDeCola(envioId) {
     setCola(c => c.filter(x => x.id !== envioId));
     colaRef.current = Math.max(0, colaRef.current - 1);
     setSel(null);
-    setDetalle(null);
   }
 
-  async function entregar() {
-    if (!sel || !detalle) return;
-    const pendientes = detalle.items
-      .filter(i => i.pendiente > 0)
-      .map(i => ({ idproducto: i.idproducto, cantidad: i.pendiente }));
-
-    setEntregando(true);
+  // Tras una entrega: imprime la comanda interna y, si ya no queda saldo, marca
+  // el envío atendido y lo saca de la cola. Entregas parciales lo dejan en cola.
+  async function onEntregado({ idot, pedido }) {
     try {
-      // Si ya estaba todo entregado, solo lo sacamos de la cola.
-      if (pendientes.length > 0) {
-        const { idot } = await registrarEntrega(sel.hash, pendientes);
-        // Imprimir la comanda interna si hay ticketera configurada (no bloquea).
-        try {
-          if (getTicketeraIP()) {
-            const boleta = await getBoleta(sel.hash, idot);
-            await imprimirBoleta(boleta, { codigo: sel.hash.substring(0, 8).toUpperCase(), idot });
-          }
-        } catch (err) {
-          toast.error(`Entregado, pero no se imprimió: ${err.message}`);
-        }
+      if (getTicketeraIP()) {
+        const boleta = await getBoleta(sel.hash, idot);
+        await imprimirBoleta(boleta, { codigo: sel.hash.substring(0, 8).toUpperCase(), idot });
       }
-      await atenderEnvio(sel.id);
-      toast.success('Pedido entregado');
-      quitarDeCola(sel.id);
     } catch (err) {
-      toast.error(err.response?.data?.error || 'Error al entregar');
-    } finally {
-      setEntregando(false);
+      toast.error(`Entregado, pero no se imprimió la comanda: ${err.message}`);
+    }
+    const quedaSaldo = pedido.items.some(i => i.pendiente > 0);
+    if (!quedaSaldo) {
+      try { await atenderEnvio(sel.id); } catch { /* noop */ }
+      quitarDeCola(sel.id);
     }
   }
-
-  const totalPendiente = detalle?.items?.reduce((a, i) => a + i.pendiente, 0) ?? 0;
 
   return (
     <div className={styles.pagina}>
@@ -128,7 +92,7 @@ export default function ExpendioEstacion() {
               <button
                 key={p.id}
                 className={`${styles.item} ${sel?.id === p.id ? styles.itemSel : ''}`}
-                onClick={() => seleccionar(p)}
+                onClick={() => setSel(p)}
               >
                 <div className={styles.itemTop}>
                   <span className={styles.itemCodigo}>{p.hash.substring(0, 8).toUpperCase()}</span>
@@ -143,41 +107,13 @@ export default function ExpendioEstacion() {
           )}
         </div>
 
-        {/* Detalle */}
+        {/* Detalle: misma tarjeta de entrega que el panel */}
         <div className={styles.detalle}>
           {!sel ? (
             <div className={styles.detVacio}>👈 Seleccioná un pedido de la cola</div>
-          ) : cargandoDet ? (
-            <div className={styles.detVacio}>Cargando…</div>
-          ) : detalle ? (
-            <>
-              <div className={styles.detHead}>
-                <div>
-                  <div className={styles.detCodigo}>{detalle.hash.substring(0, 8).toUpperCase()}</div>
-                  <div className={styles.detFamilia}>{detalle.familia}</div>
-                </div>
-              </div>
-
-              <div className={styles.detTitulo}>ENTREGAR</div>
-              <ul className={styles.detItems}>
-                {detalle.items.map(it => (
-                  <li key={it.idproducto} className={`${styles.detItem} ${it.pendiente === 0 ? styles.detItemListo : ''}`}>
-                    <span className={styles.detCant}>{it.pendiente > 0 ? it.pendiente : '✓'}</span>
-                    <span className={styles.detNombre}>{it.titulo}</span>
-                    {it.pendiente === 0 && <span className={styles.detYa}>ya entregado</span>}
-                  </li>
-                ))}
-              </ul>
-
-              <button
-                className={styles.btnEntregar}
-                onClick={entregar}
-                disabled={entregando}
-              >
-                {entregando ? 'Procesando…' : totalPendiente > 0 ? `✓ Entregar (${totalPendiente})` : '✓ Quitar de la cola'}
-              </button>
-            </>
-          ) : null}
+          ) : (
+            <EntregaCard key={sel.id} hash={sel.hash} onEntregado={onEntregado} />
+          )}
         </div>
       </div>
     </div>

@@ -1,5 +1,17 @@
 const db = require('../config/db');
 
+// Devuelve el envío PENDIENTE (activo) de un pedido, si existe en cualquier
+// estación. Sirve para impedir que un pedido esté activo en dos a la vez.
+async function envioActivoDePedido(idpedido) {
+  const [rows] = await db.query(
+    `SELECT id, estacion FROM expendio_envios
+     WHERE idpedido = ? AND estado = 'PENDIENTE'
+     ORDER BY creado_en ASC LIMIT 1`,
+    [idpedido]
+  );
+  return rows[0] || null;
+}
+
 // Rutea un pedido a una estación (lo agrega a su cola de despacho).
 async function crear(idpedido, estacion, operador) {
   const [result] = await db.query(
@@ -32,4 +44,4 @@ async function marcarAtendido(id) {
   );
 }
 
-module.exports = { crear, listarCola, marcarAtendido };
+module.exports = { crear, listarCola, marcarAtendido, envioActivoDePedido };

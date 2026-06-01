@@ -1,31 +1,25 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { getPedidoExpendio, registrarEntrega, getHistorialExpendio, getPedidosExpendio, getEstaciones } from '../../api';
+import { getPedidosExpendio, getEstaciones } from '../../api';
 import toast from 'react-hot-toast';
+import EntregaCard from './EntregaCard';
 import styles from './Expendio.module.css';
 
 export default function ExpendioPanel() {
+  const [searchParams] = useSearchParams();
   const [hash, setHash] = useState('');
-  const [pedido, setPedido] = useState(null);
-  const [cantidades, setCantidades] = useState({});
-  const [historial, setHistorial] = useState([]);
+  // Deep-link desde la pantalla de estación: /expendio/panel?hash=XXXX abre el
+  // pedido directo para entregarlo (init lazy para no setState en el efecto).
+  const [hashAbierto, setHashAbierto] = useState(() => searchParams.get('hash') || null);
   const [pedidosLista, setPedidosLista] = useState([]);
   const [filtro, setFiltro] = useState('');
-  const [tab, setTab] = useState('entregar');
-  const [cargando, setCargando] = useState(false);
   const [cargandoLista, setCargandoLista] = useState(true);
   const [estaciones, setEstaciones] = useState([]);
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
 
   useEffect(() => {
     cargarLista();
     getEstaciones().then(setEstaciones).catch(() => {});
-    // Deep-link desde la pantalla de estación: /expendio/panel?hash=XXXX abre
-    // el pedido directo para entregarlo.
-    const h = searchParams.get('hash');
-    if (h) abrirPedido(h);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   async function cargarLista() {
@@ -40,85 +34,17 @@ export default function ExpendioPanel() {
     }
   }
 
-  async function abrirPedido(hashPedido) {
-    setHash(hashPedido);
-    setCargando(true);
-    try {
-      const [data, hist] = await Promise.all([
-        getPedidoExpendio(hashPedido),
-        getHistorialExpendio(hashPedido),
-      ]);
-      setPedido(data);
-      setHistorial(hist);
-      const init = {};
-      data.items.forEach(i => { init[i.idproducto] = 0; });
-      setCantidades(init);
-      setTab('entregar');
-    } catch (err) {
-      toast.error(err.response?.data?.error || 'Pedido no encontrado o no pagado');
-      setPedido(null);
-      setHistorial([]);
-    } finally {
-      setCargando(false);
-    }
-  }
-
-  async function buscarPedido(e) {
+  function buscarPedido(e) {
     e.preventDefault();
     const val = hash.trim();
-    if (!val) return;
-    abrirPedido(val);
+    if (val) setHashAbierto(val);
   }
 
   function volverAlListado() {
-    setPedido(null);
-    setHistorial([]);
+    setHashAbierto(null);
     setHash('');
     cargarLista();
   }
-
-  function seleccionarTodo() {
-    const init = {};
-    pedido.items.forEach(i => { init[i.idproducto] = i.pendiente; });
-    setCantidades(init);
-  }
-
-  function cambiar(idproducto, delta, max) {
-    setCantidades(c => {
-      const val = Math.min(Math.max(0, (c[idproducto] || 0) + delta), max);
-      return { ...c, [idproducto]: val };
-    });
-  }
-
-  async function handleEntregar() {
-    const items = pedido.items
-      .filter(i => cantidades[i.idproducto] > 0)
-      .map(i => ({ idproducto: i.idproducto, cantidad: cantidades[i.idproducto] }));
-
-    if (!items.length) { toast.error('Seleccioná al menos un ítem'); return; }
-
-    setCargando(true);
-    try {
-      const { idot } = await registrarEntrega(hash, items);
-      toast.success('Entrega registrada');
-      const [data, hist] = await Promise.all([
-        getPedidoExpendio(hash),
-        getHistorialExpendio(hash),
-      ]);
-      setPedido(data);
-      setHistorial(hist);
-      const init = {};
-      data.items.forEach(i => { init[i.idproducto] = 0; });
-      setCantidades(init);
-      window.open(`/expendio/boleta/${hash}/${idot}`, '_blank');
-    } catch (err) {
-      toast.error(err.response?.data?.error || 'Error al registrar entrega');
-    } finally {
-      setCargando(false);
-    }
-  }
-
-  const hayPendientes = pedido?.items.some(i => i.pendiente > 0);
 
   const listaFiltrada = pedidosLista.filter(p => {
     if (!filtro.trim()) return true;
@@ -153,7 +79,7 @@ export default function ExpendioPanel() {
       </header>
 
       <div className={styles.contenido}>
-        {!pedido && (
+        {!hashAbierto && (
           <>
             <form onSubmit={buscarPedido} className={styles.buscador}>
               <input
@@ -162,7 +88,7 @@ export default function ExpendioPanel() {
                 placeholder="Hash o código del pedido"
                 className={styles.inputHash}
               />
-              <button type="submit" disabled={cargando}>Buscar</button>
+              <button type="submit">Buscar</button>
             </form>
 
             <div className={styles.listaWrap}>
@@ -201,11 +127,7 @@ export default function ExpendioPanel() {
                             <span>{Number(p.total_entregado)}/{Number(p.total_items)} ítems</span>
                           </div>
                         </div>
-                        <button
-                          className={styles.btnAbrir}
-                          onClick={() => abrirPedido(p.hash)}
-                          disabled={cargando}
-                        >
+                        <button className={styles.btnAbrir} onClick={() => setHashAbierto(p.hash)}>
                           Abrir
                         </button>
                       </li>
@@ -217,129 +139,15 @@ export default function ExpendioPanel() {
           </>
         )}
 
-        {pedido && (
+        {hashAbierto && (
           <div className={styles.pedidoCard}>
             <button onClick={volverAlListado} className={styles.btnVolverLista} type="button">
               ← Volver al listado
             </button>
-
-            <div className={styles.pedidoHeader}>
-              <div>
-                <strong>{pedido.familia}</strong>
-                <span className={styles.codigo}> · {pedido.hash.substring(0, 8).toUpperCase()}</span>
-              </div>
-              <span className={`${styles.badge} ${pedido.estado === 'PAGADO' ? styles.pagado : styles.pendiente}`}>
-                {pedido.estado}
-              </span>
-            </div>
-
-            <div className={styles.tabs}>
-              <button
-                className={`${styles.tabBtn} ${tab === 'entregar' ? styles.tabActivo : ''}`}
-                onClick={() => setTab('entregar')}
-                type="button"
-              >
-                ENTREGAR
-              </button>
-              <button
-                className={`${styles.tabBtn} ${tab === 'retiros' ? styles.tabActivo : ''}`}
-                onClick={() => setTab('retiros')}
-                type="button"
-              >
-                RETIROS {historial.length > 0 && <span className={styles.badge2}>{historial.length}</span>}
-              </button>
-            </div>
-
-            {tab === 'entregar' && (
-              <>
-                <button
-                  className={styles.btnSelAll}
-                  onClick={seleccionarTodo}
-                  type="button"
-                  disabled={!hayPendientes}
-                >
-                  Seleccionar todos los saldos
-                </button>
-
-                <table className={styles.tabla}>
-                  <thead>
-                    <tr>
-                      <th>Producto</th>
-                      <th>Ped.</th>
-                      <th>Entregado</th>
-                      <th>Saldo</th>
-                      <th>A entregar</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {pedido.items.map(item => (
-                      <tr key={item.idproducto} style={{ background: item.pendiente === 0 ? '#f0fdf4' : 'white' }}>
-                        <td>{item.titulo}</td>
-                        <td>{item.cantidad}</td>
-                        <td>{item.entregado}</td>
-                        <td style={{ color: item.pendiente > 0 ? '#E63946' : '#22c55e', fontWeight: '700' }}>
-                          {item.pendiente}
-                        </td>
-                        <td>
-                          {item.pendiente > 0 ? (
-                            <div className={styles.plusMinus}>
-                              <button
-                                type="button"
-                                onClick={() => cambiar(item.idproducto, -1, item.pendiente)}
-                              >−</button>
-                              <span>{cantidades[item.idproducto] ?? 0}</span>
-                              <button
-                                type="button"
-                                onClick={() => cambiar(item.idproducto, 1, item.pendiente)}
-                              >+</button>
-                            </div>
-                          ) : (
-                            <span className={styles.yaEntregado}>✓</span>
-                          )}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-
-                {hayPendientes ? (
-                  <button className={styles.btnEntregar} onClick={handleEntregar} disabled={cargando}>
-                    {cargando ? 'Registrando...' : '✅ Registrar Entrega'}
-                  </button>
-                ) : (
-                  <div className={styles.todoEntregado}>TODOS LOS PRODUCTOS YA FUERON RETIRADOS</div>
-                )}
-              </>
-            )}
-
-            {tab === 'retiros' && (
-              <div className={styles.historialWrap}>
-                {historial.length === 0 ? (
-                  <em>No hay retiros registrados aún.</em>
-                ) : (
-                  <>
-                    <p className={styles.historialTitulo}>Boletas emitidas:</p>
-                    <ul className={styles.boletasList}>
-                      {historial.map(b => (
-                        <li key={b.idot} className={styles.boletaItem}>
-                          <a
-                            href={`/expendio/boleta/${hash}/${b.idot}`}
-                            target="_blank"
-                            rel="noreferrer"
-                            className={styles.boletaLink}
-                          >
-                            {b.idot.substring(0, 8).toUpperCase()}...
-                          </a>
-                          <span className={styles.fechaBoleta}>
-                            {new Date(b.fecha).toLocaleString('es-PY')}
-                          </span>
-                        </li>
-                      ))}
-                    </ul>
-                  </>
-                )}
-              </div>
-            )}
+            <EntregaCard
+              hash={hashAbierto}
+              onEntregado={({ idot }) => window.open(`/expendio/boleta/${hashAbierto}/${idot}`, '_blank')}
+            />
           </div>
         )}
       </div>

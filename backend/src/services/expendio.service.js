@@ -11,6 +11,7 @@ const ESTACIONES = [
   { id: 'exp3', label: 'Expendio 3' },
 ];
 const esEstacionValida = (id) => ESTACIONES.some(e => e.id === id);
+const labelEstacion = (id) => ESTACIONES.find(e => e.id === id)?.label || id;
 // Nombre de la room en el RTS para una estación.
 const scopeDe = (estacion) => `sanjuan-${estacion}`;
 
@@ -80,6 +81,13 @@ async function enviarAEstacion(hash, estacion, operador) {
   const pedido = await pedidoModel.buscarPorHash(hash);
   if (!pedido) throw new Error('Pedido no encontrado');
   if (pedido.estado !== 'PAGADO') throw new Error('El pedido no está pagado');
+
+  // Concurrencia: un pedido no puede estar activo en dos estaciones a la vez.
+  // Si ya tiene un envío PENDIENTE (no atendido), se rechaza hasta que se libere.
+  const activo = await envioModel.envioActivoDePedido(pedido.idpedido);
+  if (activo) {
+    throw new Error(`El pedido ya está activo en ${labelEstacion(activo.estacion)}`);
+  }
 
   const envioId = await envioModel.crear(pedido.idpedido, estacion, operador);
 
