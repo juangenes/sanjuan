@@ -1,8 +1,10 @@
 const router = require('express').Router();
 const pedidoModel = require('../models/pedido.model');
 const pedidoProductoModel = require('../models/pedidoProducto.model');
+const pedidoService = require('../services/pedido.service');
 const expendioService = require('../services/expendio.service');
 const bancard = require('../services/bancard.service');
+const { authAdmin } = require('../middleware/auth');
 const { notificarDespacho } = require('../utils/rtsClient');
 
 // ───────────────────────────────────────────────────────────────────────────
@@ -64,6 +66,7 @@ router.post('/qr', async (req, res) => {
       qrData: qr_express.qr_data,
       qrUrl: qr_express.url,
     });
+    console.log(`[bancard][qr] generado hook_alias=${qr_express.hook_alias} pedido=${pedido.idpedido} monto=${amount}`);
 
     res.json({
       success: true,
@@ -120,28 +123,45 @@ router.post('/callback', async (req, res) => {
       return res.status(400).json(fail('Payload inválido'));
     }
 
+    // Log de cada callback recibido (hook_alias + resultado) para certificación
+    // y diagnóstico: con esto se reportan los hook_alias a Bancard.
+    console.log(`[bancard][callback] hook_alias=${payment.hook_alias} status=${payment.status} response_code=${payment.response_code}`);
+
     const pedido = await pedidoModel.buscarPorHookAlias(payment.hook_alias);
     if (!pedido) {
       return res.status(404).json(fail(`Pedido no encontrado para ${payment.hook_alias}`));
     }
 
     // Si ya solicitamos la reversa, NO confirmamos: respondemos error (doc, recom. 3).
+    // Cubre el escenario 4.2: si llega un confirmed para un QR ya reversado.
     if (pedido.bancard_status === 'revert_requested' || pedido.bancard_status === 'reverted') {
       return res.json(fail('La venta fue cancelada por el comercio'));
     }
 
     const exito = payment.status === 'confirmed' && payment.response_code === '00';
+
+    // CERTIFICACIÓN — escenario 3 (Bancard notifica un pago EXITOSO pero el comercio
+    // no lo puede procesar → debe responder "recepción fallida" para que Bancard
+    // reverse). Lo disparamos de forma controlada y aislada: si el nombre del pedido
+    // contiene "CERTFAIL", simulamos esa falla. NO marca PAGADO; responde error.
+    if (exito && /CERTFAIL/i.test(pedido.familia || '')) {
+      console.log(`[bancard][callback] CERTFAIL → respondemos recepción-fallida (Bancard reversará) para ${payment.hook_alias}`);
+      await pedidoModel.actualizarStatusBancard(pedido.idpedido, 'failed');
+      return res.json(fail('No se pudo procesar la confirmacion'));
+    }
+
     if (exito) {
       await confirmarPagoPedido(pedido, {
         ticket: payment.ticket_number != null ? String(payment.ticket_number) : null,
         authorization: payment.authorization_code || null,
       });
     } else {
-      // Pago rechazado: registramos el resultado, el pedido sigue PENDIENTE.
+      // Pago fallido (insuf. fondos u otro): Bancard ya lo reversó de su lado.
+      // Acusamos recibo con SUCCESS (escenario 2). El pedido sigue PENDIENTE.
       await pedidoModel.actualizarStatusBancard(pedido.idpedido, 'failed');
     }
 
-    // En ambos casos recibimos correctamente la notificación → success.
+    // Recibimos correctamente la notificación (éxito o fallo) → success.
     return res.json(ok);
   } catch (err) {
     console.error('[bancard] Error en callback:', err.message);
@@ -176,6 +196,7 @@ router.post('/revertir', async (req, res) => {
       return res.json({ success: true, mock: true, reverse: 'reverted' });
     }
 
+    console.log(`[bancard][revert] hook_alias=${pedido.bancard_hook_alias} pedido=${pedido.idpedido}`);
     const { httpStatus, body } = await bancard.revertir(pedido.bancard_hook_alias);
     const reverseStatus = body?.reverse?.status || body?.payment?.status || body?.status;
     await pedidoModel.actualizarStatusBancard(pedido.idpedido, 'reverted');
@@ -187,6 +208,22 @@ router.post('/revertir', async (req, res) => {
   }
 });
 
+// POST /api/bancard/cert/pedido  { amount, nombre }  (solo admin)
+// Crea un pedido de CERTIFICACIÓN con monto arbitrario para las pruebas que pide
+// Bancard (p. ej. 900.000.000 para forzar pago fallido; nombre con "CERTFAIL"
+// para el escenario "confirmado pero no procesado"). Devuelve el hash para que
+// el front genere el QR con POST /qr. Lo usa la pantalla /cert.
+router.post('/cert/pedido', authAdmin, async (req, res) => {
+  try {
+    const { amount, nombre } = req.body || {};
+    const pedido = await pedidoService.crearCertPedido({ amount, nombre });
+    console.log(`[bancard][cert] pedido de prueba creado idpedido=${pedido.idpedido} monto=${pedido.total} nombre=${nombre || 'CERT'}`);
+    res.status(201).json({ success: true, pedido });
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
 // Confirma el pago de un pedido: lo marca PAGADO con los datos de Bancard y
 // dispara la comanda a RETIRO (consumo inmediato del tótem). Lo usan tanto el
 // callback real de Bancard como el auto-confirm del mockup, para no divergir.
@@ -195,6 +232,9 @@ router.post('/revertir', async (req, res) => {
 async function confirmarPagoPedido(pedido, { ticket = null, authorization = null } = {}) {
   if (pedido.estado === 'PAGADO') return;
   await pedidoModel.marcarPagadoBancard(pedido.idpedido, { ticket, authorization });
+  // Pedidos de certificación (origen 'cert'): no tienen ítems ni van a cocina;
+  // solo nos interesa verificar que el pago impacta. No disparamos comanda.
+  if (pedido.origen === 'cert') return;
   try {
     const items = await pedidoProductoModel.obtenerPorPedido(pedido.idpedido);
     // Etiqueta de origen para la comanda (caja / totem / tienda). Pedidos viejos

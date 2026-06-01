@@ -29,6 +29,9 @@ const METODOS = [
 ];
 
 const fmtGs = (n) => Number(n || 0).toLocaleString('es-PY');
+// Vida del QR de pago en pantalla: a los ~5 min sin acreditarse lo reversamos
+// en Bancard (recomendación de Bancard).
+const QR_VIDA_MS = 5 * 60 * 1000;
 // Precio del día: lista NORMAL (sin descuento de preventa). Cae al de preventa
 // solo si el producto no tiene precio normal cargado.
 const precioCaja = (p) => Number(p.precio_normal) || Number(p.precio_preventa) || 0;
@@ -187,7 +190,17 @@ export default function CajaPanel() {
     }
     timer = setTimeout(poll, 4000);
 
-    return () => { cancelado = true; clearTimeout(timer); };
+    // Vencimiento del QR: a los ~5 min sin pagarse, reversamos en Bancard y
+    // marcamos el QR como vencido (el cajero genera uno nuevo).
+    const vencer = setTimeout(() => {
+      if (cancelado) return;
+      cancelado = true;
+      clearTimeout(timer);
+      revertirBancard(hash).catch(() => {});
+      setQrPago(q => (q && q.hash === hash ? { ...q, vencido: true } : q));
+    }, QR_VIDA_MS);
+
+    return () => { cancelado = true; clearTimeout(timer); clearTimeout(vencer); };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [qrPago?.hash]);
 
@@ -234,7 +247,11 @@ export default function CajaPanel() {
             <h2>📱 Pago con QR</h2>
             <p className={styles.exitoLabel}>Total a pagar</p>
             <div className={styles.exitoCodigo}>Gs. {fmtGs(qrPago.total)}</div>
-            {qrPago.data ? (
+            {qrPago.vencido ? (
+              <p style={{ marginTop: '1rem', fontWeight: 700, color: '#856404' }}>
+                ⏳ El QR venció por tiempo y se canceló. Tocá «Cerrar» y generá uno nuevo.
+              </p>
+            ) : qrPago.data ? (
               <>
                 <div className={styles.exitoQr} style={{ marginTop: '1rem' }}>
                   <QRCodeSVG value={qrPago.data} size={240} />
@@ -252,7 +269,9 @@ export default function CajaPanel() {
               <p style={{ marginTop: '1rem' }}>Generando QR de pago…</p>
             )}
             <div className={styles.exitoBtns} style={{ marginTop: '1.5rem' }}>
-              <button className={styles.btnNuevo} onClick={cancelarQr}>✕ Cancelar</button>
+              <button className={styles.btnNuevo} onClick={cancelarQr}>
+                {qrPago.vencido ? 'Cerrar' : '✕ Cancelar'}
+              </button>
             </div>
           </div>
         </div>

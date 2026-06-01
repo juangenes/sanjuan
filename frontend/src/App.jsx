@@ -25,6 +25,7 @@ import TarjetasPanel from './pages/Tarjetas/TarjetasPanel';
 import RecuerdosAdmin from './pages/Recuerdos/RecuerdosAdmin';
 import RecuerdosTV from './pages/Recuerdos/RecuerdosTV';
 import RecuerdosGaleria from './pages/Recuerdos/RecuerdosGaleria';
+import CertBancard from './pages/Cert/CertBancard';
 
 export default function App() {
   return (
@@ -73,6 +74,7 @@ export default function App() {
           <Route path="/admin/usuarios" element={<AdminUsuarios />} />
           <Route path="/admin/puestos" element={<AdminPuestos />} />
           <Route path="/admin/ventas-producto" element={<AdminVentasProducto />} />
+          <Route path="/cert" element={<CertBancard />} />
 
           {/* Redirects desde rutas viejas (Organización / juegos) */}
           <Route path="/organizacion/expendio/*" element={<Navigate to="/retiro" replace />} />

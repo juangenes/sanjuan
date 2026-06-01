@@ -1,7 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { QRCodeSVG, QRCodeCanvas } from 'qrcode.react';
-import { getPedido, getRetirosPedido, generarQrBancard, getEstadoBancard } from '../../api';
+import { getPedido, getRetirosPedido, generarQrBancard, getEstadoBancard, revertirBancard } from '../../api';
+
+// Tiempo de vida del QR de pago en pantalla. Pasado este tiempo sin acreditarse,
+// reversamos el QR en Bancard (recomendación de Bancard: ~5 min + revert).
+const QR_VIDA_MS = 5 * 60 * 1000;
 import { compartirComprobante } from '../../utils/comprobante';
 import toast from 'react-hot-toast';
 import styles from './Confirmacion.module.css';
@@ -24,6 +28,7 @@ export default function Confirmacion() {
   const [descargando, setDescargando] = useState(false);
   const [qrPago, setQrPago] = useState(null);   // cadena EMVCo del QR de Bancard
   const [qrError, setQrError] = useState(false);
+  const [qrVencido, setQrVencido] = useState(false);
   const qrCanvasRef = useRef(null);
 
   useEffect(() => {
@@ -72,7 +77,17 @@ export default function Confirmacion() {
     }
     timer = setTimeout(poll, 4000);
 
-    return () => { cancelado = true; clearTimeout(timer); };
+    // Vencimiento del QR: a los ~5 min sin acreditarse, reversamos en Bancard y
+    // dejamos de pollear (el cliente puede recargar para generar uno nuevo).
+    const vencer = setTimeout(() => {
+      if (cancelado) return;
+      cancelado = true;
+      clearTimeout(timer);
+      revertirBancard(hash).catch(() => {});
+      setQrVencido(true);
+    }, QR_VIDA_MS);
+
+    return () => { cancelado = true; clearTimeout(timer); clearTimeout(vencer); };
   }, [pedido?.idpedido, pedido?.estado, pedido?.metodo_pago, hash]);
 
   if (loading) return <div className={styles.loading}>Cargando...</div>;
@@ -150,7 +165,11 @@ export default function Confirmacion() {
           <div className={styles.pagoQrBox}>
             <h3 className={styles.pagoQrTitulo}>Pagá tu pedido</h3>
             <p className={styles.pagoQrMonto}>Gs. {Number(pedido.total).toLocaleString('es-PY')}</p>
-            {qrPago ? (
+            {qrVencido ? (
+              <p className={styles.oAlternativa}>
+                ⏳ El código QR venció por tiempo. <strong>Recargá la página</strong> para generar uno nuevo.
+              </p>
+            ) : qrPago ? (
               <>
                 <div className={styles.qrWrap}>
                   <QRCodeSVG value={qrPago} size={220} />

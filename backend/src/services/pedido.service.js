@@ -93,6 +93,27 @@ async function crearPedido({ cedula, familia, contacto, items, metodo_pago }, op
   }
 }
 
+// Pedido de CERTIFICACIÓN Bancard: PENDIENTE, método INFONET, sin ítems, con un
+// monto arbitrario (p. ej. 900.000.000 para forzar un pago fallido). origen 'cert'
+// para que el callback NO dispare comanda y no contamine ventas. Solo sirve para
+// probar que las transacciones QR impactan correctamente.
+async function crearCertPedido({ amount, nombre }) {
+  const total = Math.round(Number(amount));
+  if (!Number.isFinite(total) || total <= 0) throw new Error('Monto inválido');
+  const idpedido = await pedidoModel.crear({
+    cedula: null,
+    familia: (nombre && nombre.trim()) || 'CERT',
+    contacto: '',
+    total,
+    metodo_pago: 'INFONET',
+    origen: 'cert',
+  });
+  const fecha = await pedidoModel.obtenerFecha(idpedido);
+  const hash = generarHash(idpedido, fecha);
+  await pedidoModel.actualizarHash(idpedido, hash);
+  return { idpedido, hash, total };
+}
+
 async function obtenerPedidoPublico(hash) {
   const pedido = await pedidoModel.buscarPorHash(hash);
   if (!pedido) return null;
@@ -100,4 +121,4 @@ async function obtenerPedidoPublico(hash) {
   return { ...pedido, items };
 }
 
-module.exports = { crearPedido, obtenerPedidoPublico, METODOS_COBRO };
+module.exports = { crearPedido, crearCertPedido, obtenerPedidoPublico, METODOS_COBRO };
