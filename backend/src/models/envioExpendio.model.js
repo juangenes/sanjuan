@@ -31,7 +31,7 @@ async function listarCola(estacion) {
      FROM expendio_envios e
      JOIN pedidos p ON p.idpedido = e.idpedido
      WHERE e.estacion = ? AND e.estado = 'PENDIENTE'
-     ORDER BY e.creado_en ASC`,
+     ORDER BY e.creado_en DESC`,
     [estacion]
   );
   return rows;
