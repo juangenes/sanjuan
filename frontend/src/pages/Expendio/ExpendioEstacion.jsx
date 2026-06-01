@@ -57,7 +57,6 @@ export default function ExpendioEstacion() {
   // que pueda enviarse a otra estación. No registra entrega.
   async function liberar() {
     if (!sel) return;
-    if (!window.confirm('¿Sacar este pedido de la cola sin entregarlo? Podrá enviarse a otra estación.')) return;
     try {
       await atenderEnvio(sel.id);
       toast.success('Pedido liberado');
