@@ -42,6 +42,7 @@ export default function CajaPanel() {
   const [cobroOpen, setCobroOpen] = useState(false);
   const [exito, setExito] = useState(null); // { codigo, hash, idpedido, vuelto, metodo, nombre, total, recibido, lineas }
   const [imprimiendo, setImprimiendo] = useState(false);
+  const [impreso, setImpreso] = useState(false);
   const [modo, setModo] = useState('nuevo'); // 'nuevo' (walk-in) | 'preventa' (retiro)
   const { items, agregar, quitar, limpiar } = useCarrito();
   const navigate = useNavigate();
@@ -107,6 +108,7 @@ export default function CajaPanel() {
     // pantalla de éxito (o el comensal escanea el QR sin imprimir).
     limpiar();
     setCobroOpen(false);
+    setImpreso(false);
     setExito({
       codigo,
       hash: pedido.hash,
@@ -140,6 +142,7 @@ export default function CajaPanel() {
         vuelto: exito.vuelto,
         items: exito.lineas,
       });
+      setImpreso(true);
       toast.success('Ticket enviado a la impresora');
     } catch (err) {
       toast.error(`No se imprimió: ${err.message}`);
@@ -166,8 +169,12 @@ export default function CajaPanel() {
             </div>
             <p className={styles.exitoNota}>La comanda salió en RETIRO. El comensal retira con este código.</p>
             <div className={styles.exitoBtns}>
-              <button className={styles.btnImprimir} onClick={imprimirTicket} disabled={imprimiendo}>
-                {imprimiendo ? 'Imprimiendo…' : '🖨 Imprimir ticket'}
+              <button
+                className={`${styles.btnImprimir} ${impreso ? styles.btnImpreso : ''}`}
+                onClick={imprimirTicket}
+                disabled={imprimiendo}
+              >
+                {imprimiendo ? 'Imprimiendo…' : impreso ? '✓ Ticket impreso · reimprimir' : '🖨 Imprimir ticket'}
               </button>
               <button className={styles.btnNuevo} onClick={() => setExito(null)}>＋ Nuevo pedido</button>
             </div>

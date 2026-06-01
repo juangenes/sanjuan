@@ -99,6 +99,7 @@
   cursor: pointer;
 }
 .btnImprimir:disabled { opacity: .55; cursor: default; }
+.btnImpreso { background: #eaf7ee; color: #0a7d2c; border-color: #0a7d2c; }
 .btnNuevo {
   width: 100%;
   background: #0B2E55;
