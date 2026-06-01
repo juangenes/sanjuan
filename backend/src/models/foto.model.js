@@ -1,10 +1,19 @@
 const db = require('../config/db');
 
-// Galería pública: solo fotos publicadas, más nuevas primero.
-async function listarPublicadas(limit = 300) {
+// Galería pública: solo publicadas, más nuevas primero (DESC). Paginación por
+// cursor para el scroll infinito: `before` trae las anteriores a ese id.
+async function listarPublicadas({ before = null, limit = 24 } = {}) {
+  const lim = Math.min(Math.max(Number(limit) || 24, 1), 300);
+  if (before) {
+    const [rows] = await db.query(
+      'SELECT id, url, marco, creado_en FROM fotos WHERE publicada = 1 AND id < ? ORDER BY id DESC LIMIT ?',
+      [Number(before), lim]
+    );
+    return rows;
+  }
   const [rows] = await db.query(
     'SELECT id, url, marco, creado_en FROM fotos WHERE publicada = 1 ORDER BY id DESC LIMIT ?',
-    [limit]
+    [lim]
   );
   return rows;
 }

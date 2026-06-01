@@ -39,10 +39,13 @@ const upload = multer({
   },
 });
 
-// GET /api/fotos — público. Fotos publicadas (galería + carrusel).
-router.get('/', async (_req, res) => {
+// GET /api/fotos?before=<id>&limit=<n> — público. Publicadas, DESC, paginado por
+// cursor (scroll infinito de la galería). El carrusel pide un límite más alto.
+router.get('/', async (req, res) => {
   try {
-    const fotos = await fotoModel.listarPublicadas();
+    const before = req.query.before ? Number(req.query.before) : null;
+    const limit = req.query.limit ? Number(req.query.limit) : 24;
+    const fotos = await fotoModel.listarPublicadas({ before, limit });
     res.json({ fotos });
   } catch (err) {
     res.status(500).json({ error: err.message });

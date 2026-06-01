@@ -89,8 +89,8 @@ export const generarQrBancard = (hash) => api.post('/bancard/qr', { hash }).then
 export const getEstadoBancard = (hash) => api.get(`/bancard/estado/${hash}`).then(r => r.data);
 export const revertirBancard = (hash) => api.post('/bancard/revertir', { hash }).then(r => r.data);
 
-// AUTO FOTO — galería de fotos del evento
-export const getFotos = () => api.get('/fotos').then(r => r.data.fotos);
+// AUTO FOTO — galería de fotos del evento. params: { before, limit }
+export const getFotos = (params) => api.get('/fotos', { params }).then(r => r.data.fotos);
 export const getFotosAdmin = () => api.get('/fotos/admin').then(r => r.data.fotos);
 export const subirFoto = (blob, marco) => {
   const fd = new FormData();

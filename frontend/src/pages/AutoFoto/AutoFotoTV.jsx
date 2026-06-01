@@ -23,7 +23,7 @@ export default function AutoFotoTV() {
 
   const cargar = useCallback(async (saltarAlInicio = false) => {
     try {
-      const lista = await getFotos();
+      const lista = await getFotos({ limit: 200 });
       const nuevas = lista.some(f => !idsRef.current.has(f.id));
       idsRef.current = new Set(lista.map(f => f.id));
       setFotos(lista);

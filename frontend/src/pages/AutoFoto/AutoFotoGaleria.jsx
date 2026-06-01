@@ -1,28 +1,105 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import toast from 'react-hot-toast';
 import { getFotos } from '../../api';
 import { suscribirScope } from '../../utils/rtsSocket';
 import styles from './AutoFotoGaleria.module.css';
 
 // Galería pública de AUTO FOTO (/fotos). La gente entra desde el QR del TV y baja
-// su foto ya con el marco de San Juan. Se actualiza en vivo por el RTS.
+// su foto ya con el marco de San Juan.
+//
+// Pro: orden DESC (más nuevas primero), scroll infinito por cursor (Intersection-
+// Observer), skeletons mientras carga, fade-in por imagen y cero salto de layout
+// (toda foto es 4:5, así el alto de cada celda está reservado de antemano).
+
+const LIMIT = 24;
+
+// Celda con fade-in: muestra un shimmer hasta que la imagen termina de cargar.
+function Celda({ foto, onAbrir, onDescargar }) {
+  const [cargada, setCargada] = useState(false);
+  return (
+    <figure className={`${styles.item} ${cargada ? styles.cargada : ''}`} onClick={() => onAbrir(foto)}>
+      <img
+        src={foto.url}
+        alt=""
+        loading="lazy"
+        decoding="async"
+        onLoad={() => setCargada(true)}
+        onError={() => setCargada(true)}
+      />
+      <button
+        className={styles.descargar}
+        onClick={(e) => { e.stopPropagation(); onDescargar(foto); }}
+      >
+        ⬇ Descargar
+      </button>
+    </figure>
+  );
+}
 
 export default function AutoFotoGaleria() {
   const [fotos, setFotos] = useState([]);
-  const [cargando, setCargando] = useState(true);
+  const [estado, setEstado] = useState('cargando'); // cargando | listo
+  const [cargandoMas, setCargandoMas] = useState(false);
+  const [hayMas, setHayMas] = useState(true);
   const [activa, setActiva] = useState(null); // foto abierta en el visor
+  const sentinela = useRef(null);
+  const idsRef = useRef(new Set());
 
-  const cargar = useCallback(async () => {
-    try { setFotos(await getFotos()); }
-    catch { /* mantenemos lo que haya */ }
-    finally { setCargando(false); }
+  const recordar = (lista) => lista.forEach(f => idsRef.current.add(f.id));
+
+  const cargarInicial = useCallback(async () => {
+    try {
+      const r = await getFotos({ limit: LIMIT });
+      idsRef.current = new Set(r.map(f => f.id));
+      setFotos(r);
+      setHayMas(r.length === LIMIT);
+    } catch { /* mantenemos lo que haya */ }
+    finally { setEstado('listo'); }
   }, []);
 
-  useEffect(() => { cargar(); }, [cargar]);
-  useEffect(() => suscribirScope('sanjuan-fotos', 'fotos', cargar), [cargar]);
+  const cargarMas = useCallback(async () => {
+    if (cargandoMas || !hayMas) return;
+    const ultima = fotos[fotos.length - 1];
+    if (!ultima) return;
+    setCargandoMas(true);
+    try {
+      const r = await getFotos({ before: ultima.id, limit: LIMIT });
+      const nuevas = r.filter(f => !idsRef.current.has(f.id));
+      recordar(nuevas);
+      setFotos(prev => [...prev, ...nuevas]);
+      setHayMas(r.length === LIMIT);
+    } catch { /* reintenta al volver a intersectar */ }
+    finally { setCargandoMas(false); }
+  }, [cargandoMas, hayMas, fotos]);
 
-  // Descarga forzada (blob) para que el navegador del celular guarde el archivo
-  // en vez de abrirlo en una pestaña.
+  // RTS: foto nueva/moderada → traemos la página más nueva y agregamos al frente
+  // lo que no teníamos (sin romper la posición de scroll del visitante).
+  const refrescarNuevas = useCallback(async () => {
+    try {
+      const r = await getFotos({ limit: LIMIT });
+      const nuevas = r.filter(f => !idsRef.current.has(f.id));
+      if (!nuevas.length) return;
+      recordar(nuevas);
+      setFotos(prev => [...nuevas, ...prev]);
+    } catch { /* noop */ }
+  }, []);
+
+  useEffect(() => { cargarInicial(); }, [cargarInicial]);
+  useEffect(() => suscribirScope('sanjuan-fotos', 'fotos', refrescarNuevas), [refrescarNuevas]);
+
+  // Scroll infinito: dispara cargarMas al acercarse el sentinel al viewport.
+  useEffect(() => {
+    const el = sentinela.current;
+    if (!el) return;
+    const ob = new IntersectionObserver(
+      (entradas) => { if (entradas[0].isIntersecting) cargarMas(); },
+      { rootMargin: '700px' }
+    );
+    ob.observe(el);
+    return () => ob.disconnect();
+  }, [cargarMas]);
+
+  // Descarga forzada (blob) para que el celular guarde el archivo en vez de abrirlo.
   async function descargar(foto) {
     try {
       const resp = await fetch(foto.url);
@@ -36,7 +113,6 @@ export default function AutoFotoGaleria() {
       a.remove();
       URL.revokeObjectURL(url);
     } catch {
-      // Fallback: abrir en pestaña nueva para guardar con "mantener presionado".
       window.open(foto.url, '_blank');
       toast('Mantené presionada la foto para guardarla', { icon: '💾' });
     }
@@ -54,27 +130,31 @@ export default function AutoFotoGaleria() {
         </div>
       </header>
 
-      {cargando ? (
-        <p className={styles.aviso}>Cargando fotos…</p>
+      {estado === 'cargando' ? (
+        <div className={styles.grid}>
+          {Array.from({ length: 12 }).map((_, i) => (
+            <div key={i} className={styles.skeleton} />
+          ))}
+        </div>
       ) : fotos.length === 0 ? (
         <div className={styles.vacio}>
           <div>📸</div>
           <p>Todavía no hay fotos publicadas. ¡Volvé en un rato!</p>
         </div>
       ) : (
-        <div className={styles.masonry}>
-          {fotos.map(f => (
-            <figure key={f.id} className={styles.item} onClick={() => setActiva(f)}>
-              <img src={f.url} alt="" loading="lazy" />
-              <button
-                className={styles.descargar}
-                onClick={(e) => { e.stopPropagation(); descargar(f); }}
-              >
-                ⬇ Descargar
-              </button>
-            </figure>
-          ))}
-        </div>
+        <>
+          <div className={styles.grid}>
+            {fotos.map(f => (
+              <Celda key={f.id} foto={f} onAbrir={setActiva} onDescargar={descargar} />
+            ))}
+          </div>
+
+          {/* Sentinel + estado de carga del scroll infinito */}
+          <div ref={sentinela} className={styles.sentinela}>
+            {cargandoMas && <span className={styles.spinner} />}
+            {!hayMas && <span className={styles.fin}>· fin ·</span>}
+          </div>
+        </>
       )}
 
       {activa && (
