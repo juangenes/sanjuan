@@ -1,16 +1,19 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { getPedidosExpendio, getEstaciones } from '../../api';
+import { getPedidosExpendio, getEstaciones, getPedidoExpendio, enviarAEstacion } from '../../api';
 import toast from 'react-hot-toast';
-import EntregaCard from './EntregaCard';
 import styles from './Expendio.module.css';
 
+// El panel es el RUTEADOR: busca un pedido (p.ej. quien llega sin QR) y lo
+// envía a una estación. La entrega ocurre solo en las estaciones, así un pedido
+// vive en una sola a la vez (concurrencia garantizada por el guard del backend).
 export default function ExpendioPanel() {
   const [searchParams] = useSearchParams();
   const [hash, setHash] = useState('');
-  // Deep-link desde la pantalla de estación: /expendio/panel?hash=XXXX abre el
-  // pedido directo para entregarlo (init lazy para no setState en el efecto).
-  const [hashAbierto, setHashAbierto] = useState(() => searchParams.get('hash') || null);
+  const [abierto, setAbierto] = useState(() => searchParams.get('hash') || null);
+  const [detalle, setDetalle] = useState(null);
+  const [cargandoDet, setCargandoDet] = useState(false);
+  const [enviando, setEnviando] = useState(false);
   const [pedidosLista, setPedidosLista] = useState([]);
   const [filtro, setFiltro] = useState('');
   const [cargandoLista, setCargandoLista] = useState(true);
@@ -22,11 +25,28 @@ export default function ExpendioPanel() {
     getEstaciones().then(setEstaciones).catch(() => {});
   }, []);
 
+  // Trae el detalle del pedido abierto (para confirmar antes de rutear).
+  useEffect(() => {
+    if (!abierto) return;
+    let cancel = false;
+    (async () => {
+      setCargandoDet(true);
+      try {
+        const d = await getPedidoExpendio(abierto);
+        if (!cancel) setDetalle(d);
+      } catch (err) {
+        if (!cancel) { toast.error(err.response?.data?.error || 'Pedido no encontrado o no pagado'); setAbierto(null); }
+      } finally {
+        if (!cancel) setCargandoDet(false);
+      }
+    })();
+    return () => { cancel = true; };
+  }, [abierto]);
+
   async function cargarLista() {
     setCargandoLista(true);
     try {
-      const data = await getPedidosExpendio();
-      setPedidosLista(data);
+      setPedidosLista(await getPedidosExpendio());
     } catch (err) {
       toast.error(err.response?.data?.error || 'Error al cargar pedidos');
     } finally {
@@ -34,16 +54,31 @@ export default function ExpendioPanel() {
     }
   }
 
-  function buscarPedido(e) {
+  function buscar(e) {
     e.preventDefault();
-    const val = hash.trim();
-    if (val) setHashAbierto(val);
+    const v = hash.trim();
+    if (v) setAbierto(v);
   }
 
-  function volverAlListado() {
-    setHashAbierto(null);
+  function volver() {
+    setAbierto(null);
     setHash('');
     cargarLista();
+  }
+
+  async function enviar(estId) {
+    setEnviando(true);
+    try {
+      const envio = await enviarAEstacion(abierto, estId);
+      const est = estaciones.find(e => e.id === estId);
+      toast.success(`${envio.familia} → ${est?.label || estId}`);
+      volver();
+    } catch (err) {
+      // El guard de concurrencia responde acá: "El pedido ya está activo en Expendio N"
+      toast.error(err.response?.data?.error || 'No se pudo enviar');
+    } finally {
+      setEnviando(false);
+    }
   }
 
   const listaFiltrada = pedidosLista.filter(p => {
@@ -59,7 +94,7 @@ export default function ExpendioPanel() {
   return (
     <div className={styles.pagina}>
       <header className={styles.header}>
-        <h1>🍖 Expendio</h1>
+        <h1>🍖 Expendio · Despacho</h1>
         <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', alignItems: 'center' }}>
           {estaciones.map(e => (
             <a
@@ -79,13 +114,13 @@ export default function ExpendioPanel() {
       </header>
 
       <div className={styles.contenido}>
-        {!hashAbierto && (
+        {!abierto && (
           <>
-            <form onSubmit={buscarPedido} className={styles.buscador}>
+            <form onSubmit={buscar} className={styles.buscador}>
               <input
                 value={hash}
                 onChange={e => setHash(e.target.value)}
-                placeholder="Hash o código del pedido"
+                placeholder="Hash, código, nombre o cédula"
                 className={styles.inputHash}
               />
               <button type="submit">Buscar</button>
@@ -127,8 +162,8 @@ export default function ExpendioPanel() {
                             <span>{Number(p.total_entregado)}/{Number(p.total_items)} ítems</span>
                           </div>
                         </div>
-                        <button className={styles.btnAbrir} onClick={() => setHashAbierto(p.hash)}>
-                          Abrir
+                        <button className={styles.btnAbrir} onClick={() => setAbierto(p.hash)}>
+                          Enviar →
                         </button>
                       </li>
                     );
@@ -139,15 +174,57 @@ export default function ExpendioPanel() {
           </>
         )}
 
-        {hashAbierto && (
+        {abierto && (
           <div className={styles.pedidoCard}>
-            <button onClick={volverAlListado} className={styles.btnVolverLista} type="button">
+            <button onClick={volver} className={styles.btnVolverLista} type="button">
               ← Volver al listado
             </button>
-            <EntregaCard
-              hash={hashAbierto}
-              onEntregado={({ idot }) => window.open(`/expendio/boleta/${hashAbierto}/${idot}`, '_blank')}
-            />
+
+            {cargandoDet ? (
+              <div style={{ padding: '2rem', textAlign: 'center', color: '#666' }}>Cargando…</div>
+            ) : detalle ? (
+              <>
+                <div className={styles.pedidoHeader}>
+                  <div>
+                    <strong>{detalle.familia}</strong>
+                    <span className={styles.codigo}> · {detalle.hash.substring(0, 8).toUpperCase()}</span>
+                  </div>
+                  <span className={`${styles.badge} ${detalle.estado === 'PAGADO' ? styles.pagado : styles.pendiente}`}>
+                    {detalle.estado}
+                  </span>
+                </div>
+
+                {/* Resumen read-only del pedido (el panel no entrega, solo rutea) */}
+                <ul className={styles.routeItems}>
+                  {detalle.items.map(it => (
+                    <li key={it.idproducto} className={styles.routeItem}>
+                      <span>{it.cantidad}x {it.titulo}</span>
+                      <span style={{ color: it.pendiente > 0 ? '#E63946' : '#22c55e', fontWeight: 700 }}>
+                        {it.pendiente > 0 ? `faltan ${it.pendiente}` : '✓ entregado'}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+
+                <div className={styles.routeLabel}>Enviar a estación:</div>
+                <div className={styles.routeEstaciones}>
+                  {estaciones.map(e => (
+                    <button
+                      key={e.id}
+                      className={styles.routeBtn}
+                      onClick={() => enviar(e.id)}
+                      disabled={enviando}
+                    >
+                      🖥 {e.label}
+                    </button>
+                  ))}
+                </div>
+                <p className={styles.routeHint}>
+                  El comensal pasa a retirar a esa estación. Si el pedido ya está activo en otra,
+                  el sistema te avisa y no lo duplica.
+                </p>
+              </>
+            ) : null}
           </div>
         )}
       </div>

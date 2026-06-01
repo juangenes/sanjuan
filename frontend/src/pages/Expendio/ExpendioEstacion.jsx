@@ -53,6 +53,20 @@ export default function ExpendioEstacion() {
     setSel(null);
   }
 
+  // Liberar: saca el pedido de esta cola SIN entregar (p.ej. se ruteó mal), para
+  // que pueda enviarse a otra estación. No registra entrega.
+  async function liberar() {
+    if (!sel) return;
+    if (!window.confirm('¿Sacar este pedido de la cola sin entregarlo? Podrá enviarse a otra estación.')) return;
+    try {
+      await atenderEnvio(sel.id);
+      toast.success('Pedido liberado');
+      quitarDeCola(sel.id);
+    } catch (err) {
+      toast.error(err.response?.data?.error || 'No se pudo liberar');
+    }
+  }
+
   // Tras una entrega: imprime la comanda interna y, si ya no queda saldo, marca
   // el envío atendido y lo saca de la cola. Entregas parciales lo dejan en cola.
   async function onEntregado({ idot, pedido }) {
@@ -112,7 +126,12 @@ export default function ExpendioEstacion() {
           {!sel ? (
             <div className={styles.detVacio}>👈 Seleccioná un pedido de la cola</div>
           ) : (
-            <EntregaCard key={sel.id} hash={sel.hash} onEntregado={onEntregado} />
+            <>
+              <EntregaCard key={sel.id} hash={sel.hash} onEntregado={onEntregado} />
+              <button className={styles.btnLiberar} onClick={liberar} type="button">
+                ✕ Liberar (sacar de la cola sin entregar)
+              </button>
+            </>
           )}
         </div>
       </div>

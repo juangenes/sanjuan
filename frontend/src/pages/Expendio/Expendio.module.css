@@ -317,3 +317,45 @@
   padding: 0;
   font-size: 0.9rem;
 }
+
+/* --- Panel como ruteador (Enviar a estación) --- */
+.routeItems {
+  list-style: none;
+  margin: 0 0 1.25rem;
+  padding: 0.5rem 0;
+  border-top: 1px solid #eee;
+  border-bottom: 1px solid #eee;
+}
+.routeItem {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.45rem 0.25rem;
+  font-size: 1rem;
+}
+.routeLabel {
+  font-weight: 800;
+  color: #0B2E55;
+  margin-bottom: 0.6rem;
+}
+.routeEstaciones {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 0.6rem;
+}
+.routeBtn {
+  background: #1d4ed8;
+  color: white;
+  border: none;
+  padding: 1.1rem;
+  border-radius: 12px;
+  font-size: 1.1rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+.routeBtn:disabled { opacity: 0.6; cursor: not-allowed; }
+.routeHint {
+  margin-top: 1rem;
+  color: #777;
+  font-size: 0.85rem;
+  text-align: center;
+}

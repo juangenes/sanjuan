@@ -145,3 +145,16 @@
   .split { flex-direction: column; }
   .lista { width: 100%; }
 }
+
+.btnLiberar {
+  width: 100%;
+  margin-top: 0.75rem;
+  background: white;
+  color: #E63946;
+  border: 1.5px solid #f3b5ba;
+  padding: 0.7rem;
+  border-radius: 10px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.btnLiberar:hover { background: #fff5f5; }
