@@ -72,7 +72,8 @@ export default function ExpendioPanel() {
       const envio = await enviarAEstacion(abierto, estId);
       const est = estaciones.find(e => e.id === estId);
       toast.success(`${envio.familia} → ${est?.label || estId}`);
-      volver();
+      // Abre la vista de esa estación para ver el pedido caer en su cola.
+      navigate(`/expendio/estacion/${estId}`);
     } catch (err) {
       // El guard de concurrencia responde acá: "El pedido ya está activo en Expendio N"
       toast.error(err.response?.data?.error || 'No se pudo enviar');
