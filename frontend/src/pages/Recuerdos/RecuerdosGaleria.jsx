@@ -124,7 +124,7 @@ export default function RecuerdosGaleria() {
         <div className={styles.brand}>
           <span className={styles.fuego}>🔥</span>
           <div>
-            <h1>RECUERDOS SAN JUAN</h1>
+            <h1>GALERÍA DE RECUERDOS SAN JUAN TORREFUERTE 2026</h1>
             <p>Bajá tu foto del San Juan</p>
           </div>
         </div>
