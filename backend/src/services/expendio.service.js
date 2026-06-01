@@ -2,7 +2,7 @@ const pedidoModel = require('../models/pedido.model');
 const pedidoProductoModel = require('../models/pedidoProducto.model');
 const entregaModel = require('../models/entrega.model');
 const envioModel = require('../models/envioExpendio.model');
-const { notificarEntidad } = require('../utils/rtsClient');
+const { notificarEntidad, notificarDespacho } = require('../utils/rtsClient');
 
 // Estaciones de despacho (fijas). Agregar/quitar editando esta lista.
 const ESTACIONES = [
@@ -56,6 +56,7 @@ async function registrarEntrega(hash, items, operador) {
   }
 
   const idot = await entregaModel.registrar(pedido.idpedido, items, operador);
+  notificarDespacho({ motivo: 'entrega', hash });
   return idot;
 }
 
@@ -99,6 +100,8 @@ async function enviarAEstacion(hash, estacion, operador) {
     actor: { usuario: operador },
     meta: { envioId, hash: pedido.hash, familia: pedido.familia, estacion },
   });
+  // Avisar también al panel (board en vivo) que cambió el estado de despacho.
+  notificarDespacho({ motivo: 'ruteado', hash: pedido.hash, estacion });
 
   return { envioId, hash: pedido.hash, familia: pedido.familia, estacion };
 }
@@ -110,6 +113,7 @@ async function obtenerCola(estacion) {
 
 async function atenderEnvio(id) {
   await envioModel.marcarAtendido(id);
+  notificarDespacho({ motivo: 'liberado', envioId: id });
 }
 
 module.exports = {

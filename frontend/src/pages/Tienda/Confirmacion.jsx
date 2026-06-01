@@ -171,9 +171,18 @@ export default function Confirmacion() {
           </div>
         ) : (
           <>
-            {/* El QR de retiro no se muestra en pantalla (nadie lo escanea acá);
-                va dentro del comprobante descargable. Solo mostramos el código. */}
             <p className={styles.codigoTop}>Código de pedido: <strong>{codigo}</strong></p>
+
+            {/* Una vez pagado, mostramos el QR en pantalla para retirar: el
+                expendio puede escanearlo directo del celular. */}
+            {pedido.estado === 'PAGADO' && (
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '.5rem', margin: '0.5rem 0 1rem' }}>
+                <div style={{ background: '#fff', padding: 12, borderRadius: 14, boxShadow: '0 2px 10px rgba(0,0,0,.12)' }}>
+                  <QRCodeSVG value={JSON.stringify({ hash, idpedido: pedido.idpedido })} size={220} />
+                </div>
+                <span style={{ fontSize: '.9rem', fontWeight: 700, color: '#0B2E55' }}>📲 Mostrá este QR al retirar tu pedido</span>
+              </div>
+            )}
 
             {/* QR oculto en <canvas> para poder exportar el comprobante como imagen */}
             <div ref={qrCanvasRef} style={{ position: 'absolute', left: '-9999px', top: 0 }} aria-hidden="true">

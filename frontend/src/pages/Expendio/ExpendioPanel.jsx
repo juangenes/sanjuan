@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { getPedidosExpendio, getEstaciones, getPedidoExpendio, enviarAEstacion } from '../../api';
+import { suscribirScope } from '../../utils/rtsSocket';
 import toast from 'react-hot-toast';
 import styles from './Expendio.module.css';
 
@@ -18,12 +19,23 @@ export default function ExpendioPanel() {
   const [filtro, setFiltro] = useState('');
   const [cargandoLista, setCargandoLista] = useState(true);
   const [estaciones, setEstaciones] = useState([]);
+  const [online, setOnline] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
     cargarLista();
     getEstaciones().then(setEstaciones).catch(() => {});
   }, []);
+
+  // Board en vivo: el RTS avisa (caja cobra, se rutea, se libera, se entrega) y
+  // refrescamos la lista en silencio (sin parpadeo de "Cargando").
+  useEffect(() => {
+    const cleanup = suscribirScope('sanjuan-despacho', 'expendio', () => cargarLista(true), setOnline);
+    return cleanup;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const labelEst = (id) => estaciones.find(e => e.id === id)?.label || id;
 
   // Trae el detalle del pedido abierto (para confirmar antes de rutear).
   useEffect(() => {
@@ -43,14 +55,14 @@ export default function ExpendioPanel() {
     return () => { cancel = true; };
   }, [abierto]);
 
-  async function cargarLista() {
-    setCargandoLista(true);
+  async function cargarLista(silent = false) {
+    if (!silent) setCargandoLista(true);
     try {
       setPedidosLista(await getPedidosExpendio());
     } catch (err) {
-      toast.error(err.response?.data?.error || 'Error al cargar pedidos');
+      if (!silent) toast.error(err.response?.data?.error || 'Error al cargar pedidos');
     } finally {
-      setCargandoLista(false);
+      if (!silent) setCargandoLista(false);
     }
   }
 
@@ -95,7 +107,18 @@ export default function ExpendioPanel() {
   return (
     <div className={styles.pagina}>
       <header className={styles.header}>
-        <h1>🍖 Expendio · Despacho</h1>
+        <h1>
+          🍖 Expendio · Despacho
+          <span
+            title={online ? 'En vivo' : 'Sin conexión'}
+            style={{
+              display: 'inline-block', width: 10, height: 10, borderRadius: '50%',
+              marginLeft: 10, verticalAlign: 'middle',
+              background: online ? '#22c55e' : '#E63946',
+              boxShadow: online ? '0 0 0 3px rgba(34,197,94,.25)' : 'none',
+            }}
+          />
+        </h1>
         <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', alignItems: 'center' }}>
           {estaciones.map(e => (
             <a
@@ -163,9 +186,23 @@ export default function ExpendioPanel() {
                             <span>{Number(p.total_entregado)}/{Number(p.total_items)} ítems</span>
                           </div>
                         </div>
-                        <button className={styles.btnAbrir} onClick={() => setAbierto(p.hash)}>
-                          Enviar →
-                        </button>
+                        {p.estacion_activa ? (
+                          <a
+                            href={`/expendio/estacion/${p.estacion_activa}`}
+                            target="_blank"
+                            rel="noreferrer"
+                            className={styles.btnAbrir}
+                            style={{ background: '#1d4ed8', textDecoration: 'none', display: 'inline-block', whiteSpace: 'nowrap' }}
+                          >
+                            🖥 En {labelEst(p.estacion_activa)}
+                          </a>
+                        ) : completo ? (
+                          <span style={{ color: '#22c55e', fontWeight: 700, fontSize: '0.85rem', whiteSpace: 'nowrap' }}>✓ entregado</span>
+                        ) : (
+                          <button className={styles.btnAbrir} onClick={() => setAbierto(p.hash)}>
+                            Enviar →
+                          </button>
+                        )}
                       </li>
                     );
                   })}

@@ -35,7 +35,10 @@ async function listarPagados() {
   const [rows] = await db.query(
     `SELECT p.idpedido, p.hash, p.fecha, p.cedula, p.familia, p.total,
             COALESCE(SUM(pp.cantidad), 0) AS total_items,
-            COALESCE(SUM(ent.entregado), 0) AS total_entregado
+            COALESCE(SUM(ent.entregado), 0) AS total_entregado,
+            (SELECT ev.estacion FROM expendio_envios ev
+              WHERE ev.idpedido = p.idpedido AND ev.estado = 'PENDIENTE'
+              ORDER BY ev.creado_en DESC LIMIT 1) AS estacion_activa
      FROM pedidos p
      LEFT JOIN pedidos_productos pp ON pp.idpedido = p.idpedido
      LEFT JOIN (

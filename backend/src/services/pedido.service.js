@@ -3,6 +3,7 @@ const pedidoModel = require('../models/pedido.model');
 const pedidoProductoModel = require('../models/pedidoProducto.model');
 const productoModel = require('../models/producto.model');
 const { generarHash } = require('../utils/hash');
+const { notificarDespacho } = require('../utils/rtsClient');
 
 const METODOS_COBRO = ['EFECTIVO', 'QR', 'TARJETA', 'TRANSFERENCIA'];
 
@@ -78,6 +79,8 @@ async function crearPedido({ cedula, familia, contacto, items, metodo_pago }, op
     }
 
     await conn.commit();
+    // Si la caja lo cobró (queda PAGADO), avisar al panel de despacho en vivo.
+    if (cobro) notificarDespacho({ motivo: 'caja', hash });
     return { idpedido, hash, total, vuelto };
   } catch (err) {
     await conn.rollback();

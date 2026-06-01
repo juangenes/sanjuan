@@ -32,4 +32,10 @@ async function notificarEntidad({ resource, action, id, scope, actor, meta }) {
   }
 }
 
-module.exports = { notificarEntidad };
+// Notifica al panel de despacho (board en vivo de pedidos pagados y su estado).
+// Fire-and-forget: self-catchea, no hay que await-earlo en el flujo de negocio.
+function notificarDespacho(meta) {
+  return notificarEntidad({ resource: 'expendio', action: 'despacho', scope: 'sanjuan-despacho', meta });
+}
+
+module.exports = { notificarEntidad, notificarDespacho };

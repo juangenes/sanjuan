@@ -3,6 +3,7 @@ const pedidoService = require('../services/pedido.service');
 const pedidoModel = require('../models/pedido.model');
 const entregaModel = require('../models/entrega.model');
 const { authAdmin } = require('../middleware/auth');
+const { notificarDespacho } = require('../utils/rtsClient');
 
 // Público — crear pedido
 router.post('/', async (req, res) => {
@@ -58,6 +59,7 @@ router.post('/:id/pagar', authAdmin, async (req, res) => {
     if (!pedido) return res.status(404).json({ error: 'Pedido no encontrado' });
     if (pedido.estado === 'PAGADO') return res.status(400).json({ error: 'Ya está pagado' });
     await pedidoModel.marcarPagado(req.params.id);
+    notificarDespacho({ motivo: 'admin-pagar', hash: pedido.hash });
     res.json({ success: true });
   } catch (err) {
     res.status(500).json({ error: err.message });
