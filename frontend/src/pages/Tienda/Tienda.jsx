@@ -209,7 +209,7 @@ function CheckoutModal({ total, items, onClose, onSuccess }) {
   const [familia, setFamilia] = useState('');
   const [telefono, setTelefono] = useState('');
   const [cedula, setCedula] = useState('');
-  const [metodo, setMetodo] = useState('TRANSFERENCIA');
+  const [metodo, setMetodo] = useState('INFONET');
   const [loading, setLoading] = useState(false);
 
   const formatPhone = (v) => {

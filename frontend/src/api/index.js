@@ -89,11 +89,6 @@ export const iniciarPago = (hash) => api.post('/bancard/iniciar', { hash }).then
 export const confirmarPagoMock = (hash) => api.post('/bancard/confirmar-mock', { hash }).then(r => r.data);
 
 // Bancard QR (Infonet)
-// Certificación Bancard (solo admin): crea un pedido de prueba con monto/nombre
-// arbitrarios y devuelve su hash para generar el QR. Ver pantalla /cert.
-export const crearCertPedidoBancard = (amount, nombre) =>
-  api.post('/bancard/cert/pedido', { amount, nombre }).then(r => r.data.pedido);
-
 export const generarQrBancard = (hash) => api.post('/bancard/qr', { hash }).then(r => r.data);
 export const getEstadoBancard = (hash) => api.get(`/bancard/estado/${hash}`).then(r => r.data);
 export const revertirBancard = (hash) => api.post('/bancard/revertir', { hash }).then(r => r.data);
