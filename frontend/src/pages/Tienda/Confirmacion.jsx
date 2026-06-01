@@ -329,7 +329,15 @@ export default function Confirmacion() {
         )}
       </div>
 
-      <button className={styles.btnVolver} onClick={() => navigate('/')}>
+      <button
+        className={styles.btnVolver}
+        onClick={() => {
+          // Si el cliente abandona el pago con QR pendiente, reversamos el QR en
+          // Bancard antes de salir (recomendación: cancelar = revert).
+          if (esperandoPagoQr && !qrVencido) revertirBancard(hash).catch(() => {});
+          navigate('/');
+        }}
+      >
         ← Volver a la tienda
       </button>
     </div>

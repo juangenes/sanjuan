@@ -39,7 +39,7 @@ const fmtGs = (n) => Number(n || 0).toLocaleString('es-PY');
 const precioTotem = (p) => Number(p.precio_normal) || Number(p.precio_preventa) || 0;
 
 // Segundos de inactividad en pantalla de pago/éxito antes de volver al inicio.
-const TIMEOUT_PAGO = 180;   // 3 min esperando que pague
+const TIMEOUT_PAGO = 300;   // 5 min esperando que pague (recomendación Bancard); al vencer se reversa el QR
 const TIMEOUT_EXITO = 30;   // 30 s para escanear el QR de retiro antes de auto-reiniciar
 
 function imgSrc(p) {

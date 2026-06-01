@@ -164,8 +164,11 @@ router.post('/callback', async (req, res) => {
     // Recibimos correctamente la notificación (éxito o fallo) → success.
     return res.json(ok);
   } catch (err) {
-    console.error('[bancard] Error en callback:', err.message);
-    return res.status(500).json(fail('No se pudo procesar la confirmacion'));
+    // Escenario 4.1: recibimos la confirmación pero NO pudimos finalizar la venta
+    // (p. ej. error de DB). Respondemos la estructura de "recepción fallida" en
+    // HTTP 200 para que Bancard la lea sin ambigüedad y reverse automáticamente.
+    console.error('[bancard] Error en callback (respondemos error → Bancard reversará):', err.message);
+    return res.status(200).json(fail('No se pudo procesar la confirmacion'));
   }
 });
 
