@@ -1,5 +1,7 @@
 const router = require('express').Router();
 const pedidoModel = require('../models/pedido.model');
+const pedidoProductoModel = require('../models/pedidoProducto.model');
+const expendioService = require('../services/expendio.service');
 const bancard = require('../services/bancard.service');
 const { notificarDespacho } = require('../utils/rtsClient');
 
@@ -124,9 +126,22 @@ router.post('/callback', async (req, res) => {
           ticket: payment.ticket_number != null ? String(payment.ticket_number) : null,
           authorization: payment.authorization_code || null,
         });
-        // Pago QR acreditado (tienda online / tótem): avisar al panel de despacho
-        // en vivo, igual que hace la caja al cobrar.
-        notificarDespacho({ motivo: 'bancard', hash: pedido.hash });
+        // Pago QR acreditado (tótem): consumo inmediato → disparar la comanda a
+        // RETIRO con todos los ítems (la cocina imprime y prepara; el comensal
+        // retira mostrando el QR de su celular). Defensivo: si falla, el pago igual
+        // quedó confirmado y la comanda puede re-dispararse desde caja.
+        try {
+          const items = await pedidoProductoModel.obtenerPorPedido(pedido.idpedido);
+          await expendioService.registrarEntrega(
+            pedido.hash,
+            items.map(i => ({ idproducto: i.idproducto, cantidad: i.cantidad })),
+            'totem'
+          );
+        } catch (e) {
+          console.error('[bancard] pago OK pero no se disparó la comanda a retiro:', e.message);
+          // Avisar al menos al panel de despacho para que aparezca el pedido pagado.
+          notificarDespacho({ motivo: 'bancard', hash: pedido.hash });
+        }
       }
     } else {
       // Pago rechazado: registramos el resultado, el pedido sigue PENDIENTE.

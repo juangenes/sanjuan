@@ -15,10 +15,8 @@ import AdminUsuarios from './pages/Admin/AdminUsuarios';
 import AdminVentasProducto from './pages/Admin/AdminVentasProducto';
 import AdminPuestos from './pages/Admin/AdminPuestos';
 import ExpendioLogin from './pages/Expendio/ExpendioLogin';
-import ExpendioPanel from './pages/Expendio/ExpendioPanel';
 import ExpendioBoleta from './pages/Expendio/ExpendioBoleta';
-import ExpendioScan from './pages/Expendio/ExpendioScan';
-import ExpendioEstacion from './pages/Expendio/ExpendioEstacion';
+import RetiroPantalla from './pages/Retiro/RetiroPantalla';
 import CajaLogin from './pages/Caja/CajaLogin';
 import CajaPanel from './pages/Caja/CajaPanel';
 import TotemPanel from './pages/Totem/TotemPanel';
@@ -43,12 +41,14 @@ export default function App() {
           {/* Consumo por puesto — abierto a los stands, por URL de puesto (/tarjetas/6a) */}
           <Route path="/tarjetas/:codigo" element={<TarjetasPanel />} />
 
-          {/* Expendio — acceso propio */}
+          {/* RETIRO — pantalla única que imprime/cuelga las comandas (fast food) */}
           <Route path="/expendio" element={<ExpendioLogin />} />
-          <Route path="/expendio/panel" element={<ExpendioPanel />} />
+          <Route path="/retiro" element={<RetiroPantalla />} />
           <Route path="/expendio/boleta/:hash/:idot" element={<ExpendioBoleta />} />
-          <Route path="/expendio/scan" element={<ExpendioScan />} />
-          <Route path="/expendio/estacion/:estacion" element={<ExpendioEstacion />} />
+          {/* Rutas viejas de despacho por estaciones → unificado */}
+          <Route path="/expendio/panel" element={<Navigate to="/caja/panel" replace />} />
+          <Route path="/expendio/scan" element={<Navigate to="/retiro" replace />} />
+          <Route path="/expendio/estacion/*" element={<Navigate to="/retiro" replace />} />
 
           {/* Caja — POS físico (cobro/confirmación) */}
           <Route path="/caja" element={<CajaLogin />} />
@@ -67,7 +67,7 @@ export default function App() {
           <Route path="/admin/ventas-producto" element={<AdminVentasProducto />} />
 
           {/* Redirects desde rutas viejas (Organización / juegos) */}
-          <Route path="/organizacion/expendio/*" element={<Navigate to="/expendio/panel" replace />} />
+          <Route path="/organizacion/expendio/*" element={<Navigate to="/retiro" replace />} />
           <Route path="/organizacion/expendio" element={<Navigate to="/expendio" replace />} />
           <Route path="/organizacion/carga" element={<Navigate to="/tarjetas" replace />} />
           <Route path="/organizacion/administracion/pedidos" element={<Navigate to="/admin/pedidos" replace />} />

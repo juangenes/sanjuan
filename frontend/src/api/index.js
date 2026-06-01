@@ -50,11 +50,9 @@ export const registrarEntrega = (hash, items) => api.post('/expendio/entregar', 
 export const getBoleta = (hash, idot) => api.get(`/expendio/boleta/${hash}/${idot}`).then(r => r.data.boleta);
 export const getHistorialExpendio = (hash) => api.get(`/expendio/historial/${hash}`).then(r => r.data.historial);
 
-// Despacho por estaciones (lector QR → cola)
-export const getEstaciones = () => api.get('/expendio/estaciones').then(r => r.data.estaciones);
-export const enviarAEstacion = (hash, estacion) => api.post('/expendio/enviar', { hash, estacion }).then(r => r.data.envio);
-export const getColaEstacion = (estacion) => api.get(`/expendio/cola/${estacion}`).then(r => r.data.cola);
-export const atenderEnvio = (id) => api.post(`/expendio/cola/${id}/atendido`).then(r => r.data);
+// RETIRO (pantalla única que imprime/cuelga las comandas)
+export const getColaRetiro = () => api.get('/expendio/cola-retiro').then(r => r.data.cola);
+export const marcarComandaImpresa = (id) => api.post(`/expendio/comanda/${id}/impresa`).then(r => r.data);
 
 // Caja (POS físico) — toma un pedido nuevo, lo cobra y lo deja PAGADO
 export const tomarPedidoCaja = (payload) => api.post('/caja/pedido', payload).then(r => r.data.pedido);

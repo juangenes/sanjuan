@@ -1,37 +1,27 @@
 const db = require('../config/db');
 
-// Devuelve el envío PENDIENTE (activo) de un pedido, si existe en cualquier
-// estación. Sirve para impedir que un pedido esté activo en dos a la vez.
-async function envioActivoDePedido(idpedido) {
-  const [rows] = await db.query(
-    `SELECT id, estacion FROM expendio_envios
-     WHERE idpedido = ? AND estado = 'PENDIENTE'
-     ORDER BY creado_en ASC LIMIT 1`,
-    [idpedido]
-  );
-  return rows[0] || null;
-}
+// Una "comanda" es un envío a RETIRO ligado a una entrega concreta (idot).
+// estado PENDIENTE = todavía no se imprimió/colgó en retiro; ATENDIDO = ya impresa.
 
-// Rutea un pedido a una estación (lo agrega a su cola de despacho).
-async function crear(idpedido, estacion, operador) {
+// Crea una comanda para retiro (la encola para que la pantalla la imprima).
+async function crear(idpedido, estacion, operador, idot) {
   const [result] = await db.query(
-    `INSERT INTO expendio_envios (idpedido, estacion, enviado_por) VALUES (?, ?, ?)`,
-    [idpedido, estacion, operador || null]
+    `INSERT INTO expendio_envios (idpedido, idot, estacion, enviado_por) VALUES (?, ?, ?, ?)`,
+    [idpedido, idot || null, estacion, operador || null]
   );
   return result.insertId;
 }
 
-// Cola pendiente de una estación, con datos del pedido para mostrar.
-async function listarCola(estacion) {
+// Comandas pendientes de imprimir en una estación (la pantalla de retiro las
+// toma, imprime y marca atendidas). Trae datos del pedido para la comanda.
+async function listarComandasPendientes(estacion) {
   const [rows] = await db.query(
-    `SELECT e.id, e.idpedido, e.estacion, e.creado_en, e.enviado_por,
-            p.hash, p.familia, p.cedula,
-            (SELECT COALESCE(SUM(pp.cantidad), 0)
-               FROM pedidos_productos pp WHERE pp.idpedido = p.idpedido) AS total_items
+    `SELECT e.id, e.idot, e.idpedido, e.creado_en, e.enviado_por,
+            p.hash, p.familia, p.cedula
      FROM expendio_envios e
      JOIN pedidos p ON p.idpedido = e.idpedido
      WHERE e.estacion = ? AND e.estado = 'PENDIENTE'
-     ORDER BY e.creado_en DESC`,
+     ORDER BY e.creado_en ASC`,
     [estacion]
   );
   return rows;
@@ -44,4 +34,4 @@ async function marcarAtendido(id) {
   );
 }
 
-module.exports = { crear, listarCola, marcarAtendido, envioActivoDePedido };
+module.exports = { crear, listarComandasPendientes, marcarAtendido };

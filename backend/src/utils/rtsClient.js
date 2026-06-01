@@ -38,4 +38,10 @@ function notificarDespacho(meta) {
   return notificarEntidad({ resource: 'expendio', action: 'despacho', scope: 'sanjuan-despacho', meta });
 }
 
-module.exports = { notificarEntidad, notificarDespacho };
+// Avisa a la pantalla de RETIRO que cayó una comanda nueva para imprimir/colgar.
+// Scope único (no hay estaciones): todas las comandas van a la misma pantalla.
+function notificarRetiro(meta) {
+  return notificarEntidad({ resource: 'expendio', action: 'comanda', scope: 'sanjuan-retiro', meta });
+}
+
+module.exports = { notificarEntidad, notificarDespacho, notificarRetiro };

@@ -155,6 +155,43 @@ export async function imprimirBoleta(boleta, meta) {
   return enviarAImpresora(ip, comandos);
 }
 
+// Imprime la COMANDA que cae en RETIRO (modelo fast food): la cocina la imprime
+// y la cuelga en el riel. `comanda` = { codigo, familia, idot, creado_en, items }
+// donde items = [{ titulo, cantidad }]. Es de uso interno (qué preparar).
+export async function imprimirComandaRetiro(comanda) {
+  const ip = getTicketeraIP();
+  if (!ip) {
+    const err = new Error('No hay IP de ticketera configurada');
+    err.code = 'SIN_IP';
+    throw err;
+  }
+
+  const fecha = comanda.creado_en
+    ? new Date(comanda.creado_en).toLocaleString('es-PY')
+    : new Date().toLocaleString('es-PY');
+  const items = comanda.items || [];
+
+  const comandos = [
+    { text: 'RETIRO', align: 'center', bold: true, dw: true, dh: true },
+    { text: separador() },
+    { text: 'CODIGO', align: 'center' },
+    { text: comanda.codigo, align: 'center', bold: true, dw: true, dh: true },
+    { text: separador() },
+    { text: `Nombre:  ${comanda.familia || ''}` },
+    { text: `Hora:    ${fecha}` },
+    { text: separador() },
+    { text: 'PREPARAR', bold: true },
+    { text: separador() },
+    // Cantidad grande a la izquierda para que el armador no se equivoque.
+    ...items.map(it => ({ text: `${it.cantidad} x ${it.titulo}`, bold: true, dh: true })),
+    { text: separador() },
+    { feed: 3 },
+    { cut: true },
+  ];
+
+  return enviarAImpresora(ip, comandos);
+}
+
 // Imprime el TICKET DE PEDIDO que se lleva el comensal (su comprobante para
 // retirar en expendio). `data` = { codigo, hash, nombre, total, metodo, recibido,
 // vuelto, operador, items:[{ titulo, cantidad, subtotal }] }.
@@ -204,7 +241,7 @@ export async function imprimirTicketPedido(data) {
     { text: separador() },
     { feed: 1 },
     { text: '✓ PAGADO', align: 'center', bold: true, dw: true },
-    { text: 'Retiralo en EXPENDIO', align: 'center' },
+    { text: 'Retiralo en RETIRO', align: 'center' },
     { text: 'mostrando este codigo', align: 'center' },
     { feed: 3 },
     { cut: true },
