@@ -1,0 +1,67 @@
+/* Galería pública AUTO FOTO (/fotos). */
+.pagina {
+  min-height: 100vh;
+  background: radial-gradient(120% 70% at 50% 0%, #1a2a3a 0%, #0b1622 55%);
+  color: #e7edf5;
+}
+
+.header {
+  padding: 1.4rem 1.2rem;
+  position: sticky; top: 0; z-index: 5;
+  background: rgba(11, 22, 34, 0.85); backdrop-filter: blur(10px);
+  border-bottom: 1px solid #1d3346;
+}
+.brand { display: flex; align-items: center; gap: 0.8rem; max-width: 1100px; margin: 0 auto; }
+.fuego { font-size: 2.4rem; }
+.brand h1 {
+  margin: 0; font-size: 1.6rem; letter-spacing: 0.05em;
+  background: linear-gradient(135deg, #ff5722, #ffd166); -webkit-background-clip: text;
+  background-clip: text; color: transparent;
+}
+.brand p { margin: 0.1rem 0 0; color: #8aa0b6; font-size: 0.9rem; }
+
+.aviso { text-align: center; color: #6b8197; padding: 4rem 1rem; }
+.vacio { text-align: center; color: #6b8197; padding: 5rem 1rem; }
+.vacio div { font-size: 4rem; margin-bottom: 0.5rem; }
+
+/* Masonry por columnas. */
+.masonry {
+  max-width: 1100px; margin: 0 auto; padding: 1.2rem;
+  column-count: 2; column-gap: 0.9rem;
+}
+@media (min-width: 700px) { .masonry { column-count: 3; } }
+@media (min-width: 1000px) { .masonry { column-count: 4; } }
+
+.item {
+  position: relative; margin: 0 0 0.9rem; break-inside: avoid;
+  border-radius: 14px; overflow: hidden; cursor: pointer;
+  background: #16283a; box-shadow: 0 8px 22px rgba(0,0,0,.35);
+}
+.item img { width: 100%; display: block; }
+.descargar {
+  position: absolute; bottom: 8px; right: 8px;
+  background: rgba(255, 87, 34, 0.95); color: #fff; border: none;
+  border-radius: 999px; padding: 0.45rem 0.8rem; font-weight: 800; font-size: 0.8rem;
+  cursor: pointer; opacity: 0; transition: opacity 0.2s; backdrop-filter: blur(4px);
+}
+.item:hover .descargar { opacity: 1; }
+@media (hover: none) { .descargar { opacity: 1; } } /* en celu siempre visible */
+
+/* Visor (lightbox). */
+.visor {
+  position: fixed; inset: 0; z-index: 20;
+  background: rgba(3, 6, 10, 0.92); backdrop-filter: blur(6px);
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1rem; padding: 1rem;
+}
+.visor img { max-width: 92vw; max-height: 78vh; object-fit: contain; border-radius: 12px; }
+.cerrar {
+  position: absolute; top: 1rem; right: 1rem; background: rgba(255,255,255,0.12);
+  color: #fff; border: none; width: 44px; height: 44px; border-radius: 50%;
+  font-size: 1.3rem; cursor: pointer;
+}
+.visorDl {
+  background: linear-gradient(135deg, #ff5722, #ff8a00); color: #fff; border: none;
+  border-radius: 12px; padding: 0.9rem 1.6rem; font-weight: 900; font-size: 1rem; cursor: pointer;
+}
+
+.footer { text-align: center; color: #5a7088; padding: 2rem 1rem; font-weight: 700; }

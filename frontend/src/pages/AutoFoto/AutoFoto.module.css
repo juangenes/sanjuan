@@ -1,0 +1,87 @@
+/* AUTO FOTO — captura + moderación (mobile-first, se usa desde el celular). */
+.admin {
+  min-height: 100vh;
+  background: radial-gradient(120% 80% at 50% 0%, #1a2a3a 0%, #0b1622 60%);
+  color: #e7edf5;
+  display: flex;
+  flex-direction: column;
+}
+
+.adminHeader {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.8rem 1rem;
+  background: rgba(13, 26, 38, 0.85);
+  backdrop-filter: blur(8px);
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  border-bottom: 1px solid #1d3346;
+}
+.adminHeader h1 { margin: 0; font-size: 1.15rem; white-space: nowrap; }
+.tabs { display: flex; gap: 0.4rem; margin-left: auto; }
+.tab, .tabActive {
+  border: none; border-radius: 999px; padding: 0.4rem 0.9rem;
+  font-weight: 800; cursor: pointer; font-size: 0.85rem;
+}
+.tab { background: #24384c; color: #b9cbe0; }
+.tabActive { background: linear-gradient(135deg, #ff5722, #ffd166); color: #1a1004; }
+.salir { background: transparent; color: #7c93a8; border: none; cursor: pointer; font-size: 0.85rem; }
+
+/* ── Captura ── */
+.capturar { display: flex; flex-direction: column; align-items: center; gap: 1rem; padding: 1rem; }
+.lienzoWrap {
+  position: relative; width: 100%; max-width: 420px;
+  aspect-ratio: 4 / 5; border-radius: 16px; overflow: hidden;
+  background: #10202e; box-shadow: 0 14px 40px rgba(0,0,0,.45);
+}
+.lienzo { width: 100%; height: 100%; display: block; }
+.placeholder {
+  position: absolute; inset: 0; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: 0.6rem; color: #6b8197; pointer-events: none;
+}
+.phEmoji { font-size: 3rem; }
+
+.controles { width: 100%; max-width: 420px; display: flex; flex-direction: column; gap: 0.7rem; }
+.zoomRow { display: flex; align-items: center; gap: 0.6rem; }
+.zoomRow input { flex: 1; accent-color: #ff5722; }
+.marcos { display: flex; flex-wrap: wrap; gap: 0.45rem; }
+.marcoBtn, .marcoActivo {
+  border: 1px solid #2c4661; border-radius: 999px; padding: 0.4rem 0.8rem;
+  font-weight: 700; cursor: pointer; font-size: 0.82rem; background: #16283a; color: #cfe0f0;
+}
+.marcoActivo { background: linear-gradient(135deg, #ff5722, #ffd166); color: #1a1004; border-color: transparent; }
+.tip { margin: 0; text-align: center; color: #6b8197; font-size: 0.78rem; }
+
+.acciones { width: 100%; max-width: 420px; display: flex; gap: 0.7rem; padding-bottom: 1rem; }
+.btnPrimario, .btnSecundario {
+  flex: 1; border: none; border-radius: 12px; padding: 0.9rem;
+  font-weight: 900; font-size: 1rem; cursor: pointer;
+}
+.btnPrimario { background: linear-gradient(135deg, #ff5722, #ff8a00); color: #fff; }
+.btnPrimario:disabled { opacity: 0.6; }
+.btnSecundario { background: #24384c; color: #cfe0f0; }
+
+/* ── Moderación ── */
+.moderar { padding: 1rem; }
+.moderarTop { display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.8rem; color: #b9cbe0; }
+.moderarTop .btnSecundario { flex: none; padding: 0.5rem 0.9rem; border-radius: 999px; font-size: 0.82rem; }
+.aviso { text-align: center; color: #6b8197; padding: 3rem 1rem; }
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 0.7rem; }
+.tile {
+  position: relative; border-radius: 12px; overflow: hidden;
+  background: #16283a; border: 1px solid #244a66;
+}
+.tile img { width: 100%; aspect-ratio: 4 / 5; object-fit: cover; display: block; }
+.oculta img { opacity: 0.4; filter: grayscale(0.6); }
+.badge {
+  position: absolute; top: 6px; left: 6px; background: #7f1d1d; color: #fff;
+  font-size: 0.7rem; font-weight: 800; padding: 0.15rem 0.5rem; border-radius: 6px;
+}
+.tileBtns { display: flex; gap: 0.3rem; padding: 0.4rem; }
+.tileBtns button {
+  flex: 1; border: none; border-radius: 8px; padding: 0.45rem; cursor: pointer;
+  font-weight: 700; font-size: 0.78rem; background: #24384c; color: #cfe0f0;
+}
+.tileBtns .del { flex: none; background: #7f1d1d; color: #fff; }

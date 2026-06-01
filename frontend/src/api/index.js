@@ -89,6 +89,20 @@ export const generarQrBancard = (hash) => api.post('/bancard/qr', { hash }).then
 export const getEstadoBancard = (hash) => api.get(`/bancard/estado/${hash}`).then(r => r.data);
 export const revertirBancard = (hash) => api.post('/bancard/revertir', { hash }).then(r => r.data);
 
+// AUTO FOTO — galería de fotos del evento
+export const getFotos = () => api.get('/fotos').then(r => r.data.fotos);
+export const getFotosAdmin = () => api.get('/fotos/admin').then(r => r.data.fotos);
+export const subirFoto = (blob, marco) => {
+  const fd = new FormData();
+  fd.append('foto', blob, `sanjuan-${Date.now()}.jpg`);
+  if (marco) fd.append('marco', marco);
+  return api.post('/fotos', fd, { headers: { 'Content-Type': 'multipart/form-data' } })
+    .then(r => r.data.foto);
+};
+export const moderarFoto = (id, publicada) =>
+  api.patch(`/fotos/${id}`, { publicada }).then(r => r.data);
+export const eliminarFoto = (id) => api.delete(`/fotos/${id}`).then(r => r.data);
+
 // Usuarios
 export const getUsuarios = () => api.get('/usuarios').then(r => r.data.usuarios);
 export const crearUsuario = (datos) => api.post('/usuarios', datos).then(r => r.data);

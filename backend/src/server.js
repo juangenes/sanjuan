@@ -22,6 +22,7 @@ app.use('/api/tarjetas',  require('./routes/tarjetas.routes'));
 app.use('/api/puestos',   require('./routes/puestos.routes'));
 app.use('/api/bancard',   require('./routes/bancard.routes'));
 app.use('/api/upload',    require('./routes/upload.routes'));
+app.use('/api/fotos',     require('./routes/fotos.routes'));
 
 app.get('/api/health', (req, res) => res.json({ status: 'ok' }));
 

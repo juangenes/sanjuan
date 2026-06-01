@@ -22,6 +22,9 @@ import CajaPanel from './pages/Caja/CajaPanel';
 import TotemPanel from './pages/Totem/TotemPanel';
 import TarjetasOperador from './pages/Tarjetas/TarjetasOperador';
 import TarjetasPanel from './pages/Tarjetas/TarjetasPanel';
+import AutoFotoAdmin from './pages/AutoFoto/AutoFotoAdmin';
+import AutoFotoTV from './pages/AutoFoto/AutoFotoTV';
+import AutoFotoGaleria from './pages/AutoFoto/AutoFotoGaleria';
 
 export default function App() {
   return (
@@ -56,6 +59,11 @@ export default function App() {
 
           {/* Tótem — autoservicio (pantalla táctil, pago con QR Bancard) */}
           <Route path="/totem" element={<TotemPanel />} />
+
+          {/* AUTO FOTO — galería pública + carrusel en TVs + captura/moderación */}
+          <Route path="/fotos" element={<AutoFotoGaleria />} />
+          <Route path="/fotos/tv" element={<AutoFotoTV />} />
+          <Route path="/fotos/admin" element={<AutoFotoAdmin />} />
 
           {/* Admin — oculto, se entra tecleando /admin (sin links en ninguna página) */}
           <Route path="/admin" element={<AdminLogin />} />

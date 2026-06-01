@@ -1,0 +1,74 @@
+/* Carrusel AUTO FOTO para televisores (fullscreen). */
+.tv {
+  position: fixed; inset: 0; overflow: hidden;
+  background: #05080c; color: #fff;
+  font-family: system-ui, sans-serif;
+}
+
+/* Fondo: copia desenfocada de la foto actual para llenar la pantalla. */
+.fondo {
+  position: absolute; inset: -5%;
+  background-size: cover; background-position: center;
+  filter: blur(40px) brightness(0.45) saturate(1.2);
+  transform: scale(1.1);
+  transition: background-image 0.6s ease;
+}
+
+.escena { position: absolute; inset: 0; display: grid; place-items: center; }
+.foto {
+  grid-area: 1 / 1; max-width: 78vw; max-height: 92vh;
+  object-fit: contain; border-radius: 14px;
+  box-shadow: 0 30px 80px rgba(0,0,0,.6);
+}
+/* Fundido de entrada + leve Ken Burns (se re-dispara al montar cada foto). */
+.foto.activa { animation: aparecer 6s ease forwards; }
+@keyframes aparecer {
+  0%   { opacity: 0; transform: scale(0.96); }
+  12%  { opacity: 1; }
+  100% { opacity: 1; transform: scale(1.03); }
+}
+
+.espera {
+  position: absolute; inset: 0; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: 0.5rem; text-align: center;
+}
+.esperaEmoji { font-size: 5rem; }
+.espera h1 {
+  margin: 0; font-size: 3.5rem; letter-spacing: 0.1em;
+  background: linear-gradient(135deg, #ff5722, #ffd166); -webkit-background-clip: text;
+  background-clip: text; color: transparent;
+}
+.espera p { color: #8aa0b6; font-size: 1.3rem; }
+
+/* Marca arriba-izquierda. */
+.marca {
+  position: absolute; top: 1.6rem; left: 1.6rem; z-index: 3;
+  display: flex; align-items: center; gap: 0.7rem;
+  background: rgba(8, 14, 20, 0.55); backdrop-filter: blur(10px);
+  padding: 0.7rem 1.1rem; border-radius: 999px; border: 1px solid rgba(255,255,255,.12);
+}
+.fuego { font-size: 2rem; }
+.marcaTit { font-weight: 900; font-size: 1.5rem; letter-spacing: 0.06em; }
+.marcaSub { font-size: 0.95rem; color: #ffd166; }
+.dot { width: 12px; height: 12px; border-radius: 50%; margin-left: 0.4rem; }
+.dotOn { background: #22c55e; box-shadow: 0 0 0 4px rgba(34,197,94,.25); }
+.dotOff { background: #e63946; }
+
+/* Tarjeta de QR abajo-derecha. */
+.qrCard {
+  position: absolute; bottom: 1.8rem; right: 1.8rem; z-index: 3;
+  display: flex; align-items: center; gap: 0.9rem;
+  background: rgba(255,255,255,0.95); color: #0b1622;
+  padding: 0.9rem 1.1rem; border-radius: 16px; box-shadow: 0 12px 30px rgba(0,0,0,.5);
+}
+.qrCard span { font-size: 1.05rem; line-height: 1.25; }
+.qrCard strong { color: #c2410c; }
+
+/* Puntos de progreso abajo-centro. */
+.puntos {
+  position: absolute; bottom: 1.6rem; left: 50%; transform: translateX(-50%);
+  z-index: 3; display: flex; gap: 0.5rem;
+}
+.punto, .puntoOn { width: 10px; height: 10px; border-radius: 50%; transition: all 0.3s; }
+.punto { background: rgba(255,255,255,0.3); }
+.puntoOn { background: #ffd166; width: 26px; border-radius: 6px; }
