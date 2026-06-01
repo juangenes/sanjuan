@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
-import { getProductos, tomarPedidoCaja } from '../../api';
+import { getProductos, tomarPedidoCaja, getPedidosExpendio } from '../../api';
 import { useCarrito } from '../../context/CarritoContext';
 import { imprimirTicketPedido, getTicketeraIP, setTicketeraIP } from '../../utils/eposPrint';
+import EntregaCard from '../Expendio/EntregaCard';
 import '../Tienda/tienda-desktop.css';
 import styles from './Caja.module.css';
 
@@ -39,6 +40,7 @@ export default function CajaPanel() {
   const [search, setSearch] = useState('');
   const [cobroOpen, setCobroOpen] = useState(false);
   const [exito, setExito] = useState(null); // { codigo, vuelto, metodo }
+  const [modo, setModo] = useState('nuevo'); // 'nuevo' (walk-in) | 'preventa' (retiro)
   const { items, agregar, quitar, limpiar } = useCarrito();
   const navigate = useNavigate();
 
@@ -137,7 +139,7 @@ export default function CajaPanel() {
             {exito.metodo === 'EFECTIVO' && (
               <div className={styles.exitoVuelto}>Vuelto: Gs. {fmtGs(exito.vuelto)}</div>
             )}
-            <p className={styles.exitoNota}>El comensal retira en EXPENDIO con este código.</p>
+            <p className={styles.exitoNota}>La comanda salió en RETIRO. El comensal retira con este código.</p>
             <button className={styles.btnNuevo} onClick={() => setExito(null)}>＋ Nuevo pedido</button>
           </div>
         </div>
@@ -152,11 +154,16 @@ export default function CajaPanel() {
           <div><h1>💵 Caja · San Juan 2026</h1></div>
         </div>
         <nav className="td-header-nav">
+          <a className={modo === 'nuevo' ? 'activo' : ''} onClick={() => setModo('nuevo')}>🛒 Nuevo pedido</a>
+          <a className={modo === 'preventa' ? 'activo' : ''} onClick={() => setModo('preventa')}>🎫 Preventa / Retiro</a>
           <a onClick={configurarIp}>⚙ IP ticketera</a>
           <a onClick={() => { limpiar(); localStorage.clear(); navigate('/caja'); }}>Salir</a>
         </nav>
       </header>
 
+      {modo === 'preventa' && <PreventaRetiro />}
+
+      {modo === 'nuevo' && (<>
       <main className="td-main">
         <div className="td-toolbar">
           <div className="td-tabs">
@@ -263,11 +270,103 @@ export default function CajaPanel() {
           </div>
         )}
       </aside>
+      </>)}
 
       {cobroOpen && (
         <CobroModal total={total} onClose={() => setCobroOpen(false)} onConfirm={confirmarCobro} />
       )}
     </div>
+  );
+}
+
+// Modo "Preventa / Retiro": busca un pedido ya pagado (online/preventa) y dispara
+// la comanda a RETIRO con los ítems que el comensal quiere retirar ahora. La
+// entrega se registra y la comanda sale impresa en retiro (no acá en la caja).
+function PreventaRetiro() {
+  const [lista, setLista] = useState([]);
+  const [filtro, setFiltro] = useState('');
+  const [sel, setSel] = useState(null); // hash seleccionado
+  const [cargando, setCargando] = useState(true);
+
+  function cargar() {
+    setCargando(true);
+    getPedidosExpendio()
+      .then(setLista)
+      .catch(() => toast.error('No se pudieron cargar los pedidos'))
+      .finally(() => setCargando(false));
+  }
+  useEffect(() => { cargar(); }, []);
+
+  const filtrada = lista.filter(p => {
+    const completo = Number(p.total_entregado) >= Number(p.total_items);
+    if (completo) return false; // ya retiró todo: no aparece
+    if (!filtro.trim()) return true;
+    const f = filtro.trim().toLowerCase();
+    return (
+      p.familia?.toLowerCase().includes(f) ||
+      p.cedula?.toLowerCase?.().includes(f) ||
+      p.hash?.substring(0, 8).toLowerCase().includes(f)
+    );
+  });
+
+  if (sel) {
+    return (
+      <main className="td-main">
+        <button className={styles.btnNuevo} style={{ marginBottom: '1rem' }} onClick={() => { setSel(null); cargar(); }}>
+          ← Volver al listado
+        </button>
+        <div style={{ maxWidth: 640, margin: '0 auto', background: '#fff', borderRadius: 14, padding: '1rem' }}>
+          <EntregaCard
+            key={sel}
+            hash={sel}
+            onEntregado={() => toast.success('Comanda enviada a RETIRO')}
+          />
+        </div>
+      </main>
+    );
+  }
+
+  return (
+    <main className="td-main">
+      <div className="td-search" style={{ maxWidth: 520, margin: '0 auto 1rem' }}>
+        <span className="td-search-icon">🔍</span>
+        <input value={filtro} onChange={e => setFiltro(e.target.value)} placeholder="Buscar por código, nombre o cédula..." autoFocus />
+      </div>
+
+      {cargando ? (
+        <div className="td-loading">Cargando pedidos...</div>
+      ) : filtrada.length === 0 ? (
+        <div className="td-empty">
+          <div className="td-empty-emoji">🎫</div>
+          <div>{filtro ? `No encontramos "${filtro}".` : 'No hay pedidos de preventa pendientes de retiro.'}</div>
+        </div>
+      ) : (
+        <div style={{ maxWidth: 720, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '.6rem' }}>
+          {filtrada.map(p => (
+            <button
+              key={p.idpedido}
+              onClick={() => setSel(p.hash)}
+              style={{
+                display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '1rem',
+                background: '#fff', border: '1px solid #e3e3e3', borderRadius: 12, padding: '0.8rem 1rem',
+                cursor: 'pointer', textAlign: 'left',
+              }}
+            >
+              <div>
+                <div style={{ fontWeight: 800 }}>
+                  <span style={{ color: '#0a7d2c', marginRight: 8 }}>{p.hash.substring(0, 8).toUpperCase()}</span>
+                  {p.familia}
+                </div>
+                <div style={{ fontSize: '.85rem', color: '#777' }}>
+                  Cédula: {p.cedula || '—'} · {Number(p.total_entregado)}/{Number(p.total_items)} ítems retirados
+                </div>
+              </div>
+              <span style={{ fontWeight: 800, color: '#1d4ed8', whiteSpace: 'nowrap' }}>Retirar →</span>
+            </button>
+          ))}
+        </div>
+      )}
+    </main>
   );
 }
 

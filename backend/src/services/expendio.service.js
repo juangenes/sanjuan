@@ -2,18 +2,13 @@ const pedidoModel = require('../models/pedido.model');
 const pedidoProductoModel = require('../models/pedidoProducto.model');
 const entregaModel = require('../models/entrega.model');
 const envioModel = require('../models/envioExpendio.model');
-const { notificarEntidad, notificarDespacho } = require('../utils/rtsClient');
+const { notificarDespacho, notificarRetiro } = require('../utils/rtsClient');
 
-// Estaciones de despacho (fijas). Agregar/quitar editando esta lista.
-const ESTACIONES = [
-  { id: 'exp1', label: 'Expendio 1' },
-  { id: 'exp2', label: 'Expendio 2' },
-  { id: 'exp3', label: 'Expendio 3' },
-];
-const esEstacionValida = (id) => ESTACIONES.some(e => e.id === id);
-const labelEstacion = (id) => ESTACIONES.find(e => e.id === id)?.label || id;
-// Nombre de la room en el RTS para una estación.
-const scopeDe = (estacion) => `sanjuan-${estacion}`;
+// Modelo unificado "fast food": no hay estaciones. Toda comanda va a una única
+// pantalla/impresora de RETIRO (scope sanjuan-retiro). "Disparar a retiro" es lo
+// mismo que registrar la entrega: al registrarla se crea la comanda y se avisa a
+// la pantalla para que la imprima y la cuelgue.
+const RETIRO = 'RETIRO';
 
 async function obtenerPedidoParaExpendio(hash) {
   const pedido = await pedidoModel.buscarPorHash(hash);
@@ -35,12 +30,15 @@ async function obtenerPedidoParaExpendio(hash) {
   return { ...pedido, items: detalle };
 }
 
+// Registra una entrega Y dispara su comanda a la pantalla de RETIRO. Es el único
+// camino para "mandar a la cocina": lo usan la caja (walk-in y preventa) y el
+// callback de Bancard (tótem). Marca lo entregado en el acto (sin checks en retiro).
 async function registrarEntrega(hash, items, operador) {
   const pedido = await pedidoModel.buscarPorHash(hash);
   if (!pedido) throw new Error('Pedido no encontrado');
   if (pedido.estado !== 'PAGADO') throw new Error('El pedido no está pagado');
 
-  // Validar que no se entregue más de lo pedido
+  // Validar que no se entregue más de lo pedido (idempotencia ante reintentos).
   const pedidoItems = await pedidoProductoModel.obtenerPorPedido(pedido.idpedido);
   const entregas = await entregaModel.obtenerEntregasPorPedido(pedido.idpedido);
   const entregasMap = {};
@@ -56,8 +54,14 @@ async function registrarEntrega(hash, items, operador) {
   }
 
   const idot = await entregaModel.registrar(pedido.idpedido, items, operador);
+
+  // Encola la comanda y avisa a la pantalla de retiro (en vivo). Si el RTS falla,
+  // la comanda igual queda PENDIENTE en la base y la pantalla la levanta al refrescar.
+  const comandaId = await envioModel.crear(pedido.idpedido, RETIRO, operador, idot);
+  notificarRetiro({ comandaId, idot, hash: pedido.hash, familia: pedido.familia });
   notificarDespacho({ motivo: 'entrega', hash });
-  return idot;
+
+  return { idot, comandaId };
 }
 
 async function obtenerBoleta(hash, idot) {
@@ -74,49 +78,34 @@ async function obtenerHistorial(hash) {
   return historial;
 }
 
-// Rutea un pedido (escaneado) a una estación: valida que esté PAGADO, lo agrega
-// a la cola (DB = fuente de verdad) y avisa al RTS para que la pantalla de esa
-// estación lo muestre al instante. Si el RTS falla, el envío igual queda en cola.
-async function enviarAEstacion(hash, estacion, operador) {
-  if (!esEstacionValida(estacion)) throw new Error('Estación inválida');
-  const pedido = await pedidoModel.buscarPorHash(hash);
-  if (!pedido) throw new Error('Pedido no encontrado');
-  if (pedido.estado !== 'PAGADO') throw new Error('El pedido no está pagado');
-
-  // Concurrencia: un pedido no puede estar activo en dos estaciones a la vez.
-  // Si ya tiene un envío PENDIENTE (no atendido), se rechaza hasta que se libere.
-  const activo = await envioModel.envioActivoDePedido(pedido.idpedido);
-  if (activo) {
-    throw new Error(`El pedido ya está activo en ${labelEstacion(activo.estacion)}`);
+// Cola de comandas pendientes de imprimir en RETIRO, cada una con sus ítems.
+// La pantalla de retiro la consume, imprime y luego marca cada comanda impresa.
+async function obtenerColaRetiro() {
+  const comandas = await envioModel.listarComandasPendientes(RETIRO);
+  const out = [];
+  for (const c of comandas) {
+    const items = c.idot
+      ? await entregaModel.obtenerBoleta(c.idpedido, c.idot)
+      : [];
+    out.push({
+      id: c.id,
+      idot: c.idot,
+      hash: c.hash,
+      codigo: (c.hash || '').substring(0, 8).toUpperCase(),
+      familia: c.familia,
+      creado_en: c.creado_en,
+      items,
+    });
   }
-
-  const envioId = await envioModel.crear(pedido.idpedido, estacion, operador);
-
-  await notificarEntidad({
-    resource: 'expendio',
-    action: 'enviado',
-    id: pedido.idpedido,
-    scope: scopeDe(estacion),
-    actor: { usuario: operador },
-    meta: { envioId, hash: pedido.hash, familia: pedido.familia, estacion },
-  });
-  // Avisar también al panel (board en vivo) que cambió el estado de despacho.
-  notificarDespacho({ motivo: 'ruteado', hash: pedido.hash, estacion });
-
-  return { envioId, hash: pedido.hash, familia: pedido.familia, estacion };
+  return out;
 }
 
-async function obtenerCola(estacion) {
-  if (!esEstacionValida(estacion)) throw new Error('Estación inválida');
-  return envioModel.listarCola(estacion);
-}
-
-async function atenderEnvio(id) {
+// La pantalla de retiro confirma que imprimió/colgó la comanda → sale de la cola.
+async function marcarComandaImpresa(id) {
   await envioModel.marcarAtendido(id);
-  notificarDespacho({ motivo: 'liberado', envioId: id });
 }
 
 module.exports = {
   obtenerPedidoParaExpendio, registrarEntrega, obtenerBoleta, obtenerHistorial,
-  ESTACIONES, enviarAEstacion, obtenerCola, atenderEnvio,
+  obtenerColaRetiro, marcarComandaImpresa,
 };

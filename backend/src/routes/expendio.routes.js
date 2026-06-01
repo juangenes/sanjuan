@@ -5,7 +5,7 @@ const { authExpendio } = require('../middleware/auth');
 
 router.use(authExpendio);
 
-// Listar todos los pedidos PAGADOS para despacho
+// Listar todos los pedidos PAGADOS (para buscar preventa y ver saldos de retiro)
 router.get('/pedidos', async (req, res) => {
   try {
     const pedidos = await pedidoModel.listarPagados();
@@ -15,7 +15,7 @@ router.get('/pedidos', async (req, res) => {
   }
 });
 
-// Ver pedido para despacho (por hash)
+// Ver pedido para retiro (por hash) con saldos pendientes
 router.get('/pedido/:hash', async (req, res) => {
   try {
     const pedido = await expendioService.obtenerPedidoParaExpendio(req.params.hash);
@@ -26,19 +26,19 @@ router.get('/pedido/:hash', async (req, res) => {
   }
 });
 
-// Registrar entrega
+// Registrar entrega = disparar comanda a RETIRO (la cocina imprime y prepara)
 router.post('/entregar', async (req, res) => {
   try {
     const { hash, items } = req.body;
     if (!hash || !items?.length) return res.status(400).json({ error: 'Datos incompletos' });
-    const idot = await expendioService.registrarEntrega(hash, items, req.user.usuario);
+    const { idot } = await expendioService.registrarEntrega(hash, items, req.user.usuario);
     res.json({ success: true, idot });
   } catch (err) {
     res.status(400).json({ error: err.message });
   }
 });
 
-// Obtener boleta de una entrega
+// Obtener boleta de una entrega (para reimpresión / consulta)
 router.get('/boleta/:hash/:idot', async (req, res) => {
   try {
     const boleta = await expendioService.obtenerBoleta(req.params.hash, req.params.idot);
@@ -60,39 +60,22 @@ router.get('/historial/:hash', async (req, res) => {
   }
 });
 
-// --- Despacho por estaciones (lector QR → cola de estación) ---
+// --- RETIRO (pantalla única que imprime/cuelga las comandas) ---
 
-// Listado de estaciones disponibles
-router.get('/estaciones', (req, res) => {
-  res.json({ success: true, estaciones: expendioService.ESTACIONES });
-});
-
-// Rutear un pedido escaneado a una estación
-router.post('/enviar', async (req, res) => {
+// Cola de comandas pendientes de imprimir (se carga al montar y ante cada aviso RTS)
+router.get('/cola-retiro', async (req, res) => {
   try {
-    const { hash, estacion } = req.body;
-    if (!hash || !estacion) return res.status(400).json({ error: 'Datos incompletos' });
-    const envio = await expendioService.enviarAEstacion(hash, estacion, req.user.usuario);
-    res.json({ success: true, envio });
-  } catch (err) {
-    res.status(400).json({ error: err.message });
-  }
-});
-
-// Cola pendiente de una estación (se carga al montar la pantalla)
-router.get('/cola/:estacion', async (req, res) => {
-  try {
-    const cola = await expendioService.obtenerCola(req.params.estacion);
+    const cola = await expendioService.obtenerColaRetiro();
     res.json({ success: true, cola });
   } catch (err) {
-    res.status(400).json({ error: err.message });
+    res.status(500).json({ error: err.message });
   }
 });
 
-// Marcar un envío como atendido (sale de la cola)
-router.post('/cola/:id/atendido', async (req, res) => {
+// Marcar una comanda como impresa/colgada (sale de la cola)
+router.post('/comanda/:id/impresa', async (req, res) => {
   try {
-    await expendioService.atenderEnvio(Number(req.params.id));
+    await expendioService.marcarComandaImpresa(Number(req.params.id));
     res.json({ success: true });
   } catch (err) {
     res.status(500).json({ error: err.message });

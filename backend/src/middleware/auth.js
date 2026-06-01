@@ -17,7 +17,8 @@ function authExpendio(req, res, next) {
   if (!token) return res.status(401).json({ error: 'Sin token' });
   try {
     req.user = jwt.verify(token, process.env.JWT_SECRET);
-    if (!['admin', 'expendio'].includes(req.user.rol)) return res.status(403).json({ error: 'Sin permiso' });
+    // Equipos unificados: una "caja" puede cobrar y también disparar retiros.
+    if (!['admin', 'expendio', 'caja'].includes(req.user.rol)) return res.status(403).json({ error: 'Sin permiso' });
     next();
   } catch {
     res.status(401).json({ error: 'Token inválido' });
