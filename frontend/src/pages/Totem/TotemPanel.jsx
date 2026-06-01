@@ -40,7 +40,7 @@ const precioTotem = (p) => Number(p.precio_normal) || Number(p.precio_preventa) 
 
 // Segundos de inactividad en pantalla de pago/éxito antes de volver al inicio.
 const TIMEOUT_PAGO = 180;   // 3 min esperando que pague
-const TIMEOUT_EXITO = 20;   // 20 s admirando el código antes de auto-reiniciar
+const TIMEOUT_EXITO = 60;   // 60 s para escanear el QR de retiro antes de auto-reiniciar
 
 function imgSrc(p) {
   if (!p.imagen) return '/img/placeholder.jpg';
@@ -180,7 +180,7 @@ export default function TotemPanel() {
       toast.error(`Pago OK, pero no se imprimió: ${err.message}`);
     }
     limpiar();
-    setExito({ codigo, impreso });
+    setExito({ codigo, hash, impreso });
     setFase('exito');
   }
 
@@ -276,13 +276,21 @@ export default function TotemPanel() {
         <div className={styles.exitoCard}>
           <div className={styles.exitoCheck}>✓</div>
           <h2>¡Pago confirmado!</h2>
-          <p className={styles.exitoLabel}>Tu código de retiro</p>
+
+          <div className={styles.exitoQr}>
+            <QRCodeSVG value={`https://sanjuandicequesi.com/pedido/${exito?.hash}`} size={220} />
+          </div>
+          <p className={styles.exitoQrAyuda}>
+            📲 <strong>Escaneá este QR con tu celular</strong> para guardar tu pedido.<br />
+            Mostralo en <strong>EXPENDIO</strong> para retirar. ¡No hace falta recordar el código!
+          </p>
+
+          <p className={styles.exitoLabel}>O usá tu código de retiro</p>
           <div className={styles.exitoCodigo}>{exito?.codigo}</div>
-          {exito?.impreso ? (
-            <p className={styles.exitoNota}>🧾 Retirá tu ticket impreso y presentalo en <strong>EXPENDIO</strong>.</p>
-          ) : (
-            <p className={styles.exitoNota}>📲 Anotá tu código y retiralo en <strong>EXPENDIO</strong>.</p>
+          {exito?.impreso && (
+            <p className={styles.exitoNota}>🧾 También podés retirar tu ticket impreso.</p>
           )}
+
           <button className={styles.btnNuevo} onClick={reiniciar}>Listo · nuevo pedido ({ttl}s)</button>
         </div>
       </div>
