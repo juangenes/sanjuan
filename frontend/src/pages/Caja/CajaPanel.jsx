@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { QRCodeCanvas } from 'qrcode.react';
 import toast from 'react-hot-toast';
 import { getProductos, tomarPedidoCaja, getPedidosExpendio } from '../../api';
 import { useCarrito } from '../../context/CarritoContext';
@@ -39,7 +40,8 @@ export default function CajaPanel() {
   const [activeTab, setActiveTab] = useState('TODOS');
   const [search, setSearch] = useState('');
   const [cobroOpen, setCobroOpen] = useState(false);
-  const [exito, setExito] = useState(null); // { codigo, vuelto, metodo }
+  const [exito, setExito] = useState(null); // { codigo, hash, idpedido, vuelto, metodo, nombre, total, recibido, lineas }
+  const [imprimiendo, setImprimiendo] = useState(false);
   const [modo, setModo] = useState('nuevo'); // 'nuevo' (walk-in) | 'preventa' (retiro)
   const { items, agregar, quitar, limpiar } = useCarrito();
   const navigate = useNavigate();
@@ -100,31 +102,50 @@ export default function CajaPanel() {
     const pedido = await tomarPedidoCaja(payload);
     const codigo = pedido.hash.substring(0, 8).toUpperCase();
 
-    // Imprimir el ticket de pedido (no bloquea el cobro si la impresión falla).
+    // El cobro ya quedó cerrado y la comanda salió automática a RETIRO. La
+    // impresión del ticket NO es automática: el cajero la dispara desde la
+    // pantalla de éxito (o el comensal escanea el QR sin imprimir).
+    limpiar();
+    setCobroOpen(false);
+    setExito({
+      codigo,
+      hash: pedido.hash,
+      idpedido: pedido.idpedido,
+      vuelto: pedido.vuelto,
+      metodo,
+      nombre: (nombre && nombre.trim()) || 'Mostrador',
+      total: pedido.total,
+      recibido: Number(recibido),
+      lineas,
+    });
+  }
+
+  // Impresión explícita del ticket desde la pantalla de éxito.
+  async function imprimirTicket() {
+    if (imprimiendo) return;
+    setImprimiendo(true);
     try {
       if (!getTicketeraIP()) {
         const ip = window.prompt('IP de la ticketera Epson (ej. 192.168.1.50):', '');
         if (ip) setTicketeraIP(ip);
       }
-      if (getTicketeraIP()) {
-        await imprimirTicketPedido({
-          codigo,
-          hash: pedido.hash,
-          nombre,
-          total: pedido.total,
-          metodo,
-          recibido: Number(recibido),
-          vuelto: pedido.vuelto,
-          items: lineas,
-        });
-      }
+      if (!getTicketeraIP()) { toast.error('No hay ticketera configurada'); return; }
+      await imprimirTicketPedido({
+        codigo: exito.codigo,
+        hash: exito.hash,
+        nombre: exito.nombre,
+        total: exito.total,
+        metodo: exito.metodo,
+        recibido: exito.recibido,
+        vuelto: exito.vuelto,
+        items: exito.lineas,
+      });
+      toast.success('Ticket enviado a la impresora');
     } catch (err) {
-      toast.error(`Pedido OK, pero no se imprimió: ${err.message}`);
+      toast.error(`No se imprimió: ${err.message}`);
+    } finally {
+      setImprimiendo(false);
     }
-
-    limpiar();
-    setCobroOpen(false);
-    setExito({ codigo, vuelto: pedido.vuelto, metodo });
   }
 
   if (exito) {
@@ -139,8 +160,17 @@ export default function CajaPanel() {
             {exito.metodo === 'EFECTIVO' && (
               <div className={styles.exitoVuelto}>Vuelto: Gs. {fmtGs(exito.vuelto)}</div>
             )}
+            <div className={styles.exitoQr}>
+              <QRCodeCanvas value={JSON.stringify({ hash: exito.hash, idpedido: exito.idpedido })} size={180} />
+              <span>El comensal puede escanear este código en RETIRO, sin imprimir.</span>
+            </div>
             <p className={styles.exitoNota}>La comanda salió en RETIRO. El comensal retira con este código.</p>
-            <button className={styles.btnNuevo} onClick={() => setExito(null)}>＋ Nuevo pedido</button>
+            <div className={styles.exitoBtns}>
+              <button className={styles.btnImprimir} onClick={imprimirTicket} disabled={imprimiendo}>
+                {imprimiendo ? 'Imprimiendo…' : '🖨 Imprimir ticket'}
+              </button>
+              <button className={styles.btnNuevo} onClick={() => setExito(null)}>＋ Nuevo pedido</button>
+            </div>
           </div>
         </div>
       </div>

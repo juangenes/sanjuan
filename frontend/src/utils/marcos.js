@@ -59,9 +59,9 @@ export const MARCOS = [
       const m = Math.round(w * 0.035);
       ctx.strokeRect(m, m, w - m * 2, h - m * 2);
       ctx.restore();
-      texto(ctx, 'SAN JUAN', w / 2, h - 130, { size: 116, color: ORO, spacing: 6 });
-      texto(ctx, 'DICE QUE SÍ', w / 2, h - 64, { size: 52, color: '#fff', spacing: 10 });
-      texto(ctx, '🔥 2026', w / 2, h - 16, { size: 34, weight: 700, color: '#ffe7b3' });
+      texto(ctx, 'RECUERDO DEL', w / 2, h - 180, { size: 40, weight: 800, color: '#ffe7b3', spacing: 8 });
+      texto(ctx, 'SAN JUAN', w / 2, h - 92, { size: 108, color: ORO, spacing: 6 });
+      texto(ctx, 'Torrefuerte 2026', w / 2, h - 36, { size: 48, weight: 700, color: '#fff', spacing: 2 });
     },
   },
   {
@@ -79,8 +79,9 @@ export const MARCOS = [
       ctx.strokeStyle = g;
       ctx.strokeRect(borde / 2, borde / 2, w - borde, h - borde);
       ctx.restore();
-      scrimInferior(ctx, w, h, 0.3);
-      texto(ctx, 'SAN JUAN 2026', w / 2, h - 52, { size: 84, color: '#fff', spacing: 4 });
+      scrimInferior(ctx, w, h, 0.32);
+      texto(ctx, 'RECUERDO DEL SAN JUAN', w / 2, h - 104, { size: 44, weight: 800, color: '#ffe7b3', spacing: 3 });
+      texto(ctx, 'TORREFUERTE 2026', w / 2, h - 42, { size: 66, color: '#fff', spacing: 3 });
     },
   },
   {
@@ -97,8 +98,12 @@ export const MARCOS = [
       ctx.fillRect(0, 0, lado, h);          // izquierda
       ctx.fillRect(w - lado, 0, lado, h);   // derecha
       ctx.fillRect(0, h - abajo, w, abajo); // abajo (banda ancha)
-      texto(ctx, 'San Juan dice que sí ✦', w / 2, h - abajo / 2 + 18, {
-        size: 56, weight: 700, color: '#c2410c', font: '"Segoe Script", "Comic Sans MS", cursive',
+      const cy = h - abajo / 2;
+      texto(ctx, 'Recuerdo del San Juan', w / 2, cy - 6, {
+        size: 46, weight: 700, color: '#c2410c', font: '"Segoe Script", "Comic Sans MS", cursive',
+      });
+      texto(ctx, 'Torrefuerte 2026', w / 2, cy + 52, {
+        size: 46, weight: 700, color: '#c2410c', font: '"Segoe Script", "Comic Sans MS", cursive',
       });
       ctx.restore();
     },
@@ -117,9 +122,9 @@ export const MARCOS = [
       ctx.fillStyle = g;
       ctx.fillRect(-w * 0.3, -38, w * 0.6, 76);
       ctx.restore();
-      texto(ctx, 'SAN JUAN 2026', w * 0.135, h * 0.13, { size: 30, color: '#fff', spacing: 2 });
-      // Logo discreto abajo a la derecha.
-      texto(ctx, '🔥 sanjuandicequesi.com', w - 24, h - 28, { size: 30, weight: 700, color: '#fff', align: 'right' });
+      texto(ctx, 'TORREFUERTE 2026', w * 0.155, h * 0.135, { size: 27, color: '#fff', spacing: 1 });
+      // Recuerdo abajo a la derecha.
+      texto(ctx, '🔥 Recuerdo del San Juan Torrefuerte 2026', w - 24, h - 28, { size: 30, weight: 700, color: '#fff', align: 'right' });
     },
   },
 ];
