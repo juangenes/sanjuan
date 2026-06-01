@@ -101,5 +101,9 @@ jobs:
             set -e
             cd /var/www/sanjuan/backend
             npm ci --omit=dev
+            # Aplicar migraciones pendientes ANTES de levantar el código nuevo, para
+            # que la API arranque contra el esquema actualizado. knex es idempotente:
+            # solo corre lo que falta (tabla knex_migrations) y no toca lo ya aplicado.
+            npm run migrate
             pm2 startOrRestart ecosystem.config.js --env production
           EOF
