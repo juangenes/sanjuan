@@ -164,7 +164,7 @@ export default function CajaPanel() {
               <div className={styles.exitoVuelto}>Vuelto: Gs. {fmtGs(exito.vuelto)}</div>
             )}
             <div className={styles.exitoQr}>
-              <QRCodeCanvas value={JSON.stringify({ hash: exito.hash, idpedido: exito.idpedido })} size={180} />
+              <QRCodeCanvas value={`https://sanjuandicequesi.com/pedido/${exito.hash}`} size={180} />
               <span>El comensal puede escanear este código en RETIRO, sin imprimir.</span>
             </div>
             <p className={styles.exitoNota}>La comanda salió en RETIRO. El comensal retira con este código.</p>
