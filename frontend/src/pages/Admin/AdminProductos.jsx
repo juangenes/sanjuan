@@ -27,6 +27,7 @@ export default function AdminProductos() {
     precio_preventa: '',
     precio_normal: '',
     stock: 0,
+    creditos_por_unidad: 0,
   };
 
   function handleGuardado(guardado) {

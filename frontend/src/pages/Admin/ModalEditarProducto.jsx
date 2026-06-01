@@ -166,6 +166,22 @@ export default function ModalEditarProducto({ producto, onClose, onGuardado, onE
                 />
               </div>
             </div>
+
+            {datos.categoria === 'JUEGO' && (
+              <>
+                <label>Créditos por unidad</label>
+                <input
+                  type="number"
+                  min="0"
+                  value={datos.creditos_por_unidad ?? 0}
+                  onChange={e => set('creditos_por_unidad', e.target.value)}
+                />
+                <p style={{ fontSize: '0.8rem', color: '#777', margin: '0.25rem 0 0' }}>
+                  Cuántos créditos de juego entrega cada unidad (combo x10 = 10, suelto = 1).
+                  El acreditador dispensa estos créditos contra el pedido pagado.
+                </p>
+              </>
+            )}
           </div>
         </div>
 

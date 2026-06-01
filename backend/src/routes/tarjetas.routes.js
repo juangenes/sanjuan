@@ -32,8 +32,32 @@ router.post('/consumir', async (req, res) => {
   }
 });
 
-// Sección Tarjetas (admin/tarjetas) — cargar créditos. Requiere login.
-router.post('/cargar', authTarjetas, async (req, res) => {
+// Acreditador — pedidos PAGADOS con créditos de juego pendientes de acreditar.
+router.get('/pendientes', authTarjetas, async (req, res) => {
+  try {
+    const pedidos = await tarjetaModel.pedidosConCreditosPendientes();
+    res.json({ success: true, pedidos });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Acreditador — dispensar créditos de un pedido pagado a una tarjeta física.
+// Soporta parciales (varias tarjetas para un mismo pedido).
+router.post('/dispensar', authTarjetas, async (req, res) => {
+  try {
+    const { hash, codigo, cantidad } = req.body;
+    if (!hash || !codigo || !cantidad) return res.status(400).json({ error: 'Datos incompletos' });
+    const resultado = await tarjetaModel.dispensar(hash, codigo, cantidad, req.user.usuario);
+    res.json({ success: true, ...resultado });
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+// Admin — carga libre de créditos (respaldo de emergencia, sin atar a pedido).
+// El flujo normal es POST /dispensar contra un pedido pagado.
+router.post('/cargar', authAdmin, async (req, res) => {
   try {
     const { codigo, cantidad, valor_unitario } = req.body;
     if (!codigo || !cantidad || !valor_unitario) return res.status(400).json({ error: 'Datos incompletos' });

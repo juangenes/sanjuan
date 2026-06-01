@@ -34,20 +34,20 @@ async function reponerStock(idproducto, cantidad, conn) {
 }
 
 async function actualizarProducto(id, datos) {
-  const { titulo, descripcion, imagen, precio_preventa, precio_normal, activo, categoria, stock } = datos;
+  const { titulo, descripcion, imagen, precio_preventa, precio_normal, activo, categoria, stock, creditos_por_unidad } = datos;
   await db.query(
     `UPDATE productos SET titulo=?, descripcion=?, imagen=?, precio_preventa=?,
-     precio_normal=?, activo=?, categoria=?, stock=? WHERE idproducto=?`,
-    [titulo, descripcion, imagen, precio_preventa, precio_normal, activo, categoria, stock, id]
+     precio_normal=?, activo=?, categoria=?, stock=?, creditos_por_unidad=? WHERE idproducto=?`,
+    [titulo, descripcion, imagen, precio_preventa, precio_normal, activo, categoria, stock, creditos_por_unidad ?? 0, id]
   );
 }
 
 async function crearProducto(datos) {
-  const { titulo, descripcion, imagen, precio_preventa, precio_normal, activo, categoria, stock } = datos;
+  const { titulo, descripcion, imagen, precio_preventa, precio_normal, activo, categoria, stock, creditos_por_unidad } = datos;
   const [result] = await db.query(
-    `INSERT INTO productos (titulo, descripcion, imagen, precio_preventa, precio_normal, activo, categoria, stock)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-    [titulo, descripcion, imagen, precio_preventa, precio_normal, activo ?? 1, categoria, stock ?? 0]
+    `INSERT INTO productos (titulo, descripcion, imagen, precio_preventa, precio_normal, activo, categoria, stock, creditos_por_unidad)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    [titulo, descripcion, imagen, precio_preventa, precio_normal, activo ?? 1, categoria, stock ?? 0, creditos_por_unidad ?? 0]
   );
   return result.insertId;
 }

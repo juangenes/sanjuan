@@ -67,6 +67,10 @@ export const getSaldo = (codigo) => api.get(`/tarjetas/${codigo}/saldo`).then(r 
 export const consumirCredito = (codigo, idpuesto) => api.post('/tarjetas/consumir', { codigo, idpuesto }).then(r => r.data);
 export const cargarCredito = (codigo, cantidad, valor_unitario) =>
   api.post('/tarjetas/cargar', { codigo, cantidad, valor_unitario }).then(r => r.data);
+// Acreditación contra pedido pagado
+export const getCreditosPendientes = () => api.get('/tarjetas/pendientes').then(r => r.data.pedidos);
+export const dispensarCreditos = (hash, codigo, cantidad) =>
+  api.post('/tarjetas/dispensar', { hash, codigo, cantidad }).then(r => r.data);
 
 // Puestos
 export const getPuestos = () => api.get('/puestos').then(r => r.data.puestos);
