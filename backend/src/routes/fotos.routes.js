@@ -7,7 +7,7 @@ const { authAdmin } = require('../middleware/auth');
 const { notificarFotos } = require('../utils/rtsClient');
 
 // ───────────────────────────────────────────────────────────────────────────
-// AUTO FOTO — galería de fotos del evento (carrusel en TVs + descarga pública).
+// Recuerdos San Juan — galería de fotos del evento (carrusel en TVs + descarga).
 //
 // El fotógrafo saca/elige la foto desde su celular en /fotos/admin (login admin),
 // la recorta y le aplica el marco/logo de San Juan EN EL NAVEGADOR (canvas), y

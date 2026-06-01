@@ -2,9 +2,9 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
 import { getFotos } from '../../api';
 import { suscribirScope } from '../../utils/rtsSocket';
-import styles from './AutoFotoTV.module.css';
+import styles from './RecuerdosTV.module.css';
 
-// Carrusel de AUTO FOTO para los televisores. Pantalla fija: avanza solo y se
+// Carrusel de Recuerdos San Juan para los televisores. Pantalla fija: avanza solo y se
 // actualiza en vivo por el RTS (scope sanjuan-fotos). Robusto ante cortes: si
 // una recarga falla, sigue mostrando la lista que ya tenía. Cuando llega una
 // foto nueva salta a mostrarla primero. Un QR invita a bajar las fotos en /fotos.
@@ -14,7 +14,7 @@ import styles from './AutoFotoTV.module.css';
 
 const AVANCE_MS = 6000; // tiempo por foto
 
-export default function AutoFotoTV() {
+export default function RecuerdosTV() {
   const [fotos, setFotos] = useState([]);
   const [idx, setIdx] = useState(0);
   const [online, setOnline] = useState(false);
@@ -73,7 +73,7 @@ export default function AutoFotoTV() {
       ) : (
         <div className={styles.espera}>
           <div className={styles.esperaEmoji}>📸</div>
-          <h1>AUTO FOTO</h1>
+          <h1>RECUERDOS SAN JUAN</h1>
           <p>Las fotos del San Juan van a aparecer acá…</p>
         </div>
       )}
@@ -81,7 +81,7 @@ export default function AutoFotoTV() {
       <header className={styles.marca}>
         <span className={styles.fuego}>🔥</span>
         <div>
-          <div className={styles.marcaTit}>AUTO FOTO</div>
+          <div className={styles.marcaTit}>RECUERDOS</div>
           <div className={styles.marcaSub}>San Juan dice que sí</div>
         </div>
         <span className={`${styles.dot} ${online ? styles.dotOn : styles.dotOff}`} />

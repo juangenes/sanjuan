@@ -89,7 +89,7 @@ export const generarQrBancard = (hash) => api.post('/bancard/qr', { hash }).then
 export const getEstadoBancard = (hash) => api.get(`/bancard/estado/${hash}`).then(r => r.data);
 export const revertirBancard = (hash) => api.post('/bancard/revertir', { hash }).then(r => r.data);
 
-// AUTO FOTO — galería de fotos del evento. params: { before, limit }
+// Recuerdos San Juan — galería de fotos del evento. params: { before, limit }
 export const getFotos = (params) => api.get('/fotos', { params }).then(r => r.data.fotos);
 export const getFotosAdmin = () => api.get('/fotos/admin').then(r => r.data.fotos);
 export const subirFoto = (blob, marco) => {

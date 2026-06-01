@@ -44,7 +44,7 @@ function notificarRetiro(meta) {
   return notificarEntidad({ resource: 'expendio', action: 'comanda', scope: 'sanjuan-retiro', meta });
 }
 
-// AUTO FOTO: avisa al carrusel (/fotos/tv) y a la galería pública (/fotos) que
+// Recuerdos San Juan: avisa al carrusel (/fotos/tv) y a la galería pública (/fotos) que
 // cambió la galería (foto nueva, moderada o borrada) para que refresquen en vivo.
 function notificarFotos(meta) {
   return notificarEntidad({ resource: 'fotos', action: 'galeria', scope: 'sanjuan-fotos', meta });

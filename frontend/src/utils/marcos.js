@@ -1,4 +1,4 @@
-// Marcos de AUTO FOTO — se dibujan por código sobre la foto recortada (canvas),
+// Marcos de Recuerdos San Juan — se dibujan por código sobre la foto recortada (canvas),
 // sin imágenes externas, así quedan nítidos a cualquier resolución. Cada marco
 // expone draw(ctx, w, h) y se "hornea" en la foto antes de subirla.
 //

@@ -1,4 +1,4 @@
-// AUTO FOTO — galería de fotos del evento.
+// Recuerdos San Juan — galería de fotos del evento.
 // El celular del fotógrafo recorta y "hornea" el marco/logo en la imagen antes
 // de subirla, así que el backend solo guarda el archivo final y una fila por foto.
 //   - publicada: moderación. Sale en el carrusel (TV) y la galería pública solo

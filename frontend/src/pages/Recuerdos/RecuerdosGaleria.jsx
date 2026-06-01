@@ -2,10 +2,10 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import toast from 'react-hot-toast';
 import { getFotos } from '../../api';
 import { suscribirScope } from '../../utils/rtsSocket';
-import styles from './AutoFotoGaleria.module.css';
+import styles from './RecuerdosGaleria.module.css';
 
-// Galería pública de AUTO FOTO (/fotos). La gente entra desde el QR del TV y baja
-// su foto ya con el marco de San Juan.
+// Galería pública de Recuerdos San Juan (/fotos). La gente entra desde el QR del
+// TV y baja su foto ya con el marco de San Juan.
 //
 // Pro: orden DESC (más nuevas primero), scroll infinito por cursor (Intersection-
 // Observer), skeletons mientras carga, fade-in por imagen y cero salto de layout
@@ -36,7 +36,7 @@ function Celda({ foto, onAbrir, onDescargar }) {
   );
 }
 
-export default function AutoFotoGaleria() {
+export default function RecuerdosGaleria() {
   const [fotos, setFotos] = useState([]);
   const [estado, setEstado] = useState('cargando'); // cargando | listo
   const [cargandoMas, setCargandoMas] = useState(false);
@@ -124,8 +124,8 @@ export default function AutoFotoGaleria() {
         <div className={styles.brand}>
           <span className={styles.fuego}>🔥</span>
           <div>
-            <h1>AUTO FOTO</h1>
-            <p>San Juan dice que sí · bajá tu foto</p>
+            <h1>RECUERDOS SAN JUAN</h1>
+            <p>Bajá tu foto del San Juan</p>
           </div>
         </div>
       </header>

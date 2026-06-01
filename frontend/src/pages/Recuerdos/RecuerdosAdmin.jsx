@@ -3,15 +3,15 @@ import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { getFotosAdmin, subirFoto, moderarFoto, eliminarFoto } from '../../api';
 import { MARCOS, MARCO_DEFAULT, getMarco, OUTPUT_W, OUTPUT_H } from '../../utils/marcos';
-import styles from './AutoFoto.module.css';
+import styles from './Recuerdos.module.css';
 
-// AUTO FOTO — captura + moderación (se usa desde el celular del fotógrafo, login
-// admin). Flujo: elegir/tomar foto → recortar (arrastrar + zoom) → elegir marco
-// → previsualizar → Publicar. El recorte y el marco se "hornean" en un canvas a
-// resolución final (4:5) y se sube la imagen ya lista. La pestaña "Moderar"
-// permite ocultar/borrar lo que ya está publicado.
+// Recuerdos San Juan — captura + moderación (se usa desde el celular del
+// fotógrafo, login admin). Flujo: elegir/tomar foto → recortar (arrastrar + zoom)
+// → elegir marco → previsualizar → Publicar. El recorte y el marco se "hornean"
+// en un canvas a resolución final (4:5) y se sube la imagen ya lista. La pestaña
+// "Moderar" permite ocultar/borrar lo que ya está publicado.
 
-export default function AutoFotoAdmin() {
+export default function RecuerdosAdmin() {
   const navigate = useNavigate();
   const [vista, setVista] = useState('capturar'); // 'capturar' | 'moderar'
 
@@ -164,7 +164,7 @@ export default function AutoFotoAdmin() {
   return (
     <div className={styles.admin}>
       <header className={styles.adminHeader}>
-        <h1>📸 AUTO FOTO</h1>
+        <h1>📸 Recuerdos San Juan</h1>
         <div className={styles.tabs}>
           <button className={vista === 'capturar' ? styles.tabActive : styles.tab} onClick={() => setVista('capturar')}>Capturar</button>
           <button className={vista === 'moderar' ? styles.tabActive : styles.tab} onClick={() => setVista('moderar')}>Moderar</button>
