@@ -181,6 +181,7 @@ export default function TotemPanel() {
     }
     limpiar();
     setExito({ codigo, hash, impreso });
+    setExito({ codigo, hash, impreso });
     setFase('exito');
   }
 
@@ -286,10 +287,23 @@ export default function TotemPanel() {
           </p>
 
           <p className={styles.exitoLabel}>O usá tu código de retiro</p>
+
+          <div className={styles.exitoQr}>
+            <QRCodeSVG value={`https://sanjuandicequesi.com/pedido/${exito?.hash}`} size={220} />
+          </div>
+          <p className={styles.exitoQrAyuda}>
+            📲 <strong>Escaneá este QR con tu celular</strong> para guardar tu pedido.<br />
+            Mostralo en <strong>EXPENDIO</strong> para retirar. ¡No hace falta recordar el código!
+          </p>
+
+          <p className={styles.exitoLabel}>O usá tu código de retiro</p>
           <div className={styles.exitoCodigo}>{exito?.codigo}</div>
           {exito?.impreso && (
             <p className={styles.exitoNota}>🧾 También podés retirar tu ticket impreso.</p>
+          {exito?.impreso && (
+            <p className={styles.exitoNota}>🧾 También podés retirar tu ticket impreso.</p>
           )}
+
 
           <button className={styles.btnNuevo} onClick={reiniciar}>Listo · nuevo pedido ({ttl}s)</button>
         </div>
