@@ -77,15 +77,13 @@ export default function ModalCheckout({ onClose }) {
             >
               🏦 Transferencia
             </button>
-            {/* TEMPORAL: botón de Pago con QR oculto hasta tener credenciales de producción de Bancard/Infonet.
-                Volver a habilitar cuando lleguen las credenciales (se espera lunes). No borrar. */}
-            {/* <button
+            <button
               type="button"
               className={`${styles.metodoBtn} ${metodo === 'INFONET' ? styles.metodoActivo : ''}`}
               onClick={() => setMetodo('INFONET')}
             >
               📱 Pago con QR
-            </button> */}
+            </button>
           </div>
 
           <button type="submit" className={styles.btnEnviar} disabled={loading}>

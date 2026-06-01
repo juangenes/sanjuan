@@ -20,6 +20,7 @@ async function tomarPedido({ nombre, cedula, contacto, items, metodo, recibido }
   // el pedido PAGADO de forma transaccional. Devuelve { idpedido, hash, total, vuelto }.
   const pedido = await pedidoService.crearPedido(datos, {
     lista: 'normal',
+    origen: 'caja',
     cobro: { metodo, recibido, operador },
   });
 
@@ -41,4 +42,24 @@ async function tomarPedido({ nombre, cedula, contacto, items, metodo, recibido }
   return { ...pedido, comanda };
 }
 
-module.exports = { tomarPedido };
+// Caja con pago por QR de Bancard: NO cobra en el acto. Crea el pedido PENDIENTE
+// (precio normal, método INFONET, origen 'caja') y devuelve su hash para que el
+// front genere el QR y poletee el estado. El pago lo confirma el callback de
+// Bancard, que recién ahí marca PAGADO y dispara la comanda a RETIRO (etiquetada
+// 'caja' gracias a origen). No firamos la comanda acá: el pedido sigue pendiente.
+async function tomarPedidoQr({ nombre, cedula, contacto, items }) {
+  if (!items?.length) throw new Error('El pedido no tiene ítems');
+
+  const datos = {
+    cedula: cedula?.trim() || null,
+    familia: (nombre && nombre.trim()) || 'Mostrador',
+    contacto: contacto?.trim() || '',
+    metodo_pago: 'INFONET',
+    items,
+  };
+
+  // Sin `cobro`: queda PENDIENTE. `lista: 'normal'` = precio del día.
+  return pedidoService.crearPedido(datos, { lista: 'normal', origen: 'caja' });
+}
+
+module.exports = { tomarPedido, tomarPedidoQr };

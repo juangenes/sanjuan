@@ -29,7 +29,7 @@ router.post('/pedido', async (req, res) => {
     };
 
     // Sin `cobro`: el pedido queda PENDIENTE. `lista: 'normal'` = precio del día.
-    const pedido = await pedidoService.crearPedido(datos, { lista: 'normal' });
+    const pedido = await pedidoService.crearPedido(datos, { lista: 'normal', origen: 'totem' });
     res.status(201).json({ success: true, pedido });
   } catch (err) {
     res.status(400).json({ error: err.message });

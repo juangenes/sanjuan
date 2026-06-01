@@ -57,6 +57,10 @@ export const marcarComandaImpresa = (id) => api.post(`/expendio/comanda/${id}/im
 // Caja (POS físico) — toma un pedido nuevo, lo cobra y lo deja PAGADO
 export const tomarPedidoCaja = (payload) => api.post('/caja/pedido', payload).then(r => r.data.pedido);
 
+// Caja con pago por QR de Bancard — crea el pedido PENDIENTE (precio normal,
+// método INFONET) y devuelve su hash para generar el QR; lo confirma el callback.
+export const tomarPedidoCajaQr = (payload) => api.post('/caja/pedido-qr', payload).then(r => r.data.pedido);
+
 // Tótem autoservicio — crea un pedido PENDIENTE (precio normal, pago QR Bancard)
 export const crearPedidoTotem = (payload) => api.post('/totem/pedido', payload).then(r => r.data.pedido);
 

@@ -1,11 +1,11 @@
 const db = require('../config/db');
 
 async function crear(datos, conn) {
-  const { cedula, familia, contacto, total, metodo_pago } = datos;
+  const { cedula, familia, contacto, total, metodo_pago, origen } = datos;
   const [result] = await (conn || db).query(
-    `INSERT INTO pedidos (cedula, familia, contacto, total, metodo_pago, hash, estado)
-     VALUES (?, ?, ?, ?, ?, '', 'PENDIENTE')`,
-    [cedula, familia, contacto, total, metodo_pago || null]
+    `INSERT INTO pedidos (cedula, familia, contacto, total, metodo_pago, origen, hash, estado)
+     VALUES (?, ?, ?, ?, ?, ?, '', 'PENDIENTE')`,
+    [cedula, familia, contacto, total, metodo_pago || null, origen || null]
   );
   return result.insertId;
 }

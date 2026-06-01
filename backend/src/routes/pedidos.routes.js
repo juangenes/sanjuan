@@ -12,7 +12,7 @@ router.post('/', async (req, res) => {
     if (!familia || !contacto || !items?.length) {
       return res.status(400).json({ error: 'Datos incompletos' });
     }
-    const resultado = await pedidoService.crearPedido({ cedula, familia, contacto, items, metodo_pago });
+    const resultado = await pedidoService.crearPedido({ cedula, familia, contacto, items, metodo_pago }, { origen: 'tienda' });
     res.status(201).json({ success: true, ...resultado });
   } catch (err) {
     res.status(400).json({ success: false, error: err.message });

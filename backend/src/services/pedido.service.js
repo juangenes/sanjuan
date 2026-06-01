@@ -11,9 +11,12 @@ const METODOS_COBRO = ['EFECTIVO', 'POS_DEBITO', 'POS_CREDITO'];
 //   lista: 'preventa' (default, precio con descuento) | 'normal' (precio del día)
 //   cobro: { metodo, recibido, operador } → cobra en el acto y deja el pedido PAGADO
 //          (caja del día). Si es null, queda PENDIENTE (preventa / tienda online).
+//   origen: 'tienda' | 'caja' | 'totem' → canal de origen, para etiquetar la comanda
+//           cuando el pago QR lo confirma el callback de Bancard.
 async function crearPedido({ cedula, familia, contacto, items, metodo_pago }, opts = {}) {
   const lista = opts.lista === 'normal' ? 'normal' : 'preventa';
   const cobro = opts.cobro || null;
+  const origen = opts.origen || null;
 
   const conn = await db.getConnection();
   await conn.beginTransaction();
@@ -58,7 +61,7 @@ async function crearPedido({ cedula, familia, contacto, items, metodo_pago }, op
     }
 
     // Crear pedido
-    const idpedido = await pedidoModel.crear({ cedula, familia, contacto, total, metodo_pago }, conn);
+    const idpedido = await pedidoModel.crear({ cedula, familia, contacto, total, metodo_pago, origen }, conn);
     const fecha = await pedidoModel.obtenerFecha(idpedido, conn);
     const hash = generarHash(idpedido, fecha);
     await pedidoModel.actualizarHash(idpedido, hash, conn);

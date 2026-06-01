@@ -300,8 +300,6 @@ export default function TotemPanel() {
           <div className={styles.exitoCodigo}>{exito?.codigo}</div>
           {exito?.impreso && (
             <p className={styles.exitoNota}>🧾 También podés retirar tu ticket impreso.</p>
-          {exito?.impreso && (
-            <p className={styles.exitoNota}>🧾 También podés retirar tu ticket impreso.</p>
           )}
 
 

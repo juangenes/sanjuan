@@ -1,8 +1,11 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { QRCodeCanvas } from 'qrcode.react';
+import { QRCodeCanvas, QRCodeSVG } from 'qrcode.react';
 import toast from 'react-hot-toast';
-import { getProductos, tomarPedidoCaja, getPedidosExpendio } from '../../api';
+import {
+  getProductos, tomarPedidoCaja, tomarPedidoCajaQr, getPedidosExpendio,
+  generarQrBancard, getEstadoBancard, revertirBancard,
+} from '../../api';
 import { useCarrito } from '../../context/CarritoContext';
 import { imprimirTicketPedido, getTicketeraIP, setTicketeraIP } from '../../utils/eposPrint';
 import EntregaCard from '../Expendio/EntregaCard';
@@ -22,6 +25,7 @@ const METODOS = [
   { key: 'EFECTIVO', label: '💵 Efectivo' },
   { key: 'POS_DEBITO', label: '💳 POS Débito' },
   { key: 'POS_CREDITO', label: '💳 POS Crédito' },
+  { key: 'INFONET', label: '📱 QR Bancard' },
 ];
 
 const fmtGs = (n) => Number(n || 0).toLocaleString('es-PY');
@@ -41,6 +45,7 @@ export default function CajaPanel() {
   const [search, setSearch] = useState('');
   const [cobroOpen, setCobroOpen] = useState(false);
   const [exito, setExito] = useState(null); // { codigo, hash, idpedido, vuelto, metodo, nombre, total, recibido, lineas }
+  const [qrPago, setQrPago] = useState(null); // { hash, idpedido, nombre, total, lineas, data, error } — pago QR en curso
   const [imprimiendo, setImprimiendo] = useState(false);
   const [impreso, setImpreso] = useState(false);
   const [modo, setModo] = useState('nuevo'); // 'nuevo' (walk-in) | 'preventa' (retiro)
@@ -87,18 +92,39 @@ export default function CajaPanel() {
   }
 
   async function confirmarCobro({ nombre, metodo, recibido }) {
-    const payload = {
-      nombre,
-      metodo,
-      recibido: metodo === 'EFECTIVO' ? Number(recibido) : null,
-      items: items.map(i => ({ idproducto: i.idproducto, cantidad: i.cantidad })),
-    };
+    const itemsPayload = items.map(i => ({ idproducto: i.idproducto, cantidad: i.cantidad }));
     // Foto del carrito para el ticket (con precios del día), antes de limpiarlo.
     const lineas = items.map(i => ({
       titulo: i.titulo,
       cantidad: i.cantidad,
       subtotal: precioCaja(i) * i.cantidad,
     }));
+
+    // Pago con QR de Bancard: NO se cobra acá. Creamos el pedido PENDIENTE y
+    // pasamos a la pantalla de QR; el pago lo confirma el callback de Bancard y
+    // lo detectamos por polling. La comanda a RETIRO la dispara el callback.
+    if (metodo === 'INFONET') {
+      const pedido = await tomarPedidoCajaQr({ nombre, items: itemsPayload });
+      limpiar();
+      setCobroOpen(false);
+      setQrPago({
+        hash: pedido.hash,
+        idpedido: pedido.idpedido,
+        nombre: (nombre && nombre.trim()) || 'Mostrador',
+        total: pedido.total,
+        lineas,
+        data: null,
+        error: false,
+      });
+      return;
+    }
+
+    const payload = {
+      nombre,
+      metodo,
+      recibido: metodo === 'EFECTIVO' ? Number(recibido) : null,
+      items: itemsPayload,
+    };
 
     const pedido = await tomarPedidoCaja(payload);
     const codigo = pedido.hash.substring(0, 8).toUpperCase();
@@ -120,6 +146,55 @@ export default function CajaPanel() {
       recibido: Number(recibido),
       lineas,
     });
+  }
+
+  // Pago con QR en curso: genera el QR de Bancard y poletea el estado hasta que
+  // el callback confirme el pago. Al confirmarse, pasa a la pantalla de éxito (la
+  // comanda a RETIRO ya la disparó el callback). Se re-arma solo si cambia el hash.
+  useEffect(() => {
+    if (!qrPago?.hash) return;
+    const { hash, idpedido, nombre, total, lineas } = qrPago;
+    let cancelado = false;
+    let timer;
+
+    function alPagar() {
+      if (cancelado) return;
+      setExito({
+        codigo: hash.substring(0, 8).toUpperCase(),
+        hash, idpedido, vuelto: 0, metodo: 'INFONET',
+        nombre, total, recibido: 0, lineas,
+      });
+      setQrPago(null);
+      toast.success('¡Pago confirmado!');
+    }
+
+    generarQrBancard(hash)
+      .then(r => {
+        if (cancelado) return;
+        if (r.ya_pagado) { alPagar(); return; }
+        if (r.qr_data) setQrPago(q => (q && q.hash === hash ? { ...q, data: r.qr_data } : q));
+        else setQrPago(q => (q && q.hash === hash ? { ...q, error: true } : q));
+      })
+      .catch(() => { if (!cancelado) setQrPago(q => (q && q.hash === hash ? { ...q, error: true } : q)); });
+
+    async function poll() {
+      try {
+        const r = await getEstadoBancard(hash);
+        if (cancelado) return;
+        if (r.pagado) { alPagar(); return; }
+      } catch { /* reintentamos en el próximo ciclo */ }
+      if (!cancelado) timer = setTimeout(poll, 4000);
+    }
+    timer = setTimeout(poll, 4000);
+
+    return () => { cancelado = true; clearTimeout(timer); };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [qrPago?.hash]);
+
+  // Cancela el pago QR pendiente: reversa el QR en Bancard y vuelve al catálogo.
+  function cancelarQr() {
+    if (qrPago?.hash) revertirBancard(qrPago.hash).catch(() => {});
+    setQrPago(null);
   }
 
   // Impresión explícita del ticket desde la pantalla de éxito.
@@ -149,6 +224,40 @@ export default function CajaPanel() {
     } finally {
       setImprimiendo(false);
     }
+  }
+
+  if (qrPago) {
+    return (
+      <div className={styles.pagina}>
+        <div className={styles.exitoWrap}>
+          <div className={styles.exitoCard}>
+            <h2>📱 Pago con QR</h2>
+            <p className={styles.exitoLabel}>Total a pagar</p>
+            <div className={styles.exitoCodigo}>Gs. {fmtGs(qrPago.total)}</div>
+            {qrPago.data ? (
+              <>
+                <div className={styles.exitoQr} style={{ marginTop: '1rem' }}>
+                  <QRCodeSVG value={qrPago.data} size={240} />
+                  <span>El comensal escanea con Pago Móvil o la app de su banco.</span>
+                </div>
+                <p style={{ marginTop: '1rem', fontWeight: 700, color: '#856404' }}>
+                  ⏳ Esperando confirmación del pago…
+                </p>
+              </>
+            ) : qrPago.error ? (
+              <p style={{ marginTop: '1rem', fontWeight: 700, color: '#b00020' }}>
+                ⚠️ No se pudo generar el QR. Cancelá e intentá de nuevo.
+              </p>
+            ) : (
+              <p style={{ marginTop: '1rem' }}>Generando QR de pago…</p>
+            )}
+            <div className={styles.exitoBtns} style={{ marginTop: '1.5rem' }}>
+              <button className={styles.btnNuevo} onClick={cancelarQr}>✕ Cancelar</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   if (exito) {
@@ -464,7 +573,11 @@ function CobroModal({ total, onClose, onConfirm }) {
         </div>
         <div className="td-modal-foot">
           <button className="td-cta" disabled={!ok || loading} style={{ opacity: ok && !loading ? 1 : .55 }} onClick={submit}>
-            {loading ? 'Procesando...' : `✅ Cobrar Gs. ${fmtGs(total)}`}
+            {loading
+              ? 'Procesando...'
+              : metodo === 'INFONET'
+                ? `📱 Generar QR · Gs. ${fmtGs(total)}`
+                : `✅ Cobrar Gs. ${fmtGs(total)}`}
           </button>
         </div>
       </div>

@@ -33,7 +33,15 @@ export default function AdminPedidos() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    getPedidosAdmin().then(setPedidos).catch(() => navigate('/admin'));
+    let cancel = false;
+    // Carga inicial: si falla la auth, al login.
+    getPedidosAdmin().then(d => { if (!cancel) setPedidos(d); }).catch(() => { if (!cancel) navigate('/admin'); });
+    // Refresco periódico: los pagos confirmados por Bancard (vía callback) pasan a
+    // PAGADO en la base; así aparecen acá sin tener que recargar la página.
+    const id = setInterval(() => {
+      getPedidosAdmin().then(d => { if (!cancel) setPedidos(d); }).catch(() => {});
+    }, 15000);
+    return () => { cancel = true; clearInterval(id); };
   }, []);
 
   // Aplica un cambio de estado al pedido `id` localmente (sin recargar la lista).

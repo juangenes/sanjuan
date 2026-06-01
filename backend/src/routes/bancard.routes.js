@@ -197,10 +197,12 @@ async function confirmarPagoPedido(pedido, { ticket = null, authorization = null
   await pedidoModel.marcarPagadoBancard(pedido.idpedido, { ticket, authorization });
   try {
     const items = await pedidoProductoModel.obtenerPorPedido(pedido.idpedido);
+    // Etiqueta de origen para la comanda (caja / totem / tienda). Pedidos viejos
+    // sin origen caen a 'totem' por compatibilidad.
     await expendioService.registrarEntrega(
       pedido.hash,
       items.map(i => ({ idproducto: i.idproducto, cantidad: i.cantidad })),
-      'totem'
+      pedido.origen || 'totem'
     );
   } catch (e) {
     console.error('[bancard] pago OK pero no se disparó la comanda a retiro:', e.message);
