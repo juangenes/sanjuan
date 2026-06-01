@@ -18,9 +18,8 @@ const SECCIONES = TABS.slice(1);
 
 const METODOS = [
   { key: 'EFECTIVO', label: '💵 Efectivo' },
-  { key: 'QR', label: '📱 QR' },
-  { key: 'TARJETA', label: '💳 Tarjeta' },
-  { key: 'TRANSFERENCIA', label: '🏦 Transf.' },
+  { key: 'POS_DEBITO', label: '💳 POS Débito' },
+  { key: 'POS_CREDITO', label: '💳 POS Crédito' },
 ];
 
 const fmtGs = (n) => Number(n || 0).toLocaleString('es-PY');

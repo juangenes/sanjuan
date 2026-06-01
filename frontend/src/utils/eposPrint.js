@@ -189,8 +189,12 @@ export async function imprimirTicketPedido(data) {
     comandos.push({ text: lineaLR(`${it.cantidad}x ${it.titulo}`, gs(it.subtotal)) });
   }
   comandos.push({ text: separador() });
+  const metodoLabel = {
+    EFECTIVO: 'Efectivo', POS_DEBITO: 'POS Debito', POS_CREDITO: 'POS Credito',
+    QR: 'QR', TARJETA: 'Tarjeta', TRANSFERENCIA: 'Transferencia',
+  }[data.metodo] || data.metodo;
   comandos.push({ text: lineaLR('TOTAL', gs(data.total)), bold: true });
-  comandos.push({ text: lineaLR('Metodo', data.metodo) });
+  comandos.push({ text: lineaLR('Metodo', metodoLabel) });
   if (data.metodo === 'EFECTIVO') {
     comandos.push({ text: lineaLR('Recibido', gs(data.recibido)) });
     comandos.push({ text: lineaLR('Vuelto', gs(data.vuelto)), bold: true });

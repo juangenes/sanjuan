@@ -5,7 +5,7 @@ const productoModel = require('../models/producto.model');
 const { generarHash } = require('../utils/hash');
 const { notificarDespacho } = require('../utils/rtsClient');
 
-const METODOS_COBRO = ['EFECTIVO', 'QR', 'TARJETA', 'TRANSFERENCIA'];
+const METODOS_COBRO = ['EFECTIVO', 'POS_DEBITO', 'POS_CREDITO'];
 
 // Crea un pedido. `opts`:
 //   lista: 'preventa' (default, precio con descuento) | 'normal' (precio del día)
