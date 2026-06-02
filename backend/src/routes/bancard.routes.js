@@ -206,14 +206,20 @@ router.post('/revertir', async (req, res) => {
 async function confirmarPagoPedido(pedido, { ticket = null, authorization = null } = {}) {
   if (pedido.estado === 'PAGADO') return;
   await pedidoModel.marcarPagadoBancard(pedido.idpedido, { ticket, authorization });
+
+  // Solo el TÓTEM y la CAJA disparan la comanda a RETIRO al pagarse: la persona
+  // está ahí esperando su pedido (consumo inmediato). La TIENDA (preventa) NO: el
+  // pedido queda PAGADO y recién va a RETIRO cuando el comensal se acerca y la caja
+  // lo envía desde "Preventa / Retiro". Pedidos viejos sin origen → 'totem'.
+  const origen = pedido.origen || 'totem';
+  if (origen === 'tienda') return;
+
   try {
     const items = await pedidoProductoModel.obtenerPorPedido(pedido.idpedido);
-    // Etiqueta de origen para la comanda (caja / totem / tienda). Pedidos viejos
-    // sin origen caen a 'totem' por compatibilidad.
     await expendioService.registrarEntrega(
       pedido.hash,
       items.map(i => ({ idproducto: i.idproducto, cantidad: i.cantidad })),
-      pedido.origen || 'totem'
+      origen
     );
   } catch (e) {
     console.error('[bancard] pago OK pero no se disparó la comanda a retiro:', e.message);
