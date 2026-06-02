@@ -38,22 +38,11 @@ async function registrarEntrega(hash, items, operador) {
   if (!pedido) throw new Error('Pedido no encontrado');
   if (pedido.estado !== 'PAGADO') throw new Error('El pedido no está pagado');
 
-  // Validar que no se entregue más de lo pedido (idempotencia ante reintentos).
-  const pedidoItems = await pedidoProductoModel.obtenerPorPedido(pedido.idpedido);
-  const entregas = await entregaModel.obtenerEntregasPorPedido(pedido.idpedido);
-  const entregasMap = {};
-  for (const e of entregas) entregasMap[e.idproducto] = Number(e.entregado);
-
-  for (const item of items) {
-    const pedidoItem = pedidoItems.find(p => p.idproducto === item.idproducto);
-    if (!pedidoItem) throw new Error(`Producto ${item.idproducto} no pertenece al pedido`);
-    const yaEntregado = entregasMap[item.idproducto] || 0;
-    if (yaEntregado + item.cantidad > pedidoItem.cantidad) {
-      throw new Error(`No podés entregar más de lo pedido para ${pedidoItem.titulo}`);
-    }
-  }
-
-  const idot = await entregaModel.registrar(pedido.idpedido, items, operador);
+  // Re-chequea el saldo y registra la entrega de forma atómica (transacción con
+  // lock sobre el pedido): si dos terminales disparan el mismo pedido a la vez, la
+  // segunda relee el saldo recién cuando la primera confirmó y rechaza si ya no
+  // queda. Evita el sobre-retiro por carrera. También garantiza idempotencia.
+  const idot = await entregaModel.registrarConSaldo(pedido.idpedido, items, operador);
 
   // Encola la comanda y avisa a la pantalla de retiro (en vivo). Si el RTS falla,
   // la comanda igual queda PENDIENTE en la base y la pantalla la levanta al refrescar.

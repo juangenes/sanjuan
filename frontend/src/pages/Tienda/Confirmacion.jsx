@@ -167,23 +167,28 @@ export default function Confirmacion() {
       .filter(i => i.cantidad > 0);
     if (!items.length) { setConfirmar(false); return; }
     setPreparando(true);
+    let ok = false;
     try {
       await prepararPedido(hash, items);
+      ok = true;
       toast.success('¡Tu pedido se está preparando! 🔥');
-      // Refrescamos saldos: lo recién enviado pasa a la pestaña RETIROS.
+    } catch (err) {
+      // Típicamente saldo agotado por otra terminal (carrera). El backend ya
+      // re-chequeó con lock; acá refrescamos para mostrar el saldo real.
+      toast.error(err.response?.data?.error || 'No se pudo preparar el pedido');
+    }
+    // Siempre re-leemos el saldo: en éxito lo enviado pasa a RETIROS; en error
+    // (p. ej. otra terminal se adelantó) los steppers reflejan lo que quedó.
+    try {
       const [p, r] = await Promise.all([
         getPedido(hash),
         getRetirosPedido(hash).catch(() => []),
       ]);
       setPedido(p);
       setRetiros(r);
-      setTab('retiros');
-      setConfirmar(false);
-    } catch (err) {
-      toast.error(err.response?.data?.error || 'No se pudo preparar el pedido');
-    } finally {
-      setPreparando(false);
-    }
+    } catch { /* si el refetch falla, dejamos el estado como estaba */ }
+    if (ok) { setTab('retiros'); setConfirmar(false); }
+    setPreparando(false);
   }
 
   async function descargarComprobante() {
