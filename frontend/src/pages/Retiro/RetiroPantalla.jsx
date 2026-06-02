@@ -21,6 +21,7 @@ export default function RetiroPantalla() {
   const [impresas, setImpresas] = useState([]);  // historial de impresas en esta sesión
   const [imprimiendo, setImprimiendo] = useState(() => new Set());
   const [online, setOnline] = useState(false);
+  const [busqueda, setBusqueda] = useState('');  // filtro de la cola (código o familia)
   const navigate = useNavigate();
 
   const quitadasRef = useRef(new Set()); // ids ya impresos/quitados (evita que el refetch los reviva)
@@ -60,6 +61,17 @@ export default function RetiroPantalla() {
   // sigue en la cola; si no (recién impresa) o si no hay ninguna elegida, cae a la
   // primera (la más vieja, FIFO). Click en un item de la izquierda fija selId.
   const sel = cola.find(c => c.id === selId) || cola[0] || null;
+
+  // Cola visible según el buscador. Conserva la posición FIFO original (idx) para
+  // que el número del item siga indicando el lugar real en la cola.
+  const q = busqueda.trim().toLowerCase();
+  const colaFiltrada = q
+    ? cola
+        .map((c, idx) => ({ c, idx }))
+        .filter(({ c }) =>
+          (c.codigo || '').toLowerCase().includes(q) ||
+          (c.familia || '').toLowerCase().includes(q))
+    : cola.map((c, idx) => ({ c, idx }));
 
   function marcarImprimiendo(id, on) {
     setImprimiendo(prev => {
@@ -147,10 +159,26 @@ export default function RetiroPantalla() {
       <div className={styles.split}>
         {/* IZQUIERDA: cola FIFO (vieja arriba, nuevas al fondo) */}
         <aside className={styles.lista}>
+          <div className={styles.buscador}>
+            <span className={styles.buscadorIcon}>🔍</span>
+            <input
+              className={styles.buscadorInput}
+              type="search"
+              placeholder="Buscar código o familia…"
+              value={busqueda}
+              onChange={(e) => setBusqueda(e.target.value)}
+            />
+            {busqueda && (
+              <button className={styles.buscadorClear} onClick={() => setBusqueda('')} title="Limpiar">✕</button>
+            )}
+          </div>
+
           {cola.length === 0 ? (
             <div className={styles.vacio}>📭 Esperando comandas…</div>
+          ) : colaFiltrada.length === 0 ? (
+            <div className={styles.vacio}>Sin coincidencias para «{busqueda}»</div>
           ) : (
-            cola.map((c, idx) => (
+            colaFiltrada.map(({ c, idx }) => (
               <button
                 key={c.id}
                 className={`${styles.listItem} ${c.id === selId ? styles.listItemActivo : ''}`}

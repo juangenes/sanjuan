@@ -118,6 +118,25 @@
   padding: 0.8rem;
   display: flex; flex-direction: column; gap: 0.5rem;
 }
+/* Buscador de la cola */
+.buscador {
+  position: sticky; top: 0; z-index: 1;
+  display: flex; align-items: center; gap: 0.5rem;
+  background: #11202f; border: 1px solid #244a66; border-radius: 12px;
+  padding: 0.5rem 0.7rem; margin-bottom: 0.2rem;
+}
+.buscadorIcon { color: #7c93a8; font-size: 0.9rem; flex-shrink: 0; }
+.buscadorInput {
+  flex: 1; min-width: 0; background: transparent; border: none; outline: none;
+  color: #e7edf5; font-size: 0.95rem;
+}
+.buscadorInput::placeholder { color: #6b8197; }
+.buscadorClear {
+  flex-shrink: 0; background: #24384c; color: #cfe0f0; border: none; border-radius: 6px;
+  width: 22px; height: 22px; cursor: pointer; font-size: 0.8rem; line-height: 1;
+}
+.buscadorClear:hover { background: #2f4a64; }
+
 .listItem {
   display: flex; align-items: center; gap: 0.7rem;
   background: #16283a; border: 1px solid #244a66; border-radius: 12px;
