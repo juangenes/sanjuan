@@ -21,6 +21,26 @@ function waLink(p) {
   return `https://wa.me/595${num}?text=${encodeURIComponent(msg)}`;
 }
 
+// Normaliza un celular a su forma comparable: solo dígitos, sin prefijo país (595)
+// ni el 0 inicial. Así "0981123456", "981123456" y "595981123456" coinciden.
+function normNum(s) {
+  return (s || '').replace(/\D/g, '').replace(/^595/, '').replace(/^0/, '');
+}
+
+// Arma un wa.me con el listado de pedidos de un cliente para enviárselo a su
+// propio número. Reusa el mismo patrón de deep-link (envío manual, sin API).
+function waLinkListado(numNorm, lista) {
+  const lineas = lista.map((p, i) => {
+    const codigo = p.hash.substring(0, 8).toUpperCase();
+    const link = `https://sanjuandicequesi.com/pedido/${p.hash}`;
+    const est = p.estado === 'PAGADO' ? '✅ PAGADO' : '🔔 PENDIENTE DE PAGO';
+    return `${i + 1}) ${codigo} · ${p.familia}\n${est} — Gs. ${Number(p.total).toLocaleString()}\n${link}`;
+  });
+  const total = lista.reduce((s, p) => s + Number(p.total || 0), 0);
+  const msg = `*SAN JUAN DICE QUE SI 2026*\n\nTus pedidos (${lista.length}):\n\n${lineas.join('\n\n')}\n\n*Total: Gs. ${total.toLocaleString()}*`;
+  return `https://wa.me/595${numNorm}?text=${encodeURIComponent(msg)}`;
+}
+
 export default function AdminPedidos() {
   const [pedidos, setPedidos] = useState([]);
   const [filtro, setFiltro] = useState('TODOS');
@@ -29,6 +49,7 @@ export default function AdminPedidos() {
   // Pedido (completo, con ítems) cuya imagen de comprobante se está por compartir.
   const [imgPedido, setImgPedido] = useState(null);
   const [imgBusy, setImgBusy] = useState(null); // idpedido en proceso
+  const [numEnvio, setNumEnvio] = useState(''); // celular para enviar el listado
   const qrRef = useRef(null);
   const navigate = useNavigate();
 
@@ -155,6 +176,16 @@ export default function AdminPedidos() {
     return () => { cancel = true; cancelAnimationFrame(raf); };
   }, [imgPedido]);
 
+  // Busca todos los pedidos (no anulados) de un celular y abre WhatsApp hacia ese
+  // mismo número con el listado armado, listo para enviar.
+  function enviarListado() {
+    const objetivo = normNum(numEnvio);
+    if (objetivo.length < 6) { toast.error('Ingresá un celular válido'); return; }
+    const lista = pedidos.filter(p => p.estado !== 'ANULADO' && normNum(p.contacto) === objetivo);
+    if (!lista.length) { toast.error('No hay pedidos para ese número'); return; }
+    window.open(waLinkListado(objetivo, lista), '_blank');
+  }
+
   const filtrados = filtro === 'TODOS' ? pedidos : pedidos.filter(p => p.estado === filtro);
 
   return (
@@ -168,12 +199,13 @@ export default function AdminPedidos() {
           <Link to="/admin/ventas-producto">Ventas x Producto</Link>
           <Link to="/admin/usuarios">Usuarios</Link>
           <Link to="/admin/puestos">Puestos</Link>
+          <Link to="/admin/configuracion">Configuración</Link>
           <a onClick={() => { localStorage.clear(); navigate('/admin'); }} style={{ cursor: 'pointer' }}>Salir</a>
         </div>
       </nav>
 
       <div className={styles.contenido}>
-        <div style={{ marginBottom: '1rem', display: 'flex', gap: '0.5rem' }}>
+        <div style={{ marginBottom: '1rem', display: 'flex', gap: '0.5rem', alignItems: 'center', flexWrap: 'wrap' }}>
           {['TODOS', 'PENDIENTE', 'PAGADO', 'ANULADO'].map(f => (
             <button key={f} onClick={() => setFiltro(f)}
               style={{ padding: '0.4rem 1rem', borderRadius: '20px', border: 'none', cursor: 'pointer',
@@ -181,6 +213,23 @@ export default function AdminPedidos() {
               {f}
             </button>
           ))}
+          {/* Enviar a un cliente, por WhatsApp, el listado de sus propios pedidos. */}
+          <div style={{ marginLeft: 'auto', display: 'flex', gap: '0.4rem', alignItems: 'center' }}>
+            <input
+              type="tel"
+              value={numEnvio}
+              onChange={e => setNumEnvio(e.target.value)}
+              onKeyDown={e => { if (e.key === 'Enter') enviarListado(); }}
+              placeholder="Celular del cliente"
+              style={{ padding: '0.4rem 0.7rem', borderRadius: '20px', border: '1px solid #ccc', width: '11rem' }}
+            />
+            <button onClick={enviarListado}
+              style={{ padding: '0.4rem 1rem', borderRadius: '20px', border: 'none', cursor: 'pointer',
+                background: '#25D366', color: 'white', fontWeight: 600 }}
+              title="Enviar a ese número el listado de sus pedidos por WhatsApp">
+              📋 Enviar listado
+            </button>
+          </div>
         </div>
 
         <table>
