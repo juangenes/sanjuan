@@ -9,6 +9,7 @@ export default function TarjetasPanel() {
   const { codigo } = useParams();
   const navigate = useNavigate();
   const [puesto, setPuesto] = useState(null);
+  const [puestoInvalido, setPuestoInvalido] = useState(false);
   const [tarjeta, setTarjeta] = useState(null);
   const [cargando, setCargando] = useState(false);
   const [codigoManual, setCodigoManual] = useState('');
@@ -18,8 +19,9 @@ export default function TarjetasPanel() {
   useEffect(() => {
     getPuestos()
       .then(puestos => {
-        const p = puestos.find(x => String(x.codigo) === String(codigo) || String(x.id) === String(codigo));
-        if (!p) { toast.error('Puesto inválido'); navigate('/tarjetas'); return; }
+        // El código de la URL es el único identificador válido del puesto (no usamos el id).
+        const p = puestos.find(x => String(x.codigo) === String(codigo));
+        if (!p) { setPuestoInvalido(true); return; }
         setPuesto(p);
       })
       .catch(() => { toast.error('No se pudo validar el puesto'); navigate('/tarjetas'); });
@@ -64,6 +66,27 @@ export default function TarjetasPanel() {
     setTarjeta(null);
     setCodigoManual('');
     setModoManual(false);
+  }
+
+  if (puestoInvalido) {
+    return (
+      <div className={styles.pagina}>
+        <div className={styles.contenido}>
+          <div className={styles.tarjetaCard} style={{ textAlign: 'center' }}>
+            <h1 style={{ fontSize: '3rem', margin: 0 }}>🚫</h1>
+            <h2 style={{ color: '#E63946' }}>Puesto no encontrado</h2>
+            <p>No existe ningún puesto con el código <strong>{codigo}</strong>.</p>
+            <Link
+              to="/tarjetas"
+              className={styles.btnSecundario}
+              style={{ display: 'block', textAlign: 'center', textDecoration: 'none' }}
+            >
+              ← Ver puestos
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   return (
