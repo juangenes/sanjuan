@@ -6,70 +6,79 @@ import { suscribirScope } from '../../utils/rtsSocket';
 import { imprimirComandaRetiro, getTicketeraIP, setTicketeraIP } from '../../utils/eposPrint';
 import styles from './Retiro.module.css';
 
-// Pantalla única de RETIRO (modelo fast food). Escucha el RTS: cada comanda que
-// cae se IMPRIME sola en la ticketera y se "cuelga" en el board. La cola en la
-// base es la fuente de verdad: si el RTS se pierde un aviso, igual la levantamos
-// al refrescar (RTS + intervalo de respaldo). Una comanda recién sale de la cola
-// cuando se imprimió OK (se marca impresa en el backend).
+// Pantalla única de RETIRO (modelo fast food). El board refleja la COLA EN VIVO de
+// comandas pendientes (la base es la fuente de verdad): cada comanda que cae —la
+// dispare la caja (walk-in o preventa) o el tótem— aparece acá, HAYA O NO impresora.
+// Si hay ticketera configurada, además se imprime sola (best-effort, una vez por
+// comanda). La comanda sale del board cuando el operario toca «✓ Listo».
 //
-// CAVEAT mixed-content: abrí esta pantalla por HTTP en la LAN (igual que la caja)
-// para que el navegador pueda hablar con la impresora por http://<ip>.
+// CAVEAT mixed-content: para imprimir, abrí esta pantalla por HTTP en la LAN (igual
+// que la caja) para que el navegador pueda hablar con la impresora por http://<ip>.
+const PRINTED_KEY = 'retiro_impresas'; // ids ya impresos en ESTE dispositivo (evita reimprimir al refrescar)
+
+function cargarImpresas() {
+  try { return new Set(JSON.parse(localStorage.getItem(PRINTED_KEY) || '[]')); }
+  catch { return new Set(); }
+}
+function guardarImpresas(set) {
+  try { localStorage.setItem(PRINTED_KEY, JSON.stringify([...set].slice(-300))); } catch { /* noop */ }
+}
+
 export default function RetiroPantalla() {
-  const [colgadas, setColgadas] = useState([]); // comandas impresas esta sesión (board)
+  const [cola, setCola] = useState([]); // comandas PENDIENTE (board en vivo)
   const [online, setOnline] = useState(false);
   const [errImpresion, setErrImpresion] = useState(false);
   const navigate = useNavigate();
 
-  const impresasRef = useRef(new Set()); // ids ya impresos (no reimprimir solos)
-  const enVueloRef = useRef(new Set());  // ids imprimiéndose ahora (anti doble)
-  const procesandoRef = useRef(false);
+  const impresasRef = useRef(cargarImpresas()); // ids ya impresos (persisten en localStorage)
+  const enVueloRef = useRef(new Set());         // ids imprimiéndose ahora (anti doble)
+  const atendidasRef = useRef(new Set());       // ids que ya marcamos Listo (optimista)
 
   const horaCorta = (d) =>
     new Date(d).toLocaleTimeString('es-PY', { hour: '2-digit', minute: '2-digit' });
 
-  // Imprime las comandas pendientes que aún no se imprimieron en esta sesión.
-  const procesarCola = useCallback(async (cola) => {
-    if (procesandoRef.current) return;
-    if (!getTicketeraIP()) { if (cola.length) setErrImpresion(true); return; }
-    procesandoRef.current = true;
-    try {
-      let huboError = false;
-      for (const c of cola) {
-        if (impresasRef.current.has(c.id) || enVueloRef.current.has(c.id)) continue;
-        enVueloRef.current.add(c.id);
-        try {
-          await imprimirComandaRetiro(c);
-          await marcarComandaImpresa(c.id);
-          impresasRef.current.add(c.id);
-          setColgadas(prev => [{ ...c, hora: horaCorta(Date.now()) }, ...prev].slice(0, 40));
-        } catch (err) {
-          huboError = true;
-          console.error('[retiro] no se imprimió comanda', c.codigo, err.message);
-        } finally {
-          enVueloRef.current.delete(c.id);
-        }
+  // Best-effort: imprime las comandas nuevas si hay ticketera. NO las saca de la
+  // cola (el board las muestra hasta que el operario toque «Listo»). El id impreso
+  // se guarda en localStorage para no reimprimir al refrescar/recargar.
+  const autoImprimir = useCallback(async (lista) => {
+    if (!getTicketeraIP()) return; // sin impresora: igual se muestran en el board
+    let huboError = false;
+    for (const c of lista) {
+      if (impresasRef.current.has(c.id) || enVueloRef.current.has(c.id)) continue;
+      enVueloRef.current.add(c.id);
+      try {
+        await imprimirComandaRetiro(c);
+        impresasRef.current.add(c.id);
+        guardarImpresas(impresasRef.current);
+      } catch (err) {
+        huboError = true;
+        console.error('[retiro] no se imprimió comanda', c.codigo, err.message);
+      } finally {
+        enVueloRef.current.delete(c.id);
       }
-      setErrImpresion(huboError);
-    } finally {
-      procesandoRef.current = false;
     }
+    if (huboError) setErrImpresion(true);
   }, []);
 
   const refrescar = useCallback(async () => {
     try {
-      const cola = await getColaRetiro();
-      await procesarCola(cola);
+      const lista = await getColaRetiro();
+      // Más recientes arriba; descartamos las que ya marcamos Listo (optimista).
+      const visible = lista
+        .filter(c => !atendidasRef.current.has(c.id))
+        .sort((a, b) => new Date(b.creado_en) - new Date(a.creado_en));
+      setCola(visible);
+      autoImprimir(visible);
     } catch (err) {
-      // Silencioso: el intervalo y el RTS reintentan.
       console.error('[retiro] no se pudo cargar la cola:', err.message);
     }
-  }, [procesarCola]);
+  }, [autoImprimir]);
 
   useEffect(() => {
     if (!localStorage.getItem('sanjuan_token')) { navigate('/caja'); return; }
     refrescar();
     // Respaldo: si el RTS se cae, igual levantamos comandas nuevas.
-    const id = setInterval(refrescar, 15000);
+    const id = setInterval(refrescar, 8000);
     return () => clearInterval(id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -90,12 +99,27 @@ export default function RetiroPantalla() {
     }
   }
 
-  async function reimprimir(c) {
+  async function imprimir(c) {
     try {
       await imprimirComandaRetiro(c);
-      toast.success(`Comanda ${c.codigo} reimpresa`);
+      impresasRef.current.add(c.id);
+      guardarImpresas(impresasRef.current);
+      toast.success(`Comanda ${c.codigo} impresa`);
     } catch (err) {
-      toast.error(`No se pudo reimprimir: ${err.message}`);
+      toast.error(`No se pudo imprimir: ${err.message}`);
+    }
+  }
+
+  // El operario marca la comanda como atendida → sale del board y de la cola.
+  async function marcarListo(c) {
+    atendidasRef.current.add(c.id);
+    setCola(prev => prev.filter(x => x.id !== c.id)); // optimista
+    try {
+      await marcarComandaImpresa(c.id);
+    } catch (err) {
+      atendidasRef.current.delete(c.id);
+      toast.error(`No se pudo cerrar: ${err.message}`);
+      refrescar();
     }
   }
 
@@ -115,20 +139,20 @@ export default function RetiroPantalla() {
 
       {errImpresion && (
         <div className={styles.banner}>
-          <span>⚠️ Hay comandas sin imprimir (¿impresora o IP?). Reintentando automáticamente…</span>
+          <span>⚠️ Hay comandas sin imprimir (¿impresora o IP?). Igual se muestran abajo; reintenta automáticamente…</span>
           <button className={`${styles.btn} ${styles.btnGhost}`} onClick={configurarIp}>Configurar IP</button>
         </div>
       )}
 
       <div className={styles.board}>
-        {colgadas.length === 0 ? (
-          <div className={styles.vacio}>📭 Esperando comandas… (se imprimen y cuelgan solas)</div>
+        {cola.length === 0 ? (
+          <div className={styles.vacio}>📭 Esperando comandas… (aparecen acá apenas la caja registra la entrega)</div>
         ) : (
-          colgadas.map(c => (
+          cola.map(c => (
             <div key={c.id} className={styles.card}>
               <div className={styles.cardTop}>
                 <span className={styles.codigo}>{c.codigo}</span>
-                <span className={styles.hora}>{c.hora}</span>
+                <span className={styles.hora}>{horaCorta(c.creado_en)}</span>
               </div>
               <div className={styles.familia}>{c.familia}</div>
               <ul className={styles.items}>
@@ -139,7 +163,10 @@ export default function RetiroPantalla() {
                   </li>
                 ))}
               </ul>
-              <button className={styles.reimprimir} onClick={() => reimprimir(c)}>↻ Reimprimir</button>
+              <div className={styles.cardBtns}>
+                <button className={styles.listo} onClick={() => marcarListo(c)}>✓ Listo</button>
+                <button className={styles.reimprimir} onClick={() => imprimir(c)}>🖨</button>
+              </div>
             </div>
           ))
         )}
