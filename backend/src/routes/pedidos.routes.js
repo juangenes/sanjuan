@@ -2,6 +2,7 @@ const router = require('express').Router();
 const pedidoService = require('../services/pedido.service');
 const pedidoModel = require('../models/pedido.model');
 const entregaModel = require('../models/entrega.model');
+const expendioService = require('../services/expendio.service');
 const { authAdmin } = require('../middleware/auth');
 const { notificarDespacho } = require('../utils/rtsClient');
 
@@ -28,6 +29,23 @@ router.get('/:hash/retiros', async (req, res) => {
     res.json({ success: true, retiros });
   } catch (err) {
     res.status(500).json({ error: err.message });
+  }
+});
+
+// Público (AUTORETIRO) — el cliente, desde su celular (o el tótem), dispara la
+// comanda a RETIRO de los ítems que elige. Seguridad por hash (igual que el resto
+// de endpoints públicos del pedido). registrarEntrega ya valida que el pedido esté
+// PAGADO y que no se entregue más de lo pedido, así que un doble toque no duplica.
+router.post('/:hash/preparar', async (req, res) => {
+  try {
+    const items = (req.body?.items || [])
+      .map(i => ({ idproducto: Number(i.idproducto), cantidad: Number(i.cantidad) }))
+      .filter(i => i.idproducto && i.cantidad > 0);
+    if (!items.length) return res.status(400).json({ error: 'No seleccionaste nada para preparar' });
+    const { idot } = await expendioService.registrarEntrega(req.params.hash, items, 'AUTORETIRO');
+    res.json({ success: true, idot });
+  } catch (err) {
+    res.status(400).json({ error: err.message });
   }
 });
 

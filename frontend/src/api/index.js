@@ -77,6 +77,11 @@ export const crearPedidoTotem = (payload) => api.post('/totem/pedido', payload).
 // Retiros públicos (cliente)
 export const getRetirosPedido = (hash) => api.get(`/pedidos/${hash}/retiros`).then(r => r.data.retiros);
 
+// AUTORETIRO — el cliente (o el tótem) dispara a RETIRO los ítems que elige.
+// items: [{ idproducto, cantidad }]. Seguridad por hash.
+export const prepararPedido = (hash, items) =>
+  api.post(`/pedidos/${hash}/preparar`, { items }).then(r => r.data);
+
 // Tarjetas
 export const getSaldo = (codigo) => api.get(`/tarjetas/${codigo}/saldo`).then(r => r.data);
 export const consumirCredito = (codigo, idpuesto) => api.post('/tarjetas/consumir', { codigo, idpuesto }).then(r => r.data);

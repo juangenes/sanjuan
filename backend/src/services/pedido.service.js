@@ -1,6 +1,7 @@
 const db = require('../config/db');
 const pedidoModel = require('../models/pedido.model');
 const pedidoProductoModel = require('../models/pedidoProducto.model');
+const entregaModel = require('../models/entrega.model');
 const productoModel = require('../models/producto.model');
 const { generarHash } = require('../utils/hash');
 const { notificarDespacho } = require('../utils/rtsClient');
@@ -97,7 +98,20 @@ async function obtenerPedidoPublico(hash) {
   const pedido = await pedidoModel.buscarPorHash(hash);
   if (!pedido) return null;
   const items = await pedidoProductoModel.obtenerPorPedido(pedido.idpedido);
-  return { ...pedido, items };
+
+  // Saldo de retiro por ítem: lo que ya se disparó a RETIRO (caja, tótem o
+  // autoretiro) vs lo que falta. Habilita el AUTORETIRO desde el celular del
+  // cliente (selecciona lo pendiente y lo manda a preparar).
+  const entregas = await entregaModel.obtenerEntregasPorPedido(pedido.idpedido);
+  const entregadoMap = {};
+  for (const e of entregas) entregadoMap[e.idproducto] = Number(e.entregado);
+
+  const detalle = items.map(item => {
+    const entregado = entregadoMap[item.idproducto] || 0;
+    return { ...item, entregado, pendiente: item.cantidad - entregado };
+  });
+
+  return { ...pedido, items: detalle };
 }
 
 module.exports = { crearPedido, obtenerPedidoPublico, METODOS_COBRO };

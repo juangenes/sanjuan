@@ -7,6 +7,7 @@ import {
   generarQrBancard,
   getEstadoBancard,
   revertirBancard,
+  prepararPedido,
 } from '../../api';
 import { useCarrito } from '../../context/CarritoContext';
 import {
@@ -61,9 +62,11 @@ export default function TotemPanel() {
   const [creando, setCreando] = useState(false);
   const [exito, setExito] = useState(null);  // { codigo, impreso }
   const [ttl, setTtl] = useState(0);         // cuenta regresiva visible
+  const [retiro, setRetiro] = useState('preguntar'); // preguntar | enviando | enviado
 
   const { items, agregar, quitar, limpiar } = useCarrito();
   const lineasRef = useRef([]); // foto del carrito para el ticket
+  const itemsRef = useRef([]);  // ítems (idproducto+cantidad) para disparar el autoretiro
 
   useEffect(() => {
     getProductos()
@@ -110,9 +113,24 @@ export default function TotemPanel() {
     setQrPago(null);
     setQrError(false);
     setExito(null);
+    setRetiro('preguntar');
     setSearch('');
     setActiveTab('TODOS');
     setFase('idle');
+  }
+
+  // El tótem ya no auto-dispara a RETIRO al pagar: se le pregunta al cliente en la
+  // pantalla de éxito. Acá mandamos TODO el pedido a preparar (autoretiro).
+  async function prepararRetiroTotem() {
+    if (!exito?.hash || retiro !== 'preguntar') return;
+    setRetiro('enviando');
+    try {
+      await prepararPedido(exito.hash, itemsRef.current);
+      setRetiro('enviado');
+    } catch (err) {
+      toast.error(err.response?.data?.error || 'No se pudo enviar a preparar');
+      setRetiro('preguntar');
+    }
   }
 
   function empezar() {
@@ -130,6 +148,8 @@ export default function TotemPanel() {
       cantidad: i.cantidad,
       subtotal: precioTotem(i) * i.cantidad,
     }));
+    // Ítems para el AUTORETIRO ("¿retirar todo?" en la pantalla de éxito).
+    itemsRef.current = items.map(i => ({ idproducto: i.idproducto, cantidad: i.cantidad }));
     try {
       const pedido = await crearPedidoTotem({
         items: items.map(i => ({ idproducto: i.idproducto, cantidad: i.cantidad })),
@@ -274,26 +294,58 @@ export default function TotemPanel() {
   if (fase === 'exito') {
     return (
       <div className={styles.exitoPagina} onClick={reiniciar}>
-        <div className={styles.exitoCard}>
+        <div className={styles.exitoCard} onClick={(e) => e.stopPropagation()}>
           <div className={styles.exitoCheck}>✓</div>
           <h2>¡Pago confirmado!</h2>
 
+          {/* ¿Retirar ahora? El tótem ya no dispara solo a RETIRO: le preguntamos
+              al cliente. Si dice que sí, mandamos TODO el pedido a preparar. */}
+          {retiro === 'enviado' ? (
+            <div style={{
+              margin: '0 0 1.25rem', padding: '1.25rem', borderRadius: 16,
+              background: '#dcfce7', border: '2px solid #22c55e',
+            }}>
+              <div style={{ fontSize: '2.2rem' }}>🔥</div>
+              <h3 style={{ margin: '.25rem 0', fontWeight: 900, color: '#15803d', fontSize: '1.4rem' }}>
+                ¡Tu pedido se está preparando!
+              </h3>
+              <p style={{ margin: 0, color: '#166534', fontWeight: 700 }}>
+                Pasá a buscarlo por <strong>RETIRO</strong>.
+              </p>
+            </div>
+          ) : (
+            <div style={{
+              margin: '0 0 1.25rem', padding: '1.25rem', borderRadius: 16,
+              background: 'linear-gradient(180deg,#fff7ed 0%,#ffedd5 100%)', border: '2px solid #fb923c',
+            }}>
+              <h3 style={{ margin: '0 0 .9rem', fontWeight: 900, color: '#9a3412', fontSize: '1.5rem' }}>
+                ¿Preparamos tu pedido ahora?
+              </h3>
+              <button
+                onClick={(e) => { e.stopPropagation(); prepararRetiroTotem(); }}
+                disabled={retiro === 'enviando'}
+                style={{
+                  width: '100%', padding: '1.4rem 1rem', borderRadius: 16, border: 'none',
+                  background: retiro === 'enviando' ? '#d6d3d1' : 'linear-gradient(180deg,#fb923c 0%,#ea580c 100%)',
+                  color: '#fff', fontWeight: 900, fontSize: '1.6rem', letterSpacing: '.02em',
+                  textTransform: 'uppercase', cursor: 'pointer', boxSizing: 'border-box',
+                  boxShadow: retiro === 'enviando' ? 'none' : '0 6px 0 #c2410c',
+                }}
+              >
+                {retiro === 'enviando' ? 'Enviando…' : '🔥 Sí, prepará mi pedido'}
+              </button>
+              <p style={{ margin: '.75rem 0 0', fontSize: '.85rem', color: '#9a3412' }}>
+                Si todavía no, retiralo después escaneando el QR de abajo. 👇
+              </p>
+            </div>
+          )}
+
           <div className={styles.exitoQr}>
             <QRCodeSVG value={`https://sanjuandicequesi.com/pedido/${exito?.hash}`} size={220} />
           </div>
           <p className={styles.exitoQrAyuda}>
-            📲 <strong>Escaneá este QR con tu celular</strong> para guardar tu pedido.<br />
-            Mostralo en <strong>EXPENDIO</strong> para retirar. ¡No hace falta recordar el código!
-          </p>
-
-          <p className={styles.exitoLabel}>O usá tu código de retiro</p>
-
-          <div className={styles.exitoQr}>
-            <QRCodeSVG value={`https://sanjuandicequesi.com/pedido/${exito?.hash}`} size={220} />
-          </div>
-          <p className={styles.exitoQrAyuda}>
-            📲 <strong>Escaneá este QR con tu celular</strong> para guardar tu pedido.<br />
-            Mostralo en <strong>EXPENDIO</strong> para retirar. ¡No hace falta recordar el código!
+            📲 <strong>Escaneá este QR con tu celular</strong> para guardar tu pedido
+            y pedir el retiro cuando quieras.
           </p>
 
           <p className={styles.exitoLabel}>O usá tu código de retiro</p>
@@ -301,7 +353,6 @@ export default function TotemPanel() {
           {exito?.impreso && (
             <p className={styles.exitoNota}>🧾 También podés retirar tu ticket impreso.</p>
           )}
-
 
           <button className={styles.btnNuevo} onClick={reiniciar}>Listo · nuevo pedido ({ttl}s)</button>
         </div>

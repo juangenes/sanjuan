@@ -207,12 +207,14 @@ async function confirmarPagoPedido(pedido, { ticket = null, authorization = null
   if (pedido.estado === 'PAGADO') return;
   await pedidoModel.marcarPagadoBancard(pedido.idpedido, { ticket, authorization });
 
-  // Solo el TÓTEM y la CAJA disparan la comanda a RETIRO al pagarse: la persona
-  // está ahí esperando su pedido (consumo inmediato). La TIENDA (preventa) NO: el
-  // pedido queda PAGADO y recién va a RETIRO cuando el comensal se acerca y la caja
-  // lo envía desde "Preventa / Retiro". Pedidos viejos sin origen → 'totem'.
+  // Solo la CAJA dispara la comanda a RETIRO al pagarse (consumo inmediato: el
+  // cajero está cobrando y la persona espera). La TIENDA (preventa) y el TÓTEM NO
+  // auto-disparan: el pedido queda PAGADO y va a RETIRO recién cuando el cliente lo
+  // pide explícitamente — la tienda con el botón AUTORETIRO desde su celular, el
+  // tótem con el "¿retirar todo?" de la pantalla de éxito. Pedidos viejos sin
+  // origen → 'totem' (tampoco auto-disparan).
   const origen = pedido.origen || 'totem';
-  if (origen === 'tienda') return;
+  if (origen !== 'caja') return;
 
   try {
     const items = await pedidoProductoModel.obtenerPorPedido(pedido.idpedido);

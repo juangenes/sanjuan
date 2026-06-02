@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { QRCodeSVG, QRCodeCanvas } from 'qrcode.react';
-import { getPedido, getRetirosPedido, generarQrBancard, getEstadoBancard, revertirBancard } from '../../api';
+import { getPedido, getRetirosPedido, generarQrBancard, getEstadoBancard, revertirBancard, prepararPedido } from '../../api';
 
 // Tiempo de vida del QR de pago en pantalla. Pasado este tiempo sin acreditarse,
 // reversamos el QR en Bancard (recomendación de Bancard: ~5 min + revert).
@@ -30,6 +30,12 @@ export default function Confirmacion() {
   const [qrError, setQrError] = useState(false);
   const [qrVencido, setQrVencido] = useState(false);
   const qrCanvasRef = useRef(null);
+
+  // AUTORETIRO: cuánto de cada ítem pendiente quiere mandar a preparar (arranca
+  // con todo lo pendiente). `confirmar` abre el modal "¿estás en el local?".
+  const [prepCant, setPrepCant] = useState({}); // idproducto -> cantidad
+  const [preparando, setPreparando] = useState(false);
+  const [confirmar, setConfirmar] = useState(false);
 
   useEffect(() => {
     Promise.all([
@@ -90,6 +96,16 @@ export default function Confirmacion() {
     return () => { cancelado = true; clearTimeout(timer); clearTimeout(vencer); };
   }, [pedido?.idpedido, pedido?.estado, pedido?.metodo_pago, hash]);
 
+  // Por defecto, seleccionar TODO lo pendiente para preparar. Se recalcula cada
+  // vez que cambia el pedido (carga inicial y refetch tras un autoretiro).
+  useEffect(() => {
+    const def = {};
+    for (const it of pedido?.items || []) {
+      if (it.pendiente > 0) def[it.idproducto] = it.pendiente;
+    }
+    setPrepCant(def);
+  }, [pedido?.idpedido, pedido?.estado, pedido?.items]);
+
   if (loading) return <div className={styles.loading}>Cargando...</div>;
   if (!pedido) return <div className={styles.loading}>Pedido no encontrado</div>;
 
@@ -132,6 +148,41 @@ export default function Confirmacion() {
       toast.success('Alias copiado');
     } catch {
       toast.error('No se pudo copiar');
+    }
+  }
+
+  // AUTORETIRO: ítems que todavía no se mandaron a preparar y selección actual.
+  const pendientes = (pedido.items || []).filter(i => i.pendiente > 0);
+  const hayPendientes = pendientes.length > 0;
+  const totalSel = pendientes.reduce((a, it) => a + (prepCant[it.idproducto] || 0), 0);
+
+  const incPrep = (id, max) =>
+    setPrepCant(c => ({ ...c, [id]: Math.min((c[id] || 0) + 1, max) }));
+  const decPrep = (id) =>
+    setPrepCant(c => ({ ...c, [id]: Math.max((c[id] || 0) - 1, 0) }));
+
+  async function preparar() {
+    const items = pendientes
+      .map(it => ({ idproducto: it.idproducto, cantidad: prepCant[it.idproducto] || 0 }))
+      .filter(i => i.cantidad > 0);
+    if (!items.length) { setConfirmar(false); return; }
+    setPreparando(true);
+    try {
+      await prepararPedido(hash, items);
+      toast.success('¡Tu pedido se está preparando! 🔥');
+      // Refrescamos saldos: lo recién enviado pasa a la pestaña RETIROS.
+      const [p, r] = await Promise.all([
+        getPedido(hash),
+        getRetirosPedido(hash).catch(() => []),
+      ]);
+      setPedido(p);
+      setRetiros(r);
+      setTab('retiros');
+      setConfirmar(false);
+    } catch (err) {
+      toast.error(err.response?.data?.error || 'No se pudo preparar el pedido');
+    } finally {
+      setPreparando(false);
     }
   }
 
@@ -191,6 +242,74 @@ export default function Confirmacion() {
         ) : (
           <>
             <p className={styles.codigoTop}>Código de pedido: <strong>{codigo}</strong></p>
+
+            {/* AUTORETIRO: el cliente elige cuánto de cada ítem pendiente quiere
+                que le preparen ahora y lo manda a la pantalla de RETIRO. */}
+            {pedido.estado === 'PAGADO' && hayPendientes && (
+              <div style={{
+                margin: '0.25rem 0 1rem', padding: '1rem', borderRadius: 16,
+                background: 'linear-gradient(180deg,#fff7ed 0%,#ffedd5 100%)',
+                border: '2px solid #fb923c', boxSizing: 'border-box',
+              }}>
+                <h3 style={{ margin: '0 0 .25rem', fontSize: '1.15rem', fontWeight: 900, color: '#9a3412', textAlign: 'center' }}>
+                  🔥 ¿Listo para retirar?
+                </h3>
+                <p style={{ margin: '0 0 .85rem', fontSize: '.85rem', color: '#9a3412', textAlign: 'center' }}>
+                  Elegí cuánto querés que te preparen <strong>ahora</strong>.
+                </p>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '.5rem' }}>
+                  {pendientes.map(it => {
+                    const sel = prepCant[it.idproducto] || 0;
+                    return (
+                      <div key={it.idproducto} style={{
+                        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                        gap: '.5rem', background: '#fff', borderRadius: 12, padding: '.5rem .65rem',
+                      }}>
+                        <div style={{ minWidth: 0 }}>
+                          <div style={{ fontWeight: 700, color: '#1a1a1a', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                            {it.titulo}
+                          </div>
+                          <div style={{ fontSize: '.75rem', color: '#888' }}>
+                            {it.pendiente} por retirar
+                          </div>
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '.5rem', flexShrink: 0 }}>
+                          <button
+                            type="button"
+                            onClick={() => decPrep(it.idproducto)}
+                            disabled={sel <= 0}
+                            style={{ width: 38, height: 38, borderRadius: 10, border: 'none', fontSize: '1.4rem', fontWeight: 900, cursor: 'pointer', background: '#f1f5f9', color: sel <= 0 ? '#cbd5e1' : '#0B2E55' }}
+                          >−</button>
+                          <span style={{ minWidth: 24, textAlign: 'center', fontSize: '1.25rem', fontWeight: 900, color: '#0B2E55' }}>{sel}</span>
+                          <button
+                            type="button"
+                            onClick={() => incPrep(it.idproducto, it.pendiente)}
+                            disabled={sel >= it.pendiente}
+                            style={{ width: 38, height: 38, borderRadius: 10, border: 'none', fontSize: '1.4rem', fontWeight: 900, cursor: 'pointer', background: '#fed7aa', color: sel >= it.pendiente ? '#fbbf90' : '#9a3412' }}
+                          >+</button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                <button
+                  type="button"
+                  disabled={totalSel === 0 || preparando}
+                  onClick={() => setConfirmar(true)}
+                  style={{
+                    width: '100%', marginTop: '.85rem', padding: '1.1rem 1rem', borderRadius: 14,
+                    border: 'none', boxSizing: 'border-box', cursor: totalSel === 0 ? 'default' : 'pointer',
+                    background: totalSel === 0 ? '#d6d3d1' : 'linear-gradient(180deg,#fb923c 0%,#ea580c 100%)',
+                    color: '#fff', fontWeight: 900, fontSize: '1.25rem', letterSpacing: '.02em', textTransform: 'uppercase',
+                    boxShadow: totalSel === 0 ? 'none' : '0 6px 0 #c2410c, 0 8px 18px rgba(0,0,0,.2)',
+                  }}
+                >
+                  {preparando ? 'Enviando…' : `🔥 Preparáme mi pedido${totalSel > 0 ? ` (${totalSel} u.)` : ''}`}
+                </button>
+              </div>
+            )}
 
             {/* Una vez pagado, mostramos el QR en pantalla para retirar: el
                 expendio puede escanearlo directo del celular. */}
@@ -340,6 +459,55 @@ export default function Confirmacion() {
       >
         ← Volver a la tienda
       </button>
+
+      {/* Confirmación anti-disparo accidental: el link se comparte por WhatsApp/QR,
+          así que pedimos confirmar que está en el local antes de mandar a cocina. */}
+      {confirmar && (
+        <div
+          onClick={() => !preparando && setConfirmar(false)}
+          style={{
+            position: 'fixed', inset: 0, background: 'rgba(0,0,0,.55)', zIndex: 1000,
+            display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem',
+          }}
+        >
+          <div
+            onClick={e => e.stopPropagation()}
+            style={{ width: '100%', maxWidth: 360, background: '#fff', borderRadius: 18, padding: '1.5rem', textAlign: 'center', boxSizing: 'border-box' }}
+          >
+            <div style={{ fontSize: '2.5rem' }}>📍</div>
+            <h3 style={{ margin: '.5rem 0 .25rem', fontSize: '1.3rem', fontWeight: 900, color: '#9a3412' }}>
+              ¿Estás en el local?
+            </h3>
+            <p style={{ margin: '0 0 1.25rem', color: '#555', fontSize: '.95rem' }}>
+              Tu pedido empieza a prepararse <strong>ahora</strong> y no se puede cancelar.
+            </p>
+            <button
+              type="button"
+              disabled={preparando}
+              onClick={preparar}
+              style={{
+                width: '100%', padding: '1rem', borderRadius: 12, border: 'none',
+                background: 'linear-gradient(180deg,#fb923c 0%,#ea580c 100%)', color: '#fff',
+                fontWeight: 900, fontSize: '1.15rem', cursor: 'pointer', boxSizing: 'border-box',
+              }}
+            >
+              {preparando ? 'Enviando…' : `Sí, prepará (${totalSel} u.)`}
+            </button>
+            <button
+              type="button"
+              disabled={preparando}
+              onClick={() => setConfirmar(false)}
+              style={{
+                width: '100%', marginTop: '.6rem', padding: '.85rem', borderRadius: 12,
+                border: '1px solid #ddd', background: '#fff', color: '#666',
+                fontWeight: 700, fontSize: '1rem', cursor: 'pointer', boxSizing: 'border-box',
+              }}
+            >
+              Todavía no
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
