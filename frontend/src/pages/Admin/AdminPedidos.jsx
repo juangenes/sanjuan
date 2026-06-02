@@ -226,7 +226,7 @@ export default function AdminPedidos() {
           para poder dibujarlo dentro de la imagen del comprobante. */}
       <div ref={qrRef} style={{ position: 'absolute', left: '-9999px', top: 0 }} aria-hidden="true">
         {imgPedido && (
-          <QRCodeCanvas value={JSON.stringify({ hash: imgPedido.hash, idpedido: imgPedido.idpedido })} size={480} />
+          <QRCodeCanvas value={`https://sanjuandicequesi.com/pedido/${imgPedido.hash}`} size={480} />
         )}
       </div>
 
