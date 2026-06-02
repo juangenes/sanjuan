@@ -18,8 +18,12 @@ export default function QrScanner({ onDetected, fps = 20, qrbox = 250 }) {
     const detener = () => {
       if (detenido) return;
       detenido = true;
-      // stop() falla si el escáner nunca llegó a arrancar: lo silenciamos.
-      return html5Qr.stop().then(() => html5Qr.clear()).catch(() => { /* noop */ });
+      // stop() falla si el escáner nunca llegó a arrancar. Lanza de forma SÍNCRONA
+      // (no como promesa rechazada), así que hay que envolverlo en try/catch además
+      // del .catch() — un .catch() solo no atrapa el throw síncrono.
+      try {
+        return html5Qr.stop().then(() => html5Qr.clear()).catch(() => { /* noop */ });
+      } catch { /* el escáner nunca arrancó: nada que detener */ }
     };
 
     html5Qr
