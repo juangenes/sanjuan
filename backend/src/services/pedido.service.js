@@ -1,4 +1,5 @@
 const db = require('../config/db');
+const configService = require('./configuracion.service');
 const pedidoModel = require('../models/pedido.model');
 const pedidoProductoModel = require('../models/pedidoProducto.model');
 const entregaModel = require('../models/entrega.model');
@@ -111,7 +112,9 @@ async function obtenerPedidoPublico(hash) {
     return { ...item, entregado, pendiente: item.cantidad - entregado };
   });
 
-  return { ...pedido, items: detalle };
+  // DÍA D: el front usa este flag para mostrar (o no) el botón de autoretiro
+  // "LISTO PARA RETIRAR". Se controla desde /admin/configuracion.
+  return { ...pedido, items: detalle, dia_d: configService.diaD() };
 }
 
 module.exports = { crearPedido, obtenerPedidoPublico, METODOS_COBRO };

@@ -3,6 +3,7 @@ const pedidoService = require('../services/pedido.service');
 const pedidoModel = require('../models/pedido.model');
 const entregaModel = require('../models/entrega.model');
 const expendioService = require('../services/expendio.service');
+const configService = require('../services/configuracion.service');
 const { authAdmin } = require('../middleware/auth');
 const { notificarDespacho } = require('../utils/rtsClient');
 
@@ -38,6 +39,12 @@ router.get('/:hash/retiros', async (req, res) => {
 // PAGADO y que no se entregue más de lo pedido, así que un doble toque no duplica.
 router.post('/:hash/preparar', async (req, res) => {
   try {
+    // DÍA D: fuera del día del evento el autoretiro está deshabilitado. El front
+    // ya oculta el botón, pero bloqueamos también acá (enforcement real). Se
+    // controla desde /admin/configuracion.
+    if (!configService.diaD()) {
+      return res.status(403).json({ error: 'El retiro todavía no está habilitado' });
+    }
     const items = (req.body?.items || [])
       .map(i => ({ idproducto: Number(i.idproducto), cantidad: Number(i.cantidad) }))
       .filter(i => i.idproducto && i.cantidad > 0);

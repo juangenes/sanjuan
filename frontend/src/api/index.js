@@ -82,6 +82,12 @@ export const getRetirosPedido = (hash) => api.get(`/pedidos/${hash}/retiros`).th
 export const prepararPedido = (hash, items) =>
   api.post(`/pedidos/${hash}/preparar`, { items }).then(r => r.data);
 
+// Config pública del front (dia_d habilita el autoretiro del cliente/tótem).
+export const getConfig = () => api.get('/config').then(r => r.data);
+// Admin — ver/editar la configuración operativa (pantalla /admin/configuracion).
+export const getConfigAdmin = () => api.get('/config/admin').then(r => r.data.config);
+export const guardarConfig = (clave, valor) => api.put('/config', { clave, valor }).then(r => r.data);
+
 // Tarjetas
 export const getSaldo = (codigo) => api.get(`/tarjetas/${codigo}/saldo`).then(r => r.data);
 export const consumirCredito = (codigo, idpuesto) => api.post('/tarjetas/consumir', { codigo, idpuesto }).then(r => r.data);

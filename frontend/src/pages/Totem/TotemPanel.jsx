@@ -8,6 +8,7 @@ import {
   getEstadoBancard,
   revertirBancard,
   prepararPedido,
+  getConfig,
 } from '../../api';
 import { useCarrito } from '../../context/CarritoContext';
 import {
@@ -63,6 +64,7 @@ export default function TotemPanel() {
   const [exito, setExito] = useState(null);  // { codigo, impreso }
   const [ttl, setTtl] = useState(0);         // cuenta regresiva visible
   const [retiro, setRetiro] = useState('preguntar'); // preguntar | enviando | enviado
+  const [diaD, setDiaD] = useState(false); // DÍA D: habilita el autoretiro
 
   const { items, agregar, quitar, limpiar } = useCarrito();
   const lineasRef = useRef([]); // foto del carrito para el ticket
@@ -73,6 +75,7 @@ export default function TotemPanel() {
       .then(setProductos)
       .catch(() => toast.error('No se pudieron cargar los productos'))
       .finally(() => setLoading(false));
+    getConfig().then(c => setDiaD(!!c.dia_d)).catch(() => {});
   }, []);
 
   const total = useMemo(
@@ -299,8 +302,9 @@ export default function TotemPanel() {
           <h2>¡Pago confirmado!</h2>
 
           {/* ¿Retirar ahora? El tótem ya no dispara solo a RETIRO: le preguntamos
-              al cliente. Si dice que sí, mandamos TODO el pedido a preparar. */}
-          {retiro === 'enviado' ? (
+              al cliente. Si dice que sí, mandamos TODO el pedido a preparar.
+              Solo en DÍA D (antes del evento el retiro está deshabilitado). */}
+          {diaD && (retiro === 'enviado' ? (
             <div style={{
               margin: '0 0 1.25rem', padding: '1.25rem', borderRadius: 16,
               background: '#dcfce7', border: '2px solid #22c55e',
@@ -338,7 +342,7 @@ export default function TotemPanel() {
                 Si todavía no, retiralo después escaneando el QR de abajo. 👇
               </p>
             </div>
-          )}
+          ))}
 
           <div className={styles.exitoQr}>
             <QRCodeSVG value={`https://sanjuandicequesi.com/pedido/${exito?.hash}`} size={220} />

@@ -9,3 +9,6 @@ backend/uploads/*
 
 # Doc con credenciales de la integración Bancard — NO debe subirse al repo
 docs/bancard-integracion.md
+
+# Tarjetas físicas: QR + códigos generados para imprimir — NO subir al repo
+tarjetas-qr/

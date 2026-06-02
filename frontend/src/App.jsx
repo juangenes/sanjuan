@@ -14,6 +14,7 @@ import AdminProductos from './pages/Admin/AdminProductos';
 import AdminUsuarios from './pages/Admin/AdminUsuarios';
 import AdminVentasProducto from './pages/Admin/AdminVentasProducto';
 import AdminPuestos from './pages/Admin/AdminPuestos';
+import AdminConfiguracion from './pages/Admin/AdminConfiguracion';
 import ExpendioLogin from './pages/Expendio/ExpendioLogin';
 import ExpendioBoleta from './pages/Expendio/ExpendioBoleta';
 import RetiroPantalla from './pages/Retiro/RetiroPantalla';
@@ -77,6 +78,7 @@ export default function App() {
           <Route path="/admin/productos" element={<AdminProductos />} />
           <Route path="/admin/usuarios" element={<AdminUsuarios />} />
           <Route path="/admin/puestos" element={<AdminPuestos />} />
+          <Route path="/admin/configuracion" element={<AdminConfiguracion />} />
           <Route path="/admin/ventas-producto" element={<AdminVentasProducto />} />
 
           {/* Redirects desde rutas viejas (Organización / juegos) */}

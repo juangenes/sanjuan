@@ -4,6 +4,7 @@ const cors = require('cors');
 const path = require('path');
 const { bootstrapUsuarios } = require('./utils/bootstrapUsuarios');
 const { bootstrapPuestos } = require('./utils/bootstrapPuestos');
+const configService = require('./services/configuracion.service');
 
 const app = express();
 app.use(cors());
@@ -23,6 +24,7 @@ app.use('/api/puestos',   require('./routes/puestos.routes'));
 app.use('/api/bancard',   require('./routes/bancard.routes'));
 app.use('/api/upload',    require('./routes/upload.routes'));
 app.use('/api/fotos',     require('./routes/fotos.routes'));
+app.use('/api/config',    require('./routes/configuracion.routes'));
 
 app.get('/api/health', (req, res) => res.json({ status: 'ok' }));
 
@@ -38,5 +40,10 @@ app.listen(PORT, async () => {
     await bootstrapPuestos();
   } catch (e) {
     console.error('[bootstrap] Error sembrando puestos:', e.message);
+  }
+  try {
+    await configService.cargar();
+  } catch (e) {
+    console.error('[bootstrap] Error cargando configuración:', e.message);
   }
 });

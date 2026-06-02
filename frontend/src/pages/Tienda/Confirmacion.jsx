@@ -250,7 +250,7 @@ export default function Confirmacion() {
 
             {/* AUTORETIRO: el cliente elige cuánto de cada ítem pendiente quiere
                 que le preparen ahora y lo manda a la pantalla de RETIRO. */}
-            {pedido.estado === 'PAGADO' && hayPendientes && (
+            {pedido.dia_d && pedido.estado === 'PAGADO' && hayPendientes && (
               <div style={{
                 margin: '0.25rem 0 1rem', padding: '1rem', borderRadius: 16,
                 background: 'linear-gradient(180deg,#fff7ed 0%,#ffedd5 100%)',
