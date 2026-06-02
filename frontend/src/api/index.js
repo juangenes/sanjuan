@@ -61,6 +61,16 @@ export const tomarPedidoCaja = (payload) => api.post('/caja/pedido', payload).th
 // método INFONET) y devuelve su hash para generar el QR; lo confirma el callback.
 export const tomarPedidoCajaQr = (payload) => api.post('/caja/pedido-qr', payload).then(r => r.data.pedido);
 
+// Lector (celular) → caja: manda una lectura escaneada a una caja (1..5).
+export const registrarLecturaCaja = (caja, codigo) =>
+  api.post('/caja/lectura', { caja, codigo }).then(r => r.data.lectura);
+// Lecturas pendientes de una caja (las levanta la pantalla de caja).
+export const getLecturasCaja = (caja) =>
+  api.get('/caja/lecturas', { params: { caja } }).then(r => r.data.lecturas);
+// Marca una lectura como atendida ('ATENDIDA') o descartada ('DESCARTADA').
+export const atenderLecturaCaja = (id, estado) =>
+  api.post(`/caja/lectura/${id}/atendida`, { estado }).then(r => r.data);
+
 // Tótem autoservicio — crea un pedido PENDIENTE (precio normal, pago QR Bancard)
 export const crearPedidoTotem = (payload) => api.post('/totem/pedido', payload).then(r => r.data.pedido);
 

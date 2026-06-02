@@ -1,12 +1,14 @@
-import { useEffect, useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 import { QRCodeCanvas, QRCodeSVG } from 'qrcode.react';
 import toast from 'react-hot-toast';
 import {
   getProductos, tomarPedidoCaja, tomarPedidoCajaQr, getPedidosExpendio,
   generarQrBancard, getEstadoBancard, revertirBancard,
+  getLecturasCaja, atenderLecturaCaja,
 } from '../../api';
 import { useCarrito } from '../../context/CarritoContext';
+import { suscribirScope } from '../../utils/rtsSocket';
 import { imprimirTicketPedido, getTicketeraIP, setTicketeraIP } from '../../utils/eposPrint';
 import EntregaCard from '../Expendio/EntregaCard';
 import '../Tienda/tienda-desktop.css';
@@ -54,14 +56,15 @@ export default function CajaPanel() {
   const [modo, setModo] = useState('nuevo'); // 'nuevo' (walk-in) | 'preventa' (retiro)
   const { items, agregar, quitar, limpiar } = useCarrito();
   const navigate = useNavigate();
+  const { num } = useParams();
 
   useEffect(() => {
-    if (!localStorage.getItem('sanjuan_token')) { navigate('/caja'); return; }
+    if (!localStorage.getItem('sanjuan_token')) { navigate(`/caja/${num}`); return; }
     getProductos()
       .then(setProductos)
       .catch(() => toast.error('No se pudieron cargar los productos'))
       .finally(() => setLoading(false));
-  }, [navigate]);
+  }, [navigate, num]);
 
   const total = useMemo(
     () => items.reduce((a, i) => a + precioCaja(i) * i.cantidad, 0),
@@ -316,17 +319,17 @@ export default function CajaPanel() {
     <div className="td-app">
       <header className="td-header">
         <div className="td-header-brand">
-          <div><h1>💵 Caja · San Juan 2026</h1></div>
+          <div><h1>💵 Caja {num} · San Juan 2026</h1></div>
         </div>
         <nav className="td-header-nav">
           <a className={modo === 'nuevo' ? 'activo' : ''} onClick={() => setModo('nuevo')}>🛒 Nuevo pedido</a>
           <a className={modo === 'preventa' ? 'activo' : ''} onClick={() => setModo('preventa')}>🎫 Preventa / Retiro</a>
           <a onClick={configurarIp}>⚙ IP ticketera</a>
-          <a onClick={() => { limpiar(); localStorage.clear(); navigate('/caja'); }}>Salir</a>
+          <a onClick={() => { limpiar(); localStorage.clear(); navigate(`/caja/${num}`); }}>Salir</a>
         </nav>
       </header>
 
-      {modo === 'preventa' && <PreventaRetiro />}
+      {modo === 'preventa' && <PreventaRetiro caja={num} />}
 
       {modo === 'nuevo' && (<>
       <main className="td-main">
@@ -447,11 +450,14 @@ export default function CajaPanel() {
 // Modo "Preventa / Retiro": busca un pedido ya pagado (online/preventa) y dispara
 // la comanda a RETIRO con los ítems que el comensal quiere retirar ahora. La
 // entrega se registra y la comanda sale impresa en retiro (no acá en la caja).
-function PreventaRetiro() {
+function PreventaRetiro({ caja }) {
   const [lista, setLista] = useState([]);
   const [filtro, setFiltro] = useState('');
   const [sel, setSel] = useState(null); // hash seleccionado
+  const [selLectura, setSelLectura] = useState(null); // id de la lectura abierta (para marcarla)
   const [cargando, setCargando] = useState(true);
+  const [lecturas, setLecturas] = useState([]); // cola del lector del celular para esta caja
+  const [online, setOnline] = useState(false);
 
   function cargar() {
     setCargando(true);
@@ -461,6 +467,35 @@ function PreventaRetiro() {
       .finally(() => setCargando(false));
   }
   useEffect(() => { cargar(); }, []);
+
+  // Lecturas del lector del celular ruteadas a esta caja (cola en base + RTS en vivo).
+  const cargarLecturas = useCallback(() => {
+    if (!caja) return;
+    getLecturasCaja(caja).then(setLecturas).catch(() => { /* el RTS/refetch reintenta */ });
+  }, [caja]);
+
+  useEffect(() => {
+    cargarLecturas();
+    const cleanup = suscribirScope(`sanjuan-caja-${caja}`, 'caja', () => cargarLecturas(), setOnline);
+    return cleanup;
+  }, [caja, cargarLecturas]);
+
+  // Abre una lectura: si pudo resolverse a un pedido (hash), abre la entrega; si no,
+  // avisa que no se encontró. Recordamos su id para marcarla al entregar.
+  function abrirLectura(l) {
+    if (!l.hash) { toast.error('Esa lectura no corresponde a un pedido'); return; }
+    setSelLectura(l.id);
+    setSel(l.hash);
+  }
+
+  async function descartarLectura(id) {
+    try {
+      await atenderLecturaCaja(id, 'DESCARTADA');
+      cargarLecturas();
+    } catch { toast.error('No se pudo descartar la lectura'); }
+  }
+
+  const horaCorta = (d) => new Date(d).toLocaleTimeString('es-PY', { hour: '2-digit', minute: '2-digit' });
 
   const filtrada = lista.filter(p => {
     const completo = Number(p.total_entregado) >= Number(p.total_items);
@@ -477,14 +512,18 @@ function PreventaRetiro() {
   if (sel) {
     return (
       <main className="td-main">
-        <button className={styles.btnNuevo} style={{ marginBottom: '1rem' }} onClick={() => { setSel(null); cargar(); }}>
+        <button className={styles.btnNuevo} style={{ marginBottom: '1rem' }} onClick={() => { setSel(null); setSelLectura(null); cargar(); }}>
           ← Volver al listado
         </button>
         <div style={{ maxWidth: 640, margin: '0 auto', background: '#fff', borderRadius: 14, padding: '1rem' }}>
           <EntregaCard
             key={sel}
             hash={sel}
-            onEntregado={() => toast.success('Comanda enviada a RETIRO')}
+            onEntregado={() => {
+              toast.success('Comanda enviada a RETIRO');
+              // Si veníamos de una lectura del lector, la sacamos de la cola.
+              if (selLectura) { atenderLecturaCaja(selLectura, 'ATENDIDA').finally(cargarLecturas); }
+            }}
           />
         </div>
       </main>
@@ -493,6 +532,39 @@ function PreventaRetiro() {
 
   return (
     <main className="td-main">
+      {lecturas.length > 0 && (
+        <div className={styles.lecturas}>
+          <div className={styles.lecturasHead}>
+            <span>📲 Lecturas del lector
+              <span className={`${styles.lecturasDot} ${online ? styles.lecturasOn : styles.lecturasOff}`} title={online ? 'En vivo' : 'Sin conexión'} />
+            </span>
+            <button className={styles.lecturasRefresh} onClick={cargarLecturas}>↻</button>
+          </div>
+          <div className={styles.lecturasLista}>
+            {lecturas.map(l => {
+              const codigo = (l.hash || l.codigo || '').substring(0, 8).toUpperCase();
+              return (
+                <div key={l.id} className={styles.lecturaItem}>
+                  <div className={styles.lecturaInfo}>
+                    <span className={styles.lecturaCodigo}>{codigo}</span>
+                    {l.hash
+                      ? <span className={styles.lecturaFamilia}>{l.familia || 'Pedido'}</span>
+                      : <span className={styles.lecturaNoEnc}>no encontrado</span>}
+                    <span className={styles.lecturaHora}>{horaCorta(l.creado_en)}</span>
+                  </div>
+                  <div className={styles.lecturaBtns}>
+                    {l.hash && (
+                      <button className={styles.lecturaAbrir} onClick={() => abrirLectura(l)}>Abrir →</button>
+                    )}
+                    <button className={styles.lecturaDescartar} title="Descartar" onClick={() => descartarLectura(l.id)}>✕</button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
       <div className="td-search" style={{ maxWidth: 520, margin: '0 auto 1rem' }}>
         <span className="td-search-icon">🔍</span>
         <input value={filtro} onChange={e => setFiltro(e.target.value)} placeholder="Buscar por código, nombre o cédula..." autoFocus />

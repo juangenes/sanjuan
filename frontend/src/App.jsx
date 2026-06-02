@@ -17,8 +17,10 @@ import AdminPuestos from './pages/Admin/AdminPuestos';
 import ExpendioLogin from './pages/Expendio/ExpendioLogin';
 import ExpendioBoleta from './pages/Expendio/ExpendioBoleta';
 import RetiroPantalla from './pages/Retiro/RetiroPantalla';
+import CajaSelector from './pages/Caja/CajaSelector';
 import CajaLogin from './pages/Caja/CajaLogin';
 import CajaPanel from './pages/Caja/CajaPanel';
+import CajaLector from './pages/Caja/CajaLector';
 import TotemPanel from './pages/Totem/TotemPanel';
 import TarjetasOperador from './pages/Tarjetas/TarjetasOperador';
 import TarjetasPanel from './pages/Tarjetas/TarjetasPanel';
@@ -49,13 +51,16 @@ export default function App() {
           <Route path="/retiro" element={<RetiroPantalla />} />
           <Route path="/expendio/boleta/:hash/:idot" element={<ExpendioBoleta />} />
           {/* Rutas viejas de despacho por estaciones → unificado */}
-          <Route path="/expendio/panel" element={<Navigate to="/caja/panel" replace />} />
+          <Route path="/expendio/panel" element={<Navigate to="/caja" replace />} />
           <Route path="/expendio/scan" element={<Navigate to="/retiro" replace />} />
           <Route path="/expendio/estacion/*" element={<Navigate to="/retiro" replace />} />
 
-          {/* Caja — POS físico (cobro/confirmación) */}
-          <Route path="/caja" element={<CajaLogin />} />
-          <Route path="/caja/panel" element={<CajaPanel />} />
+          {/* Caja — POS físico (cobro/confirmación). 5 cajas con número propio. */}
+          <Route path="/caja" element={<CajaSelector />} />
+          <Route path="/caja/lector" element={<CajaLector />} />
+          <Route path="/caja/panel" element={<Navigate to="/caja" replace />} />
+          <Route path="/caja/:num" element={<CajaLogin />} />
+          <Route path="/caja/:num/panel" element={<CajaPanel />} />
 
           {/* Tótem — autoservicio (pantalla táctil, pago con QR Bancard) */}
           <Route path="/totem" element={<TotemPanel />} />

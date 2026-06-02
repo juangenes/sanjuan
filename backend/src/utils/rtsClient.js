@@ -50,4 +50,11 @@ function notificarFotos(meta) {
   return notificarEntidad({ resource: 'fotos', action: 'galeria', scope: 'sanjuan-fotos', meta });
 }
 
-module.exports = { notificarEntidad, notificarDespacho, notificarRetiro, notificarFotos };
+// Lector del celular → caja: avisa a la pantalla de una caja (scope sanjuan-caja-N)
+// que cayó una lectura nueva (el QR de un cliente para retirar su pedido). La caja
+// la levanta de la base; el evento solo dispara el refetch.
+function notificarLecturaCaja(caja, meta) {
+  return notificarEntidad({ resource: 'caja', action: 'lectura', scope: `sanjuan-caja-${caja}`, meta });
+}
+
+module.exports = { notificarEntidad, notificarDespacho, notificarRetiro, notificarFotos, notificarLecturaCaja };
