@@ -106,3 +106,64 @@
 .histCod { font-weight: 900; color: #ffd166; }
 .histHora { color: #7c93a8; font-size: 0.78rem; }
 .histRe { color: #7c93a8; }
+
+/* ── Layout maestro-detalle ─────────────────────────────────────────────── */
+.split { flex: 1; display: flex; min-height: 0; }
+
+/* Izquierda: cola FIFO */
+.lista {
+  width: 340px; flex-shrink: 0;
+  border-right: 1px solid #1d3346;
+  overflow-y: auto;
+  padding: 0.8rem;
+  display: flex; flex-direction: column; gap: 0.5rem;
+}
+.listItem {
+  display: flex; align-items: center; gap: 0.7rem;
+  background: #16283a; border: 1px solid #244a66; border-radius: 12px;
+  padding: 0.7rem 0.8rem; cursor: pointer; text-align: left; color: inherit;
+  transition: border-color .12s, background .12s;
+}
+.listItem:hover { border-color: #3a6489; }
+.listItemActivo { border-color: #ffd166; background: #1e3550; }
+.liPos {
+  flex-shrink: 0; width: 28px; height: 28px; border-radius: 50%;
+  background: #0b1622; color: #7c93a8; font-weight: 900; font-size: 0.85rem;
+  display: flex; align-items: center; justify-content: center;
+}
+.listItemActivo .liPos { background: #ffd166; color: #1b1300; }
+.liInfo { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.liCod { font-weight: 900; color: #ffd166; font-size: 1.05rem; letter-spacing: .03em; }
+.liFam { color: #cfe0f0; font-size: 0.85rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.liHora { flex-shrink: 0; color: #7c93a8; font-size: 0.8rem; }
+
+/* Derecha: detalle de lo a retirar */
+.detalle {
+  flex: 1; min-width: 0; overflow-y: auto;
+  padding: 1.5rem 2rem;
+  display: flex; flex-direction: column;
+}
+.detalleVacio {
+  margin: auto; color: #6b8197; font-size: 1.2rem;
+}
+.detTop { display: flex; align-items: baseline; justify-content: space-between; }
+.detCodigo { font-size: 2.6rem; font-weight: 900; letter-spacing: .04em; color: #ffd166; }
+.detHora { color: #7c93a8; font-size: 1rem; }
+.detFamilia { font-size: 1.3rem; font-weight: 700; color: #e7edf5; margin-top: 0.2rem; }
+.detPreparar {
+  margin-top: 1.2rem; font-size: 0.8rem; font-weight: 800; letter-spacing: .1em;
+  color: #7c93a8; border-bottom: 1px solid #244a66; padding-bottom: 0.5rem;
+}
+.detItems { list-style: none; margin: 0.5rem 0 0; padding: 0; }
+.detItem {
+  display: flex; align-items: center; gap: 1rem;
+  padding: 0.7rem 0; border-bottom: 1px solid #16283a;
+}
+.detQty {
+  flex-shrink: 0; min-width: 3rem; text-align: center;
+  font-size: 1.8rem; font-weight: 900; color: #4ade80;
+}
+.detNombre { font-size: 1.4rem; font-weight: 700; color: #e7edf5; }
+.detBtns { display: flex; gap: 0.6rem; margin-top: auto; padding-top: 1.5rem; }
+.detBtns .imprimir { font-size: 1.2rem; padding: 0.9rem; }
+.detBtns .quitar { font-size: 1.1rem; padding: 0.9rem 1.1rem; }

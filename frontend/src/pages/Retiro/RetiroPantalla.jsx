@@ -6,19 +6,20 @@ import { suscribirScope } from '../../utils/rtsSocket';
 import { imprimirComandaRetiro, getTicketeraIP, setTicketeraIP } from '../../utils/eposPrint';
 import styles from './Retiro.module.css';
 
-// Estación de IMPRESIÓN de RETIRO (modelo fast food). Las comandas que dispara la
-// caja (walk-in o preventa) o el tótem van CAYENDO acá como "pendientes de imprimir"
-// —la base es la fuente de verdad, así que aparecen haya o no impresora—. El
-// operario decide y toca «🖨 Imprimir» en cada una: al imprimirse, la comanda sale
-// del board y pasa al historial de la sesión (por si hay que reimprimir). No hay
-// impresión automática ni marca de "entregado": esta pantalla es solo para imprimir.
+// Estación de IMPRESIÓN de RETIRO (modelo fast food), layout maestro-detalle.
+// IZQUIERDA: la cola de comandas en orden FIFO (la más vieja arriba, las nuevas
+// caen al fondo) — la base es la fuente de verdad, así que aparecen haya o no
+// impresora. DERECHA: el detalle de lo que hay que preparar/retirar de la comanda
+// elegida, con el botón «🖨 Imprimir». Se elige cuál atender haciendo click en el
+// item de la izquierda; no hace falta respetar el orden.
 //
 // CAVEAT mixed-content: para imprimir, abrí esta pantalla por HTTP en la LAN (igual
 // que la caja) para que el navegador pueda hablar con la impresora por http://<ip>.
 export default function RetiroPantalla() {
-  const [cola, setCola] = useState([]);          // comandas pendientes de imprimir (board)
+  const [cola, setCola] = useState([]);          // comandas pendientes (FIFO: vieja→nueva)
+  const [selId, setSelId] = useState(null);      // comanda elegida (detalle a la derecha)
   const [impresas, setImpresas] = useState([]);  // historial de impresas en esta sesión
-  const [imprimiendo, setImprimiendo] = useState(() => new Set()); // ids imprimiéndose ahora
+  const [imprimiendo, setImprimiendo] = useState(() => new Set());
   const [online, setOnline] = useState(false);
   const navigate = useNavigate();
 
@@ -30,9 +31,11 @@ export default function RetiroPantalla() {
   const refrescar = useCallback(async () => {
     try {
       const lista = await getColaRetiro();
+      // FIFO: la más vieja primero (lo nuevo se va al fondo). getColaRetiro ya
+      // devuelve ascendente por creado_en; igual lo aseguramos.
       const visible = lista
         .filter(c => !quitadasRef.current.has(c.id))
-        .sort((a, b) => new Date(b.creado_en) - new Date(a.creado_en));
+        .sort((a, b) => new Date(a.creado_en) - new Date(b.creado_en));
       setCola(visible);
     } catch (err) {
       console.error('[retiro] no se pudo cargar la cola:', err.message);
@@ -42,18 +45,21 @@ export default function RetiroPantalla() {
   useEffect(() => {
     if (!localStorage.getItem('sanjuan_token')) { navigate('/caja'); return; }
     refrescar();
-    // Respaldo: si el RTS se cae, igual levantamos comandas nuevas.
-    const id = setInterval(refrescar, 8000);
+    const id = setInterval(refrescar, 8000); // respaldo si el RTS se cae
     return () => clearInterval(id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Realtime: ante cada aviso de comanda nueva, refrescamos (la base es la verdad).
   useEffect(() => {
     const cleanup = suscribirScope('sanjuan-retiro', 'expendio', () => refrescar(), setOnline);
     return cleanup;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Selección efectiva derivada en el render (sin efecto): la comanda elegida si
+  // sigue en la cola; si no (recién impresa) o si no hay ninguna elegida, cae a la
+  // primera (la más vieja, FIFO). Click en un item de la izquierda fija selId.
+  const sel = cola.find(c => c.id === selId) || cola[0] || null;
 
   function marcarImprimiendo(id, on) {
     setImprimiendo(prev => {
@@ -70,9 +76,9 @@ export default function RetiroPantalla() {
     return !!getTicketeraIP();
   }
 
-  // Imprime una comanda. Al imprimir OK, la saca del board y la pasa al historial.
+  // Imprime una comanda. Al imprimir OK, la saca de la cola y la pasa al historial.
   async function imprimir(c) {
-    if (imprimiendo.has(c.id)) return;
+    if (!c || imprimiendo.has(c.id)) return;
     if (!pedirIpSiFalta()) { toast.error('No hay ticketera configurada'); return; }
     marcarImprimiendo(c.id, true);
     try {
@@ -89,8 +95,9 @@ export default function RetiroPantalla() {
     }
   }
 
-  // Quita una comanda del board sin imprimirla (error, duplicado, etc.).
+  // Quita una comanda de la cola sin imprimirla (error, duplicado, etc.).
   async function quitar(c) {
+    if (!c) return;
     quitadasRef.current.add(c.id);
     setCola(prev => prev.filter(x => x.id !== c.id)); // optimista
     try {
@@ -120,6 +127,8 @@ export default function RetiroPantalla() {
     }
   }
 
+  const enCurso = sel ? imprimiendo.has(sel.id) : false;
+
   return (
     <div className={styles.pagina}>
       <header className={styles.header}>
@@ -128,60 +137,80 @@ export default function RetiroPantalla() {
           <span className={`${styles.dot} ${online ? styles.dotOn : styles.dotOff}`} title={online ? 'En vivo' : 'Sin conexión'} />
         </h1>
         <div className={styles.headRight}>
-          {cola.length > 0 && <span className={styles.contador}>{cola.length} por imprimir</span>}
+          {cola.length > 0 && <span className={styles.contador}>{cola.length} en cola</span>}
           <button className={`${styles.btn} ${styles.btnGhost}`} onClick={refrescar}>↻ Refrescar</button>
           <button className={`${styles.btn} ${styles.btnGhost}`} onClick={configurarIp}>⚙ Impresora</button>
           <button className={`${styles.btn} ${styles.btnGhost}`} onClick={() => { localStorage.clear(); navigate('/caja'); }}>Salir</button>
         </div>
       </header>
 
-      <div className={styles.board}>
-        {cola.length === 0 ? (
-          <div className={styles.vacio}>📭 Esperando comandas… (caen acá apenas la caja registra la entrega)</div>
-        ) : (
-          cola.map(c => {
-            const enCurso = imprimiendo.has(c.id);
-            return (
-              <div key={c.id} className={styles.card}>
-                <div className={styles.cardTop}>
-                  <span className={styles.codigo}>{c.codigo}</span>
-                  <span className={styles.hora}>{horaCorta(c.creado_en)}</span>
+      <div className={styles.split}>
+        {/* IZQUIERDA: cola FIFO (vieja arriba, nuevas al fondo) */}
+        <aside className={styles.lista}>
+          {cola.length === 0 ? (
+            <div className={styles.vacio}>📭 Esperando comandas…</div>
+          ) : (
+            cola.map((c, idx) => (
+              <button
+                key={c.id}
+                className={`${styles.listItem} ${c.id === selId ? styles.listItemActivo : ''}`}
+                onClick={() => setSelId(c.id)}
+              >
+                <span className={styles.liPos}>{idx + 1}</span>
+                <div className={styles.liInfo}>
+                  <span className={styles.liCod}>{c.codigo}</span>
+                  <span className={styles.liFam}>{c.familia}</span>
                 </div>
-                <div className={styles.familia}>{c.familia}</div>
-                <ul className={styles.items}>
-                  {(c.items || []).map((it, i) => (
-                    <li key={i} className={styles.item}>
-                      <span className={styles.itemQty}>{it.cantidad}</span>
-                      <span>{it.titulo}</span>
-                    </li>
-                  ))}
-                </ul>
-                <div className={styles.cardBtns}>
-                  <button className={styles.imprimir} onClick={() => imprimir(c)} disabled={enCurso}>
-                    {enCurso ? 'Imprimiendo…' : '🖨 Imprimir'}
-                  </button>
-                  <button className={styles.quitar} title="Quitar sin imprimir" onClick={() => quitar(c)} disabled={enCurso}>✕</button>
-                </div>
-              </div>
-            );
-          })
-        )}
-      </div>
-
-      {impresas.length > 0 && (
-        <div className={styles.historial}>
-          <div className={styles.historialTit}>Impresas en esta sesión</div>
-          <div className={styles.histChips}>
-            {impresas.map(c => (
-              <button key={`${c.id}-${c.horaImpresa}`} className={styles.histChip} onClick={() => reimprimir(c)} title="Reimprimir">
-                <span className={styles.histCod}>{c.codigo}</span>
-                <span className={styles.histHora}>{c.horaImpresa}</span>
-                <span className={styles.histRe}>↻</span>
+                <span className={styles.liHora}>{horaCorta(c.creado_en)}</span>
               </button>
-            ))}
-          </div>
-        </div>
-      )}
+            ))
+          )}
+
+          {impresas.length > 0 && (
+            <div className={styles.historial}>
+              <div className={styles.historialTit}>Impresas en esta sesión</div>
+              <div className={styles.histChips}>
+                {impresas.map(c => (
+                  <button key={`${c.id}-${c.horaImpresa}`} className={styles.histChip} onClick={() => reimprimir(c)} title="Reimprimir">
+                    <span className={styles.histCod}>{c.codigo}</span>
+                    <span className={styles.histRe}>↻</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+        </aside>
+
+        {/* DERECHA: detalle de lo a retirar */}
+        <section className={styles.detalle}>
+          {!sel ? (
+            <div className={styles.detalleVacio}>👈 Elegí una comanda de la cola</div>
+          ) : (
+            <>
+              <div className={styles.detTop}>
+                <span className={styles.detCodigo}>{sel.codigo}</span>
+                <span className={styles.detHora}>{horaCorta(sel.creado_en)}</span>
+              </div>
+              <div className={styles.detFamilia}>{sel.familia}</div>
+              <div className={styles.detPreparar}>PREPARAR / ENTREGAR</div>
+              <ul className={styles.detItems}>
+                {(sel.items || []).map((it, i) => (
+                  <li key={i} className={styles.detItem}>
+                    <span className={styles.detQty}>{it.cantidad}</span>
+                    <span className={styles.detNombre}>{it.titulo}</span>
+                  </li>
+                ))}
+              </ul>
+              <div className={styles.detBtns}>
+                <button className={styles.imprimir} onClick={() => imprimir(sel)} disabled={enCurso}>
+                  {enCurso ? 'Imprimiendo…' : '🖨 Imprimir'}
+                </button>
+                <button className={styles.quitar} title="Quitar sin imprimir" onClick={() => quitar(sel)} disabled={enCurso}>✕</button>
+              </div>
+            </>
+          )}
+        </section>
+      </div>
     </div>
   );
 }
