@@ -105,6 +105,33 @@
   padding: 0.7rem;
 }
 
+.btnGuardar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  width: 100%;
+  margin-top: 0.85rem;
+  padding: 1rem 1rem;
+  border: none;
+  border-radius: 14px;
+  background: linear-gradient(180deg, #1d6fd6 0%, #0B2E55 100%);
+  color: #fff;
+  font-size: 1.1rem;
+  font-weight: 900;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  font-family: inherit;
+  cursor: pointer;
+  box-shadow: 0 5px 0 #082040, 0 8px 16px rgba(0, 0, 0, 0.2);
+  transition: transform 0.1s;
+}
+
+.btnGuardar:active {
+  transform: translateY(2px);
+  box-shadow: 0 3px 0 #082040, 0 5px 12px rgba(0, 0, 0, 0.2);
+}
+
 .btnDescargar {
   display: flex;
   align-items: center;

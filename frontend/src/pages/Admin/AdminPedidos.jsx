@@ -1,8 +1,7 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { QRCodeCanvas } from 'qrcode.react';
-import { getPedidosAdmin, marcarPagado, cambiarEstadoPedido, getPedido } from '../../api';
-import { compartirComprobante } from '../../utils/comprobante';
+import { getPedidosAdmin, marcarPagado, cambiarEstadoPedido } from '../../api';
+import { compartirLinkPedido } from '../../utils/comprobante';
 import toast from 'react-hot-toast';
 import styles from './Admin.module.css';
 import ModalConfirmar from './ModalConfirmar';
@@ -46,11 +45,7 @@ export default function AdminPedidos() {
   const [filtro, setFiltro] = useState('TODOS');
   const [confirmar, setConfirmar] = useState(null); // config del modal de confirmación
   const [editando, setEditando] = useState(null);   // pedido en edición
-  // Pedido (completo, con ítems) cuya imagen de comprobante se está por compartir.
-  const [imgPedido, setImgPedido] = useState(null);
-  const [imgBusy, setImgBusy] = useState(null); // idpedido en proceso
   const [numEnvio, setNumEnvio] = useState(''); // celular para enviar el listado
-  const qrRef = useRef(null);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -138,43 +133,15 @@ export default function AdminPedidos() {
 
   // La lista de admin no trae ítems: traemos el pedido completo y lo dejamos en
   // estado para que se renderice el QR oculto. El efecto de abajo arma la imagen.
-  async function handleEnviarImagen(p) {
-    setImgBusy(p.idpedido);
+  // Comparte el link del pedido: hoja nativa en móvil, copiar link en desktop.
+  async function compartirLink(p) {
     try {
-      const full = await getPedido(p.hash);
-      setImgPedido(full);
+      const r = await compartirLinkPedido(p);
+      if (r === 'copied') toast.success('Link copiado');
     } catch {
-      toast.error('No se pudo cargar el pedido');
-      setImgBusy(null);
+      toast.error('No se pudo compartir el link');
     }
   }
-
-  // Cuando hay un pedido seleccionado, el QR oculto ya está en el DOM; esperamos
-  // dos frames para que qrcode.react lo dibuje y compartimos la imagen.
-  useEffect(() => {
-    if (!imgPedido) return;
-    let cancel = false;
-    const raf = requestAnimationFrame(() => requestAnimationFrame(async () => {
-      if (cancel) return;
-      const qrCanvas = qrRef.current?.querySelector('canvas');
-      if (!qrCanvas) { toast.error('No se pudo generar la imagen'); setImgBusy(null); setImgPedido(null); return; }
-      try {
-        const res = await compartirComprobante(imgPedido, qrCanvas);
-        if (cancel) return;
-        // Desktop (sin compartir nativo): se descargó el PNG. Abrimos el chat de
-        // WhatsApp del cliente para que el admin adjunte la imagen descargada.
-        if (res === 'downloaded') {
-          window.open(waLink(imgPedido), '_blank');
-          toast.success('Imagen descargada. Adjuntala en el chat de WhatsApp.');
-        }
-      } catch {
-        if (!cancel) toast.error('No se pudo generar la imagen');
-      } finally {
-        if (!cancel) { setImgBusy(null); setImgPedido(null); }
-      }
-    }));
-    return () => { cancel = true; cancelAnimationFrame(raf); };
-  }, [imgPedido]);
 
   // Busca todos los pedidos (no anulados) de un celular y abre WhatsApp hacia ese
   // mismo número con el listado armado, listo para enviar.
@@ -258,25 +225,16 @@ export default function AdminPedidos() {
                   <a className={styles.btnWa} href={waLink(p)} target="_blank" title="Enviar mensaje por WhatsApp">WA</a>
                   <button
                     className={styles.btnWa}
-                    onClick={() => handleEnviarImagen(p)}
-                    disabled={imgBusy === p.idpedido}
-                    title="Compartir imagen del comprobante por WhatsApp"
+                    onClick={() => compartirLink(p)}
+                    title="Compartir el link del pedido"
                   >
-                    {imgBusy === p.idpedido ? '…' : '🖼'}
+                    🔗
                   </button>
                 </td>
               </tr>
             ))}
           </tbody>
         </table>
-      </div>
-
-      {/* QR de retiro oculto: se renderiza solo cuando hay un pedido seleccionado,
-          para poder dibujarlo dentro de la imagen del comprobante. */}
-      <div ref={qrRef} style={{ position: 'absolute', left: '-9999px', top: 0 }} aria-hidden="true">
-        {imgPedido && (
-          <QRCodeCanvas value={`https://sanjuandicequesi.com/pedido/${imgPedido.hash}`} size={480} />
-        )}
       </div>
 
       {confirmar && (

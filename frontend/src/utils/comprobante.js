@@ -166,3 +166,28 @@ export async function compartirComprobante(pedido, qrCanvas) {
   URL.revokeObjectURL(url);
   return 'downloaded';
 }
+
+// Comparte el LINK al pedido (no la imagen). Esto es lo realmente útil: el link
+// abre la página viva del pedido (estado actual, QR de retiro, etc.), a
+// diferencia de la imagen que queda congelada. En móvil abre la hoja de
+// compartir nativa para que el cliente lo guarde donde quiera (p.ej.
+// reenviárselo a sí mismo por WhatsApp). En desktop / sin Web Share, copia el
+// link al portapapeles. Devuelve 'shared' | 'cancelled' | 'copied'.
+export async function compartirLinkPedido(pedido) {
+  const codigo = (pedido.hash || '').substring(0, 8).toUpperCase();
+  const link = `${window.location.origin}/pedido/${pedido.hash}`;
+  const texto =
+    `🛒 Mi pedido ${codigo} — San Juan Dice Que Si\n${link}`;
+
+  if (navigator.share) {
+    try {
+      await navigator.share({ title: `Pedido ${codigo}`, text: texto, url: link });
+      return 'shared';
+    } catch (err) {
+      if (err?.name === 'AbortError') return 'cancelled'; // el usuario canceló
+      // si share falla por otro motivo, caemos a copiar al portapapeles
+    }
+  }
+  await navigator.clipboard.writeText(link);
+  return 'copied';
+}

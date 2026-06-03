@@ -6,7 +6,7 @@ import { getPedido, getRetirosPedido, generarQrBancard, getEstadoBancard, revert
 // Tiempo de vida del QR de pago en pantalla. Pasado este tiempo sin acreditarse,
 // reversamos el QR en Bancard (recomendación de Bancard: ~5 min + revert).
 const QR_VIDA_MS = 5 * 60 * 1000;
-import { compartirComprobante } from '../../utils/comprobante';
+import { compartirComprobante, compartirLinkPedido } from '../../utils/comprobante';
 import toast from 'react-hot-toast';
 import styles from './Confirmacion.module.css';
 
@@ -191,6 +191,15 @@ export default function Confirmacion() {
     setPreparando(false);
   }
 
+  async function guardarPedido() {
+    try {
+      const r = await compartirLinkPedido({ ...pedido, hash });
+      if (r === 'copied') toast.success('Link copiado');
+    } catch {
+      toast.error('No se pudo compartir el link');
+    }
+  }
+
   async function descargarComprobante() {
     const wrap = qrCanvasRef.current;
     const qrCanvas = wrap?.tagName === 'CANVAS' ? wrap : wrap?.querySelector('canvas');
@@ -332,12 +341,23 @@ export default function Confirmacion() {
               <QRCodeCanvas value={linkPedido} size={480} />
             </div>
 
+            {/* Acción principal: compartir el LINK al pedido. Es lo más útil
+                porque abre la página viva (estado, QR de retiro). En móvil abre
+                la hoja nativa (el cliente puede guardárselo en WhatsApp); en
+                desktop copia el link. La imagen queda como opción secundaria. */}
+            <button
+              className={styles.btnGuardar}
+              onClick={guardarPedido}
+            >
+              📤 Guardar mi pedido
+            </button>
+
             <button
               className={styles.btnDescargar}
               onClick={descargarComprobante}
               disabled={descargando}
             >
-              {descargando ? 'Generando tu pedido...' : '⬇️ Descargá tu pedido'}
+              {descargando ? 'Generando…' : '🖼️ Ver comprobante (imagen)'}
             </button>
           </>
         )}
