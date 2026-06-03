@@ -183,6 +183,6 @@
   font-size: 1.8rem; font-weight: 900; color: #4ade80;
 }
 .detNombre { font-size: 1.4rem; font-weight: 700; color: #e7edf5; }
-.detBtns { display: flex; gap: 0.6rem; margin-top: auto; padding-top: 1.5rem; }
+.detBtns { display: flex; gap: 0.6rem; margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid #244a66; }
 .detBtns .imprimir { font-size: 1.2rem; padding: 0.9rem; }
 .detBtns .quitar { font-size: 1.1rem; padding: 0.9rem 1.1rem; }
