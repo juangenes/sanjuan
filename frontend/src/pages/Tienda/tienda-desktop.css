@@ -304,6 +304,37 @@
 .td-cta:active{transform:scale(.98)}
 .td-cta-amount{background:rgba(255,255,255,.15);padding:.18rem .55rem;border-radius:999px;font-size:.82rem;font-weight:700}
 
+/* ── TÓTEM: kiosko de pantalla fija ──
+   El total y el botón de pago tienen que quedar SIEMPRE visibles (no cortarse
+   abajo). En pantallas táctiles `100vh` cuenta el área detrás de la barra del
+   navegador y empuja el pie del carrito fuera de la vista: usamos `100dvh`
+   (alto dinámico, ya descuenta esa barra). */
+.td-totem.td-app{
+  height:100dvh;
+  min-height:0;
+  overflow:hidden;            /* el scroll vive dentro de main y del carrito */
+}
+.td-totem .td-cart{
+  height:100dvh;
+  max-height:100dvh;
+}
+.td-totem .td-cart-foot{
+  padding-bottom:calc(1.2rem + env(safe-area-inset-bottom));
+}
+@media (max-width:900px){
+  /* En vertical el carrito se apila debajo del menú: que su pie quede pegado
+     al borde inferior para que el botón "Pagar" nunca se corte. */
+  .td-totem.td-app{
+    height:auto;min-height:100dvh;overflow:visible;
+    padding-bottom:0;         /* el tótem no usa la barra móvil de la tienda */
+  }
+  .td-totem .td-cart{height:auto;max-height:none}
+  .td-totem .td-cart-foot{
+    position:sticky;bottom:0;
+    box-shadow:0 -6px 20px -6px rgba(0,0,0,.25);
+  }
+}
+
 /* ── CHECKOUT MODAL ── */
 .td-overlay{
   position:fixed;inset:0;background:rgba(10,20,40,.6);

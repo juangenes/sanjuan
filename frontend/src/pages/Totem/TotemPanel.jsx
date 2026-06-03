@@ -366,7 +366,7 @@ export default function TotemPanel() {
 
   // ─── Pantalla de menú (arma el pedido) ──────────────────────────────────
   return (
-    <div className="td-app">
+    <div className="td-app td-totem">
       <header className="td-header">
         <div className="td-header-brand">
           <div><h1>🔥 San Juan · Autoservicio</h1></div>

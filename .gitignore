@@ -12,3 +12,11 @@ docs/bancard-integracion.md
 
 # Tarjetas físicas: QR + códigos generados para imprimir — NO subir al repo
 tarjetas-qr/
+
+# Snapshots automáticos del navegador Playwright MCP (sesiones de prueba)
+.playwright-mcp/
+
+# Material de prueba de QR Bancard y evidencias — NO subir al repo
+gen-qr-prueba.js
+qr-prueba/
+bancard-evidencia-*.png
