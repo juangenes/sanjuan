@@ -2,7 +2,7 @@ const router = require('express').Router();
 const Usuario = require('../models/usuario.model');
 const { authAdmin, authExpendio } = require('../middleware/auth');
 
-const ROLES_VALIDOS = ['admin', 'expendio', 'tarjetas', 'caja'];
+const ROLES_VALIDOS = ['admin', 'expendio', 'tarjetas', 'caja', 'fotos'];
 
 function validarUsuario(usuario) {
   return typeof usuario === 'string' && /^[a-zA-Z0-9._-]{3,50}$/.test(usuario);

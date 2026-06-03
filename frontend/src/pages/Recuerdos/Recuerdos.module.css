@@ -29,6 +29,21 @@
 .tabActive { background: linear-gradient(135deg, #ff5722, #ffd166); color: #1a1004; }
 .salir { background: transparent; color: #7c93a8; border: none; cursor: pointer; font-size: 0.85rem; }
 
+/* ── Login embebido ── */
+.loginWrap { flex: 1; display: flex; align-items: center; justify-content: center; padding: 1.5rem; }
+.loginCard {
+  width: 100%; max-width: 340px; display: flex; flex-direction: column; gap: 0.8rem;
+  background: rgba(13, 26, 38, 0.85); border: 1px solid #1d3346; border-radius: 16px;
+  padding: 1.6rem 1.4rem; box-shadow: 0 14px 40px rgba(0, 0, 0, .45);
+}
+.loginCard h1 { margin: 0; font-size: 1.25rem; text-align: center; }
+.loginSub { margin: 0 0 0.4rem; text-align: center; color: #6b8197; font-size: 0.85rem; }
+.loginCard input {
+  width: 100%; box-sizing: border-box; padding: 0.8rem 0.9rem; border-radius: 10px;
+  border: 1px solid #2c4661; background: #10202e; color: #e7edf5; font-size: 1rem;
+}
+.loginCard input::placeholder { color: #6b8197; }
+
 /* ── Captura ── */
 .capturar { display: flex; flex-direction: column; align-items: center; gap: 1rem; padding: 1rem; }
 .lienzoWrap {

@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
-import { getFotosAdmin, subirFoto, moderarFoto, eliminarFoto } from '../../api';
+import { getFotosAdmin, subirFoto, moderarFoto, eliminarFoto, login } from '../../api';
 import { MARCOS, MARCO_DEFAULT, getMarco, OUTPUT_W, OUTPUT_H } from '../../utils/marcos';
 import styles from './Recuerdos.module.css';
 
@@ -12,7 +11,10 @@ import styles from './Recuerdos.module.css';
 // "Moderar" permite ocultar/borrar lo que ya está publicado.
 
 export default function RecuerdosAdmin() {
-  const navigate = useNavigate();
+  // Acceso transversal: cualquier usuario logueado (cualquier rol) entra acá.
+  // Si no hay sesión mostramos un login embebido (los usuarios solo-fotos no
+  // pasan por /admin, que es exclusivo de administradores).
+  const [token, setToken] = useState(() => localStorage.getItem('sanjuan_token'));
   const [vista, setVista] = useState('capturar'); // 'capturar' | 'moderar'
 
   // ─── Captura ───────────────────────────────────────────────────────────
@@ -26,10 +28,6 @@ export default function RecuerdosAdmin() {
   const dragRef = useRef(null);
   const camInput = useRef(null);
   const galInput = useRef(null);
-
-  useEffect(() => {
-    if (!localStorage.getItem('sanjuan_token')) navigate('/admin');
-  }, [navigate]);
 
   // Dimensiones de dibujo de la foto para un zoom dado (modo "cover").
   const dims = useCallback((z) => {
@@ -161,6 +159,8 @@ export default function RecuerdosAdmin() {
     } catch { toast.error('No se pudo borrar'); }
   }
 
+  if (!token) return <FotosLogin onLogin={setToken} />;
+
   return (
     <div className={styles.admin}>
       <header className={styles.adminHeader}>
@@ -169,7 +169,7 @@ export default function RecuerdosAdmin() {
           <button className={vista === 'capturar' ? styles.tabActive : styles.tab} onClick={() => setVista('capturar')}>Capturar</button>
           <button className={vista === 'moderar' ? styles.tabActive : styles.tab} onClick={() => setVista('moderar')}>Moderar</button>
         </div>
-        <button className={styles.salir} onClick={() => { localStorage.clear(); navigate('/admin'); }}>Salir</button>
+        <button className={styles.salir} onClick={() => { localStorage.clear(); setToken(null); }}>Salir</button>
       </header>
 
       {vista === 'capturar' ? (
@@ -258,6 +258,59 @@ export default function RecuerdosAdmin() {
           )}
         </div>
       )}
+    </div>
+  );
+}
+
+// Login embebido del panel de fotos. Acepta CUALQUIER rol (el backend, vía
+// authFotos, deja entrar a todos los usuarios logueados). Los usuarios solo-fotos
+// entran por acá; el resto suele llegar ya con sesión iniciada en su panel.
+function FotosLogin({ onLogin }) {
+  const [form, setForm] = useState({ usuario: '', password: '' });
+  const [loading, setLoading] = useState(false);
+
+  async function handleSubmit(e) {
+    e.preventDefault();
+    setLoading(true);
+    try {
+      const { token, rol } = await login(form.usuario, form.password);
+      localStorage.setItem('sanjuan_token', token);
+      localStorage.setItem('sanjuan_rol', rol);
+      onLogin(token);
+    } catch {
+      toast.error('Usuario o contraseña incorrectos');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <div className={styles.admin}>
+      <div className={styles.loginWrap}>
+        <form className={styles.loginCard} onSubmit={handleSubmit}>
+          <h1>📸 Recuerdos San Juan</h1>
+          <p className={styles.loginSub}>Ingresá para subir y moderar fotos</p>
+          <input
+            placeholder="Usuario"
+            value={form.usuario}
+            onChange={e => setForm(f => ({ ...f, usuario: e.target.value }))}
+            required
+            autoFocus
+            autoCapitalize="none"
+            autoCorrect="off"
+          />
+          <input
+            type="password"
+            placeholder="Contraseña"
+            value={form.password}
+            onChange={e => setForm(f => ({ ...f, password: e.target.value }))}
+            required
+          />
+          <button className={styles.btnPrimario} type="submit" disabled={loading}>
+            {loading ? 'Ingresando…' : 'Ingresar'}
+          </button>
+        </form>
+      </div>
     </div>
   );
 }

@@ -49,4 +49,21 @@ function authCaja(req, res, next) {
   }
 }
 
-module.exports = { authAdmin, authExpendio, authTarjetas, authCaja };
+// Fotos (Recuerdos): acceso transversal. CUALQUIER usuario logueado entra —
+// todos los roles ven/suben/moderan fotos. El rol dedicado 'fotos' es para los
+// que SOLO acceden acá (p. ej. el fotógrafo), sin caja/tarjetas/admin.
+function authFotos(req, res, next) {
+  const token = req.headers.authorization?.split(' ')[1];
+  if (!token) return res.status(401).json({ error: 'Sin token' });
+  try {
+    req.user = jwt.verify(token, process.env.JWT_SECRET);
+    if (!['admin', 'expendio', 'tarjetas', 'caja', 'fotos'].includes(req.user.rol)) {
+      return res.status(403).json({ error: 'Sin permiso' });
+    }
+    next();
+  } catch {
+    res.status(401).json({ error: 'Token inválido' });
+  }
+}
+
+module.exports = { authAdmin, authExpendio, authTarjetas, authCaja, authFotos };

@@ -3,7 +3,7 @@ const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 const fotoModel = require('../models/foto.model');
-const { authAdmin } = require('../middleware/auth');
+const { authFotos } = require('../middleware/auth');
 const { notificarFotos } = require('../utils/rtsClient');
 
 // ───────────────────────────────────────────────────────────────────────────
@@ -53,7 +53,7 @@ router.get('/', async (req, res) => {
 });
 
 // GET /api/fotos/admin — todas, para el panel de moderación.
-router.get('/admin', authAdmin, async (_req, res) => {
+router.get('/admin', authFotos, async (_req, res) => {
   try {
     const fotos = await fotoModel.listarTodas();
     res.json({ fotos });
@@ -63,7 +63,7 @@ router.get('/admin', authAdmin, async (_req, res) => {
 });
 
 // POST /api/fotos — sube una foto ya recortada y con marco. Campo: `foto`.
-router.post('/', authAdmin, (req, res) => {
+router.post('/', authFotos, (req, res) => {
   upload.single('foto')(req, res, async (err) => {
     if (err) return res.status(400).json({ error: err.message });
     if (!req.file) return res.status(400).json({ error: 'Archivo requerido' });
@@ -83,7 +83,7 @@ router.post('/', authAdmin, (req, res) => {
 });
 
 // PATCH /api/fotos/:id — moderación: publicar / ocultar.  { publicada: bool }
-router.patch('/:id', authAdmin, async (req, res) => {
+router.patch('/:id', authFotos, async (req, res) => {
   try {
     const foto = await fotoModel.buscarPorId(req.params.id);
     if (!foto) return res.status(404).json({ error: 'Foto no encontrada' });
@@ -96,7 +96,7 @@ router.patch('/:id', authAdmin, async (req, res) => {
 });
 
 // DELETE /api/fotos/:id — borra fila y archivo en disco.
-router.delete('/:id', authAdmin, async (req, res) => {
+router.delete('/:id', authFotos, async (req, res) => {
   try {
     const foto = await fotoModel.buscarPorId(req.params.id);
     if (!foto) return res.status(404).json({ error: 'Foto no encontrada' });

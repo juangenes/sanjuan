@@ -10,7 +10,7 @@ import {
 } from '../../api';
 import styles from './Admin.module.css';
 
-const ROLES = ['admin', 'expendio', 'tarjetas'];
+const ROLES = ['admin', 'caja', 'expendio', 'tarjetas', 'fotos'];
 
 const FORM_VACIO = { usuario: '', password: '', rol: 'expendio', nombre: '', activo: true };
 
