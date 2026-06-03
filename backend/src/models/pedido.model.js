@@ -25,7 +25,8 @@ async function actualizarHash(idpedido, hash, conn) {
 
 async function listarTodos() {
   const [rows] = await db.query(
-    `SELECT idpedido, hash, fecha, cedula, familia, contacto, total, metodo_pago, estado
+    `SELECT idpedido, hash, fecha, cedula, familia, contacto, total,
+            metodo_pago, cobro_metodo, bancard_status, origen, estado
      FROM pedidos ORDER BY idpedido DESC`
   );
   return rows;

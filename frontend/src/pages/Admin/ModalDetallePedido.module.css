@@ -1,0 +1,77 @@
+/* El detalle necesita algo más de ancho que los modales de edición/confirmación. */
+.modalWide {
+  max-width: 560px;
+}
+
+/* Encabezado de sección dentro del cuerpo del modal. */
+.seccion {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #0B2E55;
+  margin: 0.9rem 0 0.1rem;
+  padding-bottom: 0.3rem;
+  border-bottom: 1px solid #eee;
+}
+.seccion:first-child { margin-top: 0; }
+
+/* Fila etiqueta → valor. */
+.campo {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  font-size: 0.9rem;
+  padding: 0.25rem 0;
+}
+.campo .lbl { color: #888; flex-shrink: 0; }
+.campo .val { color: #222; font-weight: 600; text-align: right; word-break: break-word; }
+
+/* Fila superior con los dos badges (estado + método de pago). */
+.badges {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.3rem;
+}
+.pagoBadge {
+  display: inline-block;
+  padding: 0.2rem 0.6rem;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  background: #eef2f7;
+  color: #0B2E55;
+}
+
+/* Listado de ítems del pedido. */
+.items {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  margin-top: 0.25rem;
+}
+.item {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  font-size: 0.9rem;
+}
+.item .cant { color: #0B2E55; font-weight: 700; flex-shrink: 0; }
+.item .tit { flex: 1; color: #333; }
+.item .sub { color: #555; white-space: nowrap; }
+.totalRow {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 0.5rem;
+  padding-top: 0.5rem;
+  border-top: 1px dashed #ddd;
+  font-weight: 700;
+  color: #0B2E55;
+}
+
+.cargando { padding: 1.5rem 0; text-align: center; color: #888; }
+
+/* Footer con acciones: que envuelvan en pantallas chicas. */
+.acciones { flex-wrap: wrap; justify-content: flex-start; }
+.acciones a { text-decoration: none; }

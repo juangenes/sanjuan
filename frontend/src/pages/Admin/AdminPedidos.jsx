@@ -3,10 +3,12 @@ import { Link, useNavigate } from 'react-router-dom';
 import { QRCodeCanvas } from 'qrcode.react';
 import { getPedidosAdmin, marcarPagado, cambiarEstadoPedido, getPedido } from '../../api';
 import { compartirComprobante } from '../../utils/comprobante';
+import { metodoPago } from '../../utils/metodoPago';
 import toast from 'react-hot-toast';
 import styles from './Admin.module.css';
 import ModalConfirmar from './ModalConfirmar';
 import ModalEditarPedido from './ModalEditarPedido';
+import ModalDetallePedido from './ModalDetallePedido';
 
 function waLink(p) {
   const codigo = p.hash.substring(0, 8).toUpperCase();
@@ -46,6 +48,7 @@ export default function AdminPedidos() {
   const [filtro, setFiltro] = useState('TODOS');
   const [confirmar, setConfirmar] = useState(null); // config del modal de confirmación
   const [editando, setEditando] = useState(null);   // pedido en edición
+  const [detalleId, setDetalleId] = useState(null);  // idpedido del detalle abierto
   // Pedido (completo, con ítems) cuya imagen de comprobante se está por compartir.
   const [imgPedido, setImgPedido] = useState(null);
   const [imgBusy, setImgBusy] = useState(null); // idpedido en proceso
@@ -187,6 +190,9 @@ export default function AdminPedidos() {
   }
 
   const filtrados = filtro === 'TODOS' ? pedidos : pedidos.filter(p => p.estado === filtro);
+  // Se deriva de la lista (no es un snapshot) para que los cambios de estado
+  // hechos desde el modal de detalle se reflejen al instante.
+  const detalle = detalleId != null ? pedidos.find(p => p.idpedido === detalleId) : null;
 
   return (
     <div className={styles.panel}>
@@ -234,39 +240,24 @@ export default function AdminPedidos() {
 
         <table>
           <thead>
-            <tr><th>#</th><th>Código</th><th>Fecha</th><th>Nombre</th><th>Total</th><th>Estado</th><th>Acciones</th></tr>
+            <tr><th>#</th><th>Código</th><th>Fecha</th><th>Nombre</th><th>Total</th><th>Pago</th><th>Estado</th></tr>
           </thead>
           <tbody>
-            {filtrados.map(p => (
-              <tr key={p.idpedido}>
-                <td>{p.idpedido}</td>
-                <td><a href={`/pedido/${p.hash}`} target="_blank">{p.hash.substring(0,8).toUpperCase()}</a></td>
-                <td style={{ fontSize: '0.85rem' }}>{new Date(p.fecha).toLocaleString('es-PY', { timeZone: 'America/Asuncion' })}</td>
-                <td>{p.familia}</td>
-                <td>Gs. {Number(p.total).toLocaleString()}</td>
-                <td><span className={`${styles.badge} ${styles[p.estado.toLowerCase()]}`}>{p.estado}</span></td>
-                <td>
-                  {p.estado === 'PENDIENTE' && (
-                    <button className={styles.btnPagar} onClick={() => pedirPagar(p)}>✓ Pagar</button>
-                  )}
-                  <button className={styles.btnEditar} onClick={() => setEditando(p)} title="Editar datos del pedido">✎</button>
-                  {p.estado === 'ANULADO' ? (
-                    <button className={styles.btnRestaurar} onClick={() => pedirRestaurar(p)} title="Restaurar pedido">↺</button>
-                  ) : (
-                    <button className={styles.btnAnular} onClick={() => pedirAnular(p)} title="Anular pedido">✕</button>
-                  )}
-                  <a className={styles.btnWa} href={waLink(p)} target="_blank" title="Enviar mensaje por WhatsApp">WA</a>
-                  <button
-                    className={styles.btnWa}
-                    onClick={() => handleEnviarImagen(p)}
-                    disabled={imgBusy === p.idpedido}
-                    title="Compartir imagen del comprobante por WhatsApp"
-                  >
-                    {imgBusy === p.idpedido ? '…' : '🖼'}
-                  </button>
-                </td>
-              </tr>
-            ))}
+            {filtrados.map(p => {
+              const pago = metodoPago(p);
+              return (
+                <tr key={p.idpedido} onClick={() => setDetalleId(p.idpedido)} style={{ cursor: 'pointer' }} title="Ver detalle del pedido">
+                  <td>{p.idpedido}</td>
+                  {/* El link al pedido público no debe disparar el modal de detalle. */}
+                  <td><a href={`/pedido/${p.hash}`} target="_blank" onClick={e => e.stopPropagation()}>{p.hash.substring(0,8).toUpperCase()}</a></td>
+                  <td style={{ fontSize: '0.85rem' }}>{new Date(p.fecha).toLocaleString('es-PY', { timeZone: 'America/Asuncion' })}</td>
+                  <td>{p.familia}</td>
+                  <td>Gs. {Number(p.total).toLocaleString()}</td>
+                  <td style={{ fontSize: '0.85rem' }}>{pago.icon} {pago.label}</td>
+                  <td><span className={`${styles.badge} ${styles[p.estado.toLowerCase()]}`}>{p.estado}</span></td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>
@@ -278,6 +269,20 @@ export default function AdminPedidos() {
           <QRCodeCanvas value={`https://sanjuandicequesi.com/pedido/${imgPedido.hash}`} size={480} />
         )}
       </div>
+
+      {detalle && (
+        <ModalDetallePedido
+          pedido={detalle}
+          onClose={() => setDetalleId(null)}
+          onPagar={pedirPagar}
+          onEditar={setEditando}
+          onAnular={pedirAnular}
+          onRestaurar={pedirRestaurar}
+          whatsappHref={waLink(detalle)}
+          onEnviarImagen={handleEnviarImagen}
+          imgBusy={imgBusy}
+        />
+      )}
 
       {confirmar && (
         <ModalConfirmar {...confirmar} onClose={() => setConfirmar(null)} />
