@@ -4,6 +4,7 @@ import toast from 'react-hot-toast';
 import { getColaRetiro, marcarComandaImpresa } from '../../api';
 import { suscribirScope } from '../../utils/rtsSocket';
 import { imprimirComandaRetiro, getTicketeraIP, setTicketeraIP } from '../../utils/eposPrint';
+import { imprimirComandaRetiroWeb, getModoImpresion, setModoImpresion, COMANDA_PRUEBA } from '../../utils/webPrint';
 import styles from './Retiro.module.css';
 
 // Estación de IMPRESIÓN de RETIRO (modelo fast food), layout maestro-detalle.
@@ -13,8 +14,13 @@ import styles from './Retiro.module.css';
 // elegida, con el botón «🖨 Imprimir». Se elige cuál atender haciendo click en el
 // item de la izquierda; no hace falta respetar el orden.
 //
-// CAVEAT mixed-content: para imprimir, abrí esta pantalla por HTTP en la LAN (igual
-// que la caja) para que el navegador pueda hablar con la impresora por http://<ip>.
+// IMPRESIÓN: el botón soporta dos métodos (se elige en ⚙ Impresora, se guarda por PC):
+//   • USB/Windows (por defecto): imprime por el driver de Windows (window.print) a la
+//     impresora predeterminada — ej. Epson TM-T20IVL por USB001. Funciona por HTTPS.
+//     Para que salga sin diálogo, abrir Chrome con --kiosk-printing (ver webPrint.js).
+//   • Red/IP: ePOS-Print por http://<ip> (ej. m30II). CAVEAT mixed-content: en este
+//     modo hay que abrir la pantalla por HTTP en la LAN para que el navegador pueda
+//     hablar con la impresora por http://<ip>.
 export default function RetiroPantalla() {
   const [cola, setCola] = useState([]);          // comandas pendientes (FIFO: vieja→nueva)
   const [selId, setSelId] = useState(null);      // comanda elegida (detalle a la derecha)
@@ -81,20 +87,31 @@ export default function RetiroPantalla() {
     });
   }
 
-  function pedirIpSiFalta() {
+  // Verifica que la impresora esté lista según el método elegido. En USB/Windows no
+  // hace falta nada (usa la predeterminada). En Red/IP, pide la IP si falta.
+  function impresoraLista() {
+    if (getModoImpresion() === 'usb') return true;
     if (getTicketeraIP()) return true;
     const ip = window.prompt('IP de la ticketera de RETIRO (ej. 192.168.1.50):', '');
     if (ip) setTicketeraIP(ip);
     return !!getTicketeraIP();
   }
 
+  // Imprime una comanda por el método configurado: USB/Windows (driver, sin IP) o
+  // Red/IP (ePOS-Print; lanza {code:'SIN_IP'} si falta la IP).
+  function imprimirComandaSegunModo(c) {
+    return getModoImpresion() === 'usb'
+      ? imprimirComandaRetiroWeb(c)
+      : imprimirComandaRetiro(c);
+  }
+
   // Imprime una comanda. Al imprimir OK, la saca de la cola y la pasa al historial.
   async function imprimir(c) {
     if (!c || imprimiendo.has(c.id)) return;
-    if (!pedirIpSiFalta()) { toast.error('No hay ticketera configurada'); return; }
+    if (!impresoraLista()) { toast.error('No hay impresora configurada'); return; }
     marcarImprimiendo(c.id, true);
     try {
-      await imprimirComandaRetiro(c);
+      await imprimirComandaSegunModo(c);
       await marcarComandaImpresa(c.id); // sale de la cola en la base
       quitadasRef.current.add(c.id);
       setCola(prev => prev.filter(x => x.id !== c.id));
@@ -122,20 +139,43 @@ export default function RetiroPantalla() {
   }
 
   async function reimprimir(c) {
-    if (!pedirIpSiFalta()) { toast.error('No hay ticketera configurada'); return; }
+    if (!impresoraLista()) { toast.error('No hay impresora configurada'); return; }
     try {
-      await imprimirComandaRetiro(c);
+      await imprimirComandaSegunModo(c);
       toast.success(`Comanda ${c.codigo} reimpresa`);
     } catch (err) {
       toast.error(`No se pudo reimprimir: ${err.message}`);
     }
   }
 
-  function configurarIp() {
-    const ip = window.prompt('IP de la ticketera de RETIRO:', getTicketeraIP());
-    if (ip !== null) {
-      setTicketeraIP(ip);
-      toast.success(ip ? `Ticketera: ${ip}` : 'IP borrada');
+  // Imprime una comanda de muestra para probar la impresora sin esperar un pedido real.
+  async function imprimirPrueba() {
+    if (!impresoraLista()) { toast.error('No hay impresora configurada'); return; }
+    try {
+      await imprimirComandaSegunModo(COMANDA_PRUEBA);
+      toast.success('Prueba enviada a la impresora');
+    } catch (err) {
+      toast.error(`No se imprimió: ${err.message}`);
+    }
+  }
+
+  // Elige el método de impresión de esta PC: USB/Windows (TM-T20IVL por USB) o
+  // Red/IP (ePOS, ej. m30II). Si es por red, además pide la IP.
+  function configurarImpresora() {
+    const esUsb = window.confirm(
+      'Impresora de RETIRO — elegí el método:\n\n' +
+      '• Aceptar  → USB / Windows (TM-T20IVL por USB001)\n' +
+      '• Cancelar → Red / IP (ePOS, ej. m30II)\n\n' +
+      `Método actual: ${getModoImpresion() === 'usb' ? 'USB / Windows' : 'Red / IP'}`
+    );
+    if (esUsb) {
+      setModoImpresion('usb');
+      toast.success('Impresora: USB / Windows');
+    } else {
+      setModoImpresion('red');
+      const ip = window.prompt('IP de la ticketera de RETIRO:', getTicketeraIP());
+      if (ip !== null) setTicketeraIP(ip);
+      toast.success(getTicketeraIP() ? `Impresora: Red ${getTicketeraIP()}` : 'Impresora: Red (falta IP)');
     }
   }
 
@@ -151,7 +191,8 @@ export default function RetiroPantalla() {
         <div className={styles.headRight}>
           {cola.length > 0 && <span className={styles.contador}>{cola.length} en cola</span>}
           <button className={`${styles.btn} ${styles.btnGhost}`} onClick={refrescar}>↻ Refrescar</button>
-          <button className={`${styles.btn} ${styles.btnGhost}`} onClick={configurarIp}>⚙ Impresora</button>
+          <button className={`${styles.btn} ${styles.btnGhost}`} onClick={imprimirPrueba}>🖨 Prueba</button>
+          <button className={`${styles.btn} ${styles.btnGhost}`} onClick={configurarImpresora}>⚙ Impresora</button>
           <button className={`${styles.btn} ${styles.btnGhost}`} onClick={() => { localStorage.clear(); navigate('/caja'); }}>Salir</button>
         </div>
       </header>
