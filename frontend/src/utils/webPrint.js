@@ -91,7 +91,7 @@ const ESTILOS = `
   .item .chk { flex: none; width: 6mm; height: 6mm; border: 1.6px solid #000; border-radius: 2px; }
   .item .q { flex: none; min-width: 7mm; height: 7mm; line-height: 6.7mm; text-align: center;
              font-size: 15px; font-weight: 800; border: 1.5px solid #000; border-radius: 4px; }
-  .item .n { font-size: 17px; font-weight: 700; }
+  .item .n { font-size: 14px; font-weight: 700; line-height: 1.15; }
 
   .foot { font-size: 12px; font-weight: 700; margin-top: 1mm;
           display: flex; align-items: center; justify-content: center; gap: 2mm; }
