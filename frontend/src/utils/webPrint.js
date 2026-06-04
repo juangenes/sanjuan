@@ -81,7 +81,7 @@ const ESTILOS = `
 
   .codebox { background: #000; color: #fff; border-radius: 6px; padding: 1.8mm 2mm 2.4mm; margin: 1.5mm 0; }
   .codelbl { font-size: 11px; font-weight: 700; letter-spacing: 5px; }
-  .code { font-size: 34px; font-weight: 900; letter-spacing: 3px; line-height: 1.05;
+  .code { font-size: 31px; font-weight: 900; letter-spacing: 3px; line-height: 1.05;
           font-family: "Consolas", "Cascadia Mono", monospace; }
 
   .meta { font-size: 13px; font-weight: 600; }
