@@ -67,12 +67,14 @@ const ESTILOS = `
     color: #000; background: #fff;
     -webkit-print-color-adjust: exact; print-color-adjust: exact;
   }
-  .t { padding: 3mm 3.5mm 5mm; text-align: center; }
+  /* Padding lateral generoso: las térmicas tienen ~4mm no-imprimibles a cada lado;
+     con menos margen se come la línea izquierda de los recuadros. */
+  .t { padding: 3mm 5mm 5mm; text-align: center; }
 
   .brand { margin-bottom: 1mm; }
   .brand svg { display: block; margin: 0 auto .3mm; }
-  .bname { font-size: 26px; font-weight: 900; letter-spacing: 3px; line-height: 1; }
-  .btag { font-size: 13px; font-style: italic; font-weight: 600; margin-top: .4mm; }
+  .bname { font-size: 24px; font-weight: 900; letter-spacing: 2px; line-height: 1; }
+  .btag { font-size: 14px; font-weight: 700; letter-spacing: 1px; margin-top: .6mm; }
 
   .rule { border-top: 2px solid #000; margin: 2mm 0; }
   .dash { border-top: 1px dashed #000; margin: 2mm 0; }
@@ -161,8 +163,8 @@ function comandaRetiroHTML(comanda) {
   return `<!doctype html><html><head><meta charset="utf-8"><style>${ESTILOS}</style></head>` +
     `<body><div class="t">` +
     `<div class="brand">${fogataSVG(34)}` +
-      `<div class="bname">SAN JUAN</div>` +
-      `<div class="btag">dice que Siii!</div>` +
+      `<div class="bname">SAN JUAN 2026</div>` +
+      `<div class="btag">Promo 2032</div>` +
     `</div>` +
     `<div class="rule"></div>` +
     `<div class="codebox">` +
