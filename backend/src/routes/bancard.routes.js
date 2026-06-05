@@ -1,5 +1,6 @@
 const router = require('express').Router();
 const pedidoModel = require('../models/pedido.model');
+const pedidoService = require('../services/pedido.service');
 const bancard = require('../services/bancard.service');
 const configService = require('../services/configuracion.service');
 
@@ -197,6 +198,14 @@ router.post('/revertir', async (req, res) => {
     // Marcamos la intención antes de invocar: así, si el callback llega en
     // paralelo, respondemos error y no confirmamos una venta cancelada.
     await pedidoModel.actualizarStatusBancard(pedido.idpedido, 'revert_requested');
+
+    // QR abandonado del tótem o de la caja walk-in (nunca pagado): lo anulamos y le
+    // devolvemos el stock, para que no quede colgado como PENDIENTE en /admin. La
+    // preventa de tienda NO se anula (el cliente puede pagar por transferencia o
+    // regenerar el QR). Idempotente: solo anula la primera reversa.
+    if (['totem', 'caja'].includes(pedido.origen)) {
+      await pedidoService.anularPorAbandono(pedido.idpedido);
+    }
 
     // MOCKUP: no hay nada que reversar en Bancard; lo dejamos como reversado.
     if (mockHabilitado()) {

@@ -95,6 +95,31 @@ async function crearPedido({ cedula, familia, contacto, items, metodo_pago }, op
   }
 }
 
+// Anula un pedido PENDIENTE abandonado (QR generado y nunca pagado) y le DEVUELVE
+// el stock que había descontado al crearse. Transaccional con lock sobre el pedido
+// para que dos reversas concurrentes (cancelar + vencer) no repongan el stock dos
+// veces: solo la primera, que lo encuentra PENDIENTE, anula y repone. Idempotente.
+async function anularPorAbandono(idpedido) {
+  const conn = await db.getConnection();
+  await conn.beginTransaction();
+  try {
+    const [rows] = await conn.query('SELECT estado FROM pedidos WHERE idpedido = ? FOR UPDATE', [idpedido]);
+    if (!rows.length || rows[0].estado !== 'PENDIENTE') { await conn.commit(); return false; }
+    const [items] = await conn.query('SELECT idproducto, cantidad FROM pedidos_productos WHERE idpedido = ?', [idpedido]);
+    for (const it of items) {
+      await productoModel.reponerStock(it.idproducto, it.cantidad, conn);
+    }
+    await conn.query("UPDATE pedidos SET estado = 'ANULADO' WHERE idpedido = ?", [idpedido]);
+    await conn.commit();
+    return true;
+  } catch (err) {
+    await conn.rollback();
+    throw err;
+  } finally {
+    conn.release();
+  }
+}
+
 async function obtenerPedidoPublico(hash) {
   const pedido = await pedidoModel.buscarPorHash(hash);
   if (!pedido) return null;
@@ -117,4 +142,4 @@ async function obtenerPedidoPublico(hash) {
   return { ...pedido, items: detalle, dia_d: configService.diaD() };
 }
 
-module.exports = { crearPedido, obtenerPedidoPublico, METODOS_COBRO };
+module.exports = { crearPedido, obtenerPedidoPublico, anularPorAbandono, METODOS_COBRO };
