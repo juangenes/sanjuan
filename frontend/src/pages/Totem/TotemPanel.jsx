@@ -7,7 +7,13 @@ import {
   generarQrBancard,
   getEstadoBancard,
   revertirBancard,
+  pagarMockTotem,
 } from '../../api';
+
+// PRUEBA (revertible): saltea el pago de Bancard en el tótem para ver el flujo
+// completo (pedido → "seguí desde tu celular" → autoretiro → #XX). Requiere también
+// BYPASS_PAGO_TOTEM=true en el server. Para revertir: poner BYPASS_PAGO = false.
+const BYPASS_PAGO = true;
 import { useCarrito } from '../../context/CarritoContext';
 import '../Tienda/tienda-desktop.css';
 import styles from './Totem.module.css';
@@ -118,6 +124,15 @@ export default function TotemPanel() {
       const pedido = await crearPedidoTotem({
         items: items.map(i => ({ idproducto: i.idproducto, cantidad: i.cantidad })),
       });
+
+      // PRUEBA (revertible): saltea el QR de Bancard y marca pagado directo, como si
+      // hubiera pagado OK. Va derecho a "seguí desde tu celular". Ver BYPASS_PAGO arriba.
+      if (BYPASS_PAGO) {
+        await pagarMockTotem(pedido.hash);
+        onPagado(pedido.hash);
+        return;
+      }
+
       setPago({ hash: pedido.hash, total: pedido.total });
       setQrPago(null);
       setQrError(false);

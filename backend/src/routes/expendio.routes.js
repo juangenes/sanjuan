@@ -31,8 +31,10 @@ router.post('/entregar', async (req, res) => {
   try {
     const { hash, items } = req.body;
     if (!hash || !items?.length) return res.status(400).json({ error: 'Datos incompletos' });
-    const { idot } = await expendioService.registrarEntrega(hash, items, req.user.usuario);
-    res.json({ success: true, idot });
+    const { idot, comandaId } = await expendioService.registrarEntrega(hash, items, req.user.usuario);
+    // `numero` (= comandaId) es el #XX que se canta en RETIRO; lo devolvemos para
+    // que la caja lo muestre/imprima al despachar un retiro de preventa.
+    res.json({ success: true, idot, numero: comandaId });
   } catch (err) {
     res.status(400).json({ error: err.message });
   }

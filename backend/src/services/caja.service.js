@@ -1,6 +1,7 @@
 const pedidoService = require('./pedido.service');
 const expendioService = require('./expendio.service');
 const pedidoModel = require('../models/pedido.model');
+const pedidoProductoModel = require('../models/pedidoProducto.model');
 const cajaLecturaModel = require('../models/cajaLectura.model');
 const { notificarLecturaCaja } = require('../utils/rtsClient');
 
@@ -21,33 +22,33 @@ async function tomarPedido({ nombre, cedula, contacto, items, metodo, recibido }
 
   // crearPedido valida stock, calcula el total con precio normal, cobra y deja
   // el pedido PAGADO de forma transaccional. Devuelve { idpedido, hash, total, vuelto }.
+  // NO disparamos la comanda acá: tras confirmar el cobro, la pantalla de caja le
+  // pregunta al cliente "¿retirás todo ahora o por partes?". Si elige "todo ahora"
+  // llama a despacharTodo; si elige "por partes", sigue desde su celular (no se
+  // dispara nada y retira cuando quiera, como una preventa).
   const pedido = await pedidoService.crearPedido(datos, {
     lista: 'normal',
     origen: 'caja',
     cobro: { metodo, recibido, operador },
   });
 
-  // Dispara la comanda a RETIRO con todos los ítems. Si falla (RTS/red), NO
-  // rompemos el cobro: el pedido ya quedó PAGADO y se puede re-disparar desde el
-  // modo "Preventa / Retiro" buscándolo por su código.
-  let comanda = false;
-  let numero = null; // #XX de retiro: el comandaId que se canta en el mostrador.
-  try {
-    const r = await expendioService.registrarEntrega(
-      pedido.hash,
-      items.map(i => ({ idproducto: i.idproducto, cantidad: i.cantidad })),
-      operador
-    );
-    comanda = true;
-    // El comandaId es el número consecutivo y único de la comanda en RETIRO.
-    // Lo devolvemos para imprimirlo en el ticket del comensal (clave para quien
-    // no tiene celular: se lleva su #XX impreso y sabe cuándo lo llaman).
-    numero = r?.comandaId ?? null;
-  } catch (err) {
-    console.error('[caja] cobro OK pero no se disparó la comanda a retiro:', err.message);
-  }
+  return { ...pedido };
+}
 
-  return { ...pedido, comanda, numero };
+// "Retirar todo ahora": dispara la comanda con TODO lo pendiente del pedido y
+// devuelve su #XX (comandaId) para que la caja lo muestre/imprima. Lo usa la
+// pantalla de caja cuando el cliente elige retirar todo apenas paga. registrarEntrega
+// re-chequea el saldo con lock, así que es idempotente y no entrega de más.
+async function despacharTodo(hash, operador) {
+  const pedido = await pedidoModel.buscarPorHash(hash);
+  if (!pedido) throw new Error('Pedido no encontrado');
+
+  const productos = await pedidoProductoModel.obtenerPorPedido(pedido.idpedido);
+  const items = productos.map(p => ({ idproducto: p.idproducto, cantidad: p.cantidad }));
+  if (!items.length) throw new Error('El pedido no tiene ítems');
+
+  const { idot, comandaId } = await expendioService.registrarEntrega(hash, items, operador);
+  return { numero: comandaId, idot };
 }
 
 // Caja con pago por QR de Bancard: NO cobra en el acto. Crea el pedido PENDIENTE
@@ -129,4 +130,4 @@ function atenderLectura(id, estado) {
   return cajaLecturaModel.marcarAtendida(id, estado);
 }
 
-module.exports = { tomarPedido, tomarPedidoQr, registrarLectura, listarLecturas, atenderLectura };
+module.exports = { tomarPedido, tomarPedidoQr, despacharTodo, registrarLectura, listarLecturas, atenderLectura };

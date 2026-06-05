@@ -5,7 +5,7 @@ import toast from 'react-hot-toast';
 import {
   getProductos, tomarPedidoCaja, tomarPedidoCajaQr, getPedidosExpendio,
   generarQrBancard, getEstadoBancard, revertirBancard,
-  getLecturasCaja, atenderLecturaCaja,
+  getLecturasCaja, atenderLecturaCaja, despacharPedidoCaja, getConfig,
 } from '../../api';
 import { useCarrito } from '../../context/CarritoContext';
 import { suscribirScope } from '../../utils/rtsSocket';
@@ -53,6 +53,8 @@ export default function CajaPanel() {
   const [qrPago, setQrPago] = useState(null); // { hash, idpedido, nombre, total, lineas, data, error } — pago QR en curso
   const [imprimiendo, setImprimiendo] = useState(false);
   const [impreso, setImpreso] = useState(false);
+  const [despachando, setDespachando] = useState(false); // disparando "retirar todo"
+  const [diaD, setDiaD] = useState(false); // DÍA D: habilita preguntar el retiro al cobrar
   const [modo, setModo] = useState('nuevo'); // 'nuevo' (walk-in) | 'preventa' (retiro)
   const { items, agregar, quitar, limpiar } = useCarrito();
   const navigate = useNavigate();
@@ -64,6 +66,7 @@ export default function CajaPanel() {
       .then(setProductos)
       .catch(() => toast.error('No se pudieron cargar los productos'))
       .finally(() => setLoading(false));
+    getConfig().then(c => setDiaD(!!c.dia_d)).catch(() => {});
   }, [navigate, num]);
 
   const total = useMemo(
@@ -135,15 +138,16 @@ export default function CajaPanel() {
     const pedido = await tomarPedidoCaja(payload);
     const codigo = pedido.hash.substring(0, 8).toUpperCase();
 
-    // El cobro ya quedó cerrado y la comanda salió automática a RETIRO. La
-    // impresión del ticket NO es automática: el cajero la dispara desde la
-    // pantalla de éxito (o el comensal escanea el QR sin imprimir).
+    // COBRO cerrado, pero el RETIRO NO se disparó: la pantalla de éxito le pregunta
+    // al cliente "¿retirás todo ahora o por partes?". El #XX recién aparece cuando
+    // elige "todo ahora" (despacharPedidoCaja).
     limpiar();
     setCobroOpen(false);
     setImpreso(false);
     setExito({
       codigo,
-      numero: pedido.numero ?? null, // #XX de retiro (el que se canta en el mostrador)
+      numero: null,        // se llena al despachar "todo ahora"
+      porPartes: false,    // true si el cliente elige seguir por su celular
       hash: pedido.hash,
       idpedido: pedido.idpedido,
       vuelto: pedido.vuelto,
@@ -156,8 +160,8 @@ export default function CajaPanel() {
   }
 
   // Pago con QR en curso: genera el QR de Bancard y poletea el estado hasta que
-  // el callback confirme el pago. Al confirmarse, pasa a la pantalla de éxito (la
-  // comanda a RETIRO ya la disparó el callback). Se re-arma solo si cambia el hash.
+  // el callback confirme el pago. Al confirmarse, pasa a la pantalla de éxito, que
+  // pregunta el retiro igual que en efectivo (el callback ya no dispara la comanda).
   useEffect(() => {
     if (!qrPago?.hash) return;
     const { hash, idpedido, nombre, total, lineas } = qrPago;
@@ -168,7 +172,7 @@ export default function CajaPanel() {
       if (cancelado) return;
       setExito({
         codigo: hash.substring(0, 8).toUpperCase(),
-        numero: null, // QR: el #XX lo genera el callback de Bancard (2da etapa)
+        numero: null, porPartes: false,
         hash, idpedido, vuelto: 0, metodo: 'INFONET',
         nombre, total, recibido: 0, lineas,
       });
@@ -213,6 +217,21 @@ export default function CajaPanel() {
   function cancelarQr() {
     if (qrPago?.hash) revertirBancard(qrPago.hash).catch(() => {});
     setQrPago(null);
+  }
+
+  // "Retirar todo ahora": dispara la comanda con todo el pedido y trae el #XX.
+  async function retirarTodoCaja() {
+    if (despachando || !exito?.hash) return;
+    setDespachando(true);
+    try {
+      const r = await despacharPedidoCaja(exito.hash);
+      setExito(e => ({ ...e, numero: r.numero }));
+      toast.success(`Comanda #${r.numero} enviada a RETIRO`);
+    } catch (err) {
+      toast.error(err.response?.data?.error || 'No se pudo enviar a RETIRO');
+    } finally {
+      setDespachando(false);
+    }
   }
 
   // Impresión explícita del ticket desde la pantalla de éxito.
@@ -286,35 +305,69 @@ export default function CajaPanel() {
   }
 
   if (exito) {
+    const despachado = exito.numero != null;        // ya se disparó la comanda (#XX)
+    const preguntando = diaD && !despachado && !exito.porPartes; // mostramos TODO/POR PARTES
     return (
       <div className={styles.pagina}>
         <div className={styles.exitoWrap}>
           <div className={styles.exitoCard}>
             <div className={styles.exitoCheck}>✓</div>
             <h2>Pedido cobrado</h2>
-            <p className={styles.exitoLabel}>{exito.numero != null ? 'Número de retiro' : 'Código de retiro'}</p>
-            <div className={styles.exitoCodigo}>{exito.numero != null ? `#${exito.numero}` : exito.codigo}</div>
-            {exito.numero != null && (
-              <p className={styles.exitoPedidoCod}>Pedido {exito.codigo}</p>
-            )}
             {exito.metodo === 'EFECTIVO' && (
               <div className={styles.exitoVuelto}>Vuelto: Gs. {fmtGs(exito.vuelto)}</div>
             )}
-            <div className={styles.exitoQr}>
-              <QRCodeCanvas value={`https://sanjuandicequesi.com/pedido/${exito.hash}`} size={180} />
-              <span>El comensal puede escanear este código en RETIRO, sin imprimir.</span>
-            </div>
-            <p className={styles.exitoNota}>La comanda salió en RETIRO. El comensal retira con {exito.numero != null ? 'este número' : 'este código'}.</p>
-            <div className={styles.exitoBtns}>
-              <button
-                className={`${styles.btnImprimir} ${impreso ? styles.btnImpreso : ''}`}
-                onClick={imprimirTicket}
-                disabled={imprimiendo}
-              >
-                {imprimiendo ? 'Imprimiendo…' : impreso ? '✓ Ticket impreso · reimprimir' : '🖨 Imprimir ticket'}
-              </button>
-              <button className={styles.btnNuevo} onClick={() => setExito(null)}>＋ Nuevo pedido</button>
-            </div>
+
+            {preguntando ? (
+              /* COBRO listo. Ahora el RETIRO: ¿todo ahora o por partes? */
+              <>
+                <p className={styles.exitoNota} style={{ margin: '1rem 0 .75rem' }}>
+                  ¿Cómo va a retirar el pedido?
+                </p>
+                <div className={styles.exitoBtns} style={{ flexDirection: 'column' }}>
+                  <button className={styles.btnImprimir} disabled={despachando} onClick={retirarTodoCaja}>
+                    {despachando ? 'Enviando…' : '🔥 Retirar TODO ahora'}
+                  </button>
+                  <button
+                    className={styles.btnNuevo}
+                    disabled={despachando}
+                    onClick={() => setExito(e => ({ ...e, porPartes: true }))}
+                  >
+                    Va a retirar por partes
+                  </button>
+                </div>
+              </>
+            ) : despachado ? (
+              /* Comanda disparada: el #XX es lo que se canta en el mostrador. */
+              <>
+                <p className={styles.exitoLabel}>Número de retiro</p>
+                <div className={styles.exitoCodigo}>#{exito.numero}</div>
+                <p className={styles.exitoPedidoCod}>Pedido {exito.codigo}</p>
+                <p className={styles.exitoNota}>La comanda salió a RETIRO. Se llama al comensal por su número.</p>
+                <div className={styles.exitoBtns}>
+                  <button
+                    className={`${styles.btnImprimir} ${impreso ? styles.btnImpreso : ''}`}
+                    onClick={imprimirTicket}
+                    disabled={imprimiendo}
+                  >
+                    {imprimiendo ? 'Imprimiendo…' : impreso ? '✓ Ticket impreso · reimprimir' : '🖨 Imprimir ticket'}
+                  </button>
+                  <button className={styles.btnNuevo} onClick={() => setExito(null)}>＋ Nuevo pedido</button>
+                </div>
+              </>
+            ) : (
+              /* "Por partes" o antes del DÍA D: retira desde su celular cuando quiera. */
+              <>
+                <div className={styles.exitoQr}>
+                  <QRCodeCanvas value={`https://sanjuandicequesi.com/pedido/${exito.hash}`} size={180} />
+                  <span>📲 El comensal escanea este QR y pide el retiro desde su celular cuando quiera.</span>
+                </div>
+                <p className={styles.exitoLabel}>Código de pedido</p>
+                <div className={styles.exitoCodigo}>{exito.codigo}</div>
+                <div className={styles.exitoBtns}>
+                  <button className={styles.btnNuevo} onClick={() => setExito(null)}>＋ Nuevo pedido</button>
+                </div>
+              </>
+            )}
           </div>
         </div>
       </div>

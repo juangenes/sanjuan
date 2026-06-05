@@ -61,6 +61,9 @@ export const tomarPedidoCaja = (payload) => api.post('/caja/pedido', payload).th
 // método INFONET) y devuelve su hash para generar el QR; lo confirma el callback.
 export const tomarPedidoCajaQr = (payload) => api.post('/caja/pedido-qr', payload).then(r => r.data.pedido);
 
+// "Retirar todo ahora": dispara la comanda con todo el pedido y devuelve su #XX.
+export const despacharPedidoCaja = (hash) => api.post(`/caja/pedido/${hash}/despachar`).then(r => r.data);
+
 // Lector (celular) → caja: manda una lectura escaneada a una caja (1..5).
 export const registrarLecturaCaja = (caja, codigo) =>
   api.post('/caja/lectura', { caja, codigo }).then(r => r.data.lectura);
@@ -111,6 +114,8 @@ export const confirmarPagoMock = (hash) => api.post('/bancard/confirmar-mock', {
 
 // Bancard QR (Infonet)
 export const generarQrBancard = (hash) => api.post('/bancard/qr', { hash }).then(r => r.data);
+// PRUEBA (revertible): marca pagado sin Bancard (gateado por BYPASS_PAGO_TOTEM en el server).
+export const pagarMockTotem = (hash) => api.post(`/bancard/pagar-mock/${hash}`).then(r => r.data);
 export const getEstadoBancard = (hash) => api.get(`/bancard/estado/${hash}`).then(r => r.data);
 export const revertirBancard = (hash) => api.post('/bancard/revertir', { hash }).then(r => r.data);
 

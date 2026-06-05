@@ -34,6 +34,18 @@ router.post('/pedido-qr', async (req, res) => {
   }
 });
 
+// "Retirar todo ahora": dispara la comanda con todo lo pendiente y devuelve el
+// #XX (numero) para mostrarlo/imprimirlo. Lo usa la pantalla de caja cuando el
+// cliente, tras pagar, elige retirar todo en el acto.
+router.post('/pedido/:hash/despachar', async (req, res) => {
+  try {
+    const r = await cajaService.despacharTodo(req.params.hash, req.user.usuario);
+    res.json({ success: true, ...r });
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
 // ── Lector del celular → caja ────────────────────────────────────────────────
 // Registra una lectura escaneada en el celular y la rutea a la caja elegida (RTS).
 router.post('/lectura', async (req, res) => {

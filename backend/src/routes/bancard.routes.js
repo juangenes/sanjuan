@@ -1,9 +1,6 @@
 const router = require('express').Router();
 const pedidoModel = require('../models/pedido.model');
-const pedidoProductoModel = require('../models/pedidoProducto.model');
-const expendioService = require('../services/expendio.service');
 const bancard = require('../services/bancard.service');
-const { notificarDespacho } = require('../utils/rtsClient');
 
 // ───────────────────────────────────────────────────────────────────────────
 // Pago con QR de Bancard/Infonet (método de pago 'INFONET').
@@ -91,6 +88,26 @@ router.get('/estado/:hash', async (req, res) => {
       pagado: pedido.estado === 'PAGADO',
       bancard_status: pedido.bancard_status || null,
     });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// POST /api/bancard/pagar-mock/:hash
+// PRUEBA (revertible): saltea el pago real del TÓTEM. Marca el pedido PAGADO sin
+// pasar por Bancard, para ver el flujo completo tótem → celular → retiro sin pagar.
+// Gateado por BYPASS_PAGO_TOTEM=true (apagado por defecto: en prod normal devuelve
+// 403 y no afecta al Bancard real de caja/tienda). Para revertir: quitar el env
+// (y poner BYPASS_PAGO=false en el front del tótem). NO usar con clientes reales.
+router.post('/pagar-mock/:hash', async (req, res) => {
+  if (String(process.env.BYPASS_PAGO_TOTEM).toLowerCase() !== 'true') {
+    return res.status(403).json({ error: 'Bypass de pago no habilitado' });
+  }
+  try {
+    const pedido = await pedidoModel.buscarPorHash(req.params.hash);
+    if (!pedido) return res.status(404).json({ error: 'Pedido no encontrado' });
+    await confirmarPagoPedido(pedido, { ticket: 'BYPASS', authorization: 'BYPASS-OK' });
+    res.json({ success: true, pagado: true });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -207,26 +224,11 @@ async function confirmarPagoPedido(pedido, { ticket = null, authorization = null
   if (pedido.estado === 'PAGADO') return;
   await pedidoModel.marcarPagadoBancard(pedido.idpedido, { ticket, authorization });
 
-  // Solo la CAJA dispara la comanda a RETIRO al pagarse (consumo inmediato: el
-  // cajero está cobrando y la persona espera). La TIENDA (preventa) y el TÓTEM NO
-  // auto-disparan: el pedido queda PAGADO y va a RETIRO recién cuando el cliente lo
-  // pide explícitamente — la tienda con el botón AUTORETIRO desde su celular, el
-  // tótem con el "¿retirar todo?" de la pantalla de éxito. Pedidos viejos sin
-  // origen → 'totem' (tampoco auto-disparan).
-  const origen = pedido.origen || 'totem';
-  if (origen !== 'caja') return;
-
-  try {
-    const items = await pedidoProductoModel.obtenerPorPedido(pedido.idpedido);
-    await expendioService.registrarEntrega(
-      pedido.hash,
-      items.map(i => ({ idproducto: i.idproducto, cantidad: i.cantidad })),
-      origen
-    );
-  } catch (e) {
-    console.error('[bancard] pago OK pero no se disparó la comanda a retiro:', e.message);
-    notificarDespacho({ motivo: 'bancard', hash: pedido.hash });
-  }
+  // NINGÚN origen auto-dispara la comanda a RETIRO al pagarse. El retiro lo pide
+  // siempre el cliente explícitamente: la tienda/tótem con el AUTORETIRO desde su
+  // celular, y la caja preguntando "¿retirás todo ahora o por partes?" tras cobrar
+  // (incluido el QR de caja: cae a la misma pantalla de éxito que pregunta). Así no
+  // se prepara comida hasta que alguien la pide de verdad.
 }
 
 // ───────────────────────────────────────────────────────────────────────────
