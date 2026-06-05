@@ -21,7 +21,12 @@ const TABS = [
   { key: 'POSTRE', label: '🍰 Postres' },
   { key: 'JUEGO', label: '🎯 Juegos' },
 ];
-const SECCIONES = TABS.slice(1);
+// La caja 5 es exclusiva de juegos; las cajas 1-4 no venden juegos.
+const SOLO_JUEGOS = (num) => String(num) === '5';
+const tabsDeCaja = (num) =>
+  SOLO_JUEGOS(num)
+    ? TABS.filter(t => t.key === 'JUEGO')
+    : TABS.filter(t => t.key !== 'JUEGO');
 
 const METODOS = [
   { key: 'EFECTIVO', label: '💵 Efectivo' },
@@ -44,9 +49,12 @@ function imgSrc(p) {
 }
 
 export default function CajaPanel() {
+  const { num } = useParams();
+  const tabs = useMemo(() => tabsDeCaja(num), [num]);
+  const secciones = useMemo(() => tabs.filter(t => t.key !== 'TODOS'), [tabs]);
   const [productos, setProductos] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState('TODOS');
+  const [activeTab, setActiveTab] = useState(() => (SOLO_JUEGOS(num) ? 'JUEGO' : 'TODOS'));
   const [search, setSearch] = useState('');
   const [cobroOpen, setCobroOpen] = useState(false);
   const [exito, setExito] = useState(null); // { codigo, hash, idpedido, vuelto, metodo, nombre, total, recibido, lineas }
@@ -57,7 +65,6 @@ export default function CajaPanel() {
   const [modo, setModo] = useState('nuevo'); // 'nuevo' (walk-in) | 'preventa' (retiro)
   const { items, agregar, quitar, limpiar } = useCarrito();
   const navigate = useNavigate();
-  const { num } = useParams();
 
   useEffect(() => {
     if (!localStorage.getItem('sanjuan_token')) { navigate(`/caja/${num}`); return; }
@@ -77,13 +84,13 @@ export default function CajaPanel() {
 
   const counts = useMemo(() => {
     const c = { TODOS: totalUnits };
-    SECCIONES.forEach(s => {
+    secciones.forEach(s => {
       c[s.key] = items.filter(i => i.categoria === s.key).reduce((a, i) => a + i.cantidad, 0);
     });
     return c;
-  }, [items, totalUnits]);
+  }, [items, totalUnits, secciones]);
 
-  const filteredSections = SECCIONES
+  const filteredSections = secciones
     .filter(s => activeTab === 'TODOS' || activeTab === s.key)
     .map(s => ({
       seccion: s,
@@ -367,7 +374,7 @@ export default function CajaPanel() {
       <main className="td-main">
         <div className="td-toolbar">
           <div className="td-tabs">
-            {TABS.map(t => (
+            {tabs.map(t => (
               <button key={t.key} className={`td-tab ${activeTab === t.key ? 'active' : ''}`} onClick={() => setActiveTab(t.key)} type="button">
                 <span>{t.label}</span>
                 {counts[t.key] > 0 && <span className="td-tab-count">{counts[t.key]}</span>}
