@@ -127,10 +127,16 @@ export default function TotemPanel() {
 
       // PRUEBA (revertible): saltea el QR de Bancard y marca pagado directo, como si
       // hubiera pagado OK. Va derecho a "seguí desde tu celular". Ver BYPASS_PAGO arriba.
+      // Si el server NO tiene BYPASS_PAGO_TOTEM (403), caemos al QR normal: así el
+      // tótem nunca queda roto por tener el flag prendido sin el env del lado server.
       if (BYPASS_PAGO) {
-        await pagarMockTotem(pedido.hash);
-        onPagado(pedido.hash);
-        return;
+        try {
+          await pagarMockTotem(pedido.hash);
+          onPagado(pedido.hash);
+          return;
+        } catch (err) {
+          if (err.response?.status !== 403) throw err;
+        }
       }
 
       setPago({ hash: pedido.hash, total: pedido.total });
