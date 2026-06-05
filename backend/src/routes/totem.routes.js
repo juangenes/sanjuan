@@ -17,13 +17,15 @@ const pedidoService = require('../services/pedido.service');
 // que el front genere el QR de Bancard. No descuenta nada más que el stock.
 router.post('/pedido', async (req, res) => {
   try {
-    const { items, nombre } = req.body || {};
+    const { items, nombre, contacto } = req.body || {};
     if (!items?.length) return res.status(400).json({ error: 'El pedido no tiene ítems' });
 
     const datos = {
       cedula: null,
       familia: (nombre && nombre.trim()) || 'Autoservicio',
-      contacto: '',
+      // Celular opcional: si el comensal lo carga, su compra entra a la bolsa de
+      // autoretiro de ese número (puede retirar después por el link de WhatsApp).
+      contacto: (contacto && contacto.trim()) || '',
       metodo_pago: 'INFONET',
       items,
     };

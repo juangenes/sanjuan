@@ -102,7 +102,7 @@ export default function CajaPanel() {
   const hasResults = filteredSections.some(g => g.productos.length > 0);
 
 
-  async function confirmarCobro({ nombre, metodo, recibido }) {
+  async function confirmarCobro({ nombre, contacto, metodo, recibido }) {
     const itemsPayload = items.map(i => ({ idproducto: i.idproducto, cantidad: i.cantidad }));
     // Foto del carrito para el ticket (con precios del día), antes de limpiarlo.
     const lineas = items.map(i => ({
@@ -115,7 +115,7 @@ export default function CajaPanel() {
     // pasamos a la pantalla de QR; el pago lo confirma el callback de Bancard y
     // lo detectamos por polling. La comanda a RETIRO la dispara el callback.
     if (metodo === 'INFONET') {
-      const pedido = await tomarPedidoCajaQr({ nombre, items: itemsPayload });
+      const pedido = await tomarPedidoCajaQr({ nombre, contacto, items: itemsPayload });
       limpiar();
       setCobroOpen(false);
       setQrPago({
@@ -132,6 +132,7 @@ export default function CajaPanel() {
 
     const payload = {
       nombre,
+      contacto,
       metodo,
       recibido: metodo === 'EFECTIVO' ? Number(recibido) : null,
       items: itemsPayload,
@@ -684,6 +685,7 @@ function PreventaRetiro({ caja }) {
 
 function CobroModal({ total, onClose, onConfirm }) {
   const [nombre, setNombre] = useState('');
+  const [telefono, setTelefono] = useState('');
   const [metodo, setMetodo] = useState('EFECTIVO');
   const [recibido, setRecibido] = useState('');
   const [loading, setLoading] = useState(false);
@@ -696,7 +698,7 @@ function CobroModal({ total, onClose, onConfirm }) {
     if (!ok || loading) return;
     setLoading(true);
     try {
-      await onConfirm({ nombre, metodo, recibido });
+      await onConfirm({ nombre, contacto: telefono, metodo, recibido });
     } catch (err) {
       toast.error(err.response?.data?.error || 'Error al cobrar');
       setLoading(false);
@@ -714,6 +716,13 @@ function CobroModal({ total, onClose, onConfirm }) {
           <div className={styles.campo}>
             <label>Nombre <span style={{ opacity: .5 }}>(opcional)</span></label>
             <input value={nombre} onChange={e => setNombre(e.target.value)} placeholder="Ej: Juan / Mostrador" autoFocus />
+          </div>
+
+          {/* Celular opcional: habilita el AUTORETIRO por WhatsApp. Si lo carga, su
+              compra se agrupa bajo ese número y puede retirar después desde su celu. */}
+          <div className={styles.campo}>
+            <label>Celular <span style={{ opacity: .5 }}>(opcional · para retirar por WhatsApp)</span></label>
+            <input type="tel" value={telefono} onChange={e => setTelefono(e.target.value)} placeholder="Ej: 0981 123 456" />
           </div>
 
           <div className={styles.metodos}>
