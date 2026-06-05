@@ -248,6 +248,39 @@
   padding: 0.5rem 0;
 }
 
+/* Ticket de retiro (walk-in): el #XX bien grande al abrir el pedido escaneado. */
+.ticketRetiro {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.2rem;
+  margin: 0.75rem 0 1rem;
+  padding: 1.25rem 1rem;
+  border-radius: 18px;
+  background: linear-gradient(180deg,#fff7ed 0%,#ffedd5 100%);
+  border: 3px solid #fb923c;
+  text-align: center;
+}
+.ticketRetiroLbl {
+  font-size: 0.85rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #9a3412;
+  font-weight: 800;
+}
+.ticketRetiroNum {
+  font-family: monospace;
+  font-size: 3.6rem;
+  font-weight: 900;
+  line-height: 1;
+  color: #9a3412;
+}
+.ticketRetiroHint {
+  font-size: 0.9rem;
+  color: #7c2d12;
+  font-weight: 700;
+}
+
 /* Banner del número de retiro recién disparado: lo más visible de la pestaña. */
 .numeroBanner {
   display: flex;

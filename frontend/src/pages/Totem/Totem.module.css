@@ -163,6 +163,18 @@
   line-height: 1.5;
   color: #7c2d12;
 }
+/* Número de retiro (#XX) dentro del callout: lo que se canta en el mostrador. */
+.retiroNum {
+  margin: 0.6rem 0 0;
+  font-size: 1.3rem;
+  font-weight: 800;
+  letter-spacing: 0.03em;
+  color: #9a3412;
+}
+.retiroNum strong {
+  font-size: 2.1rem;
+  font-family: "Consolas", "Cascadia Mono", monospace;
+}
 
 .exitoLabel { font-size: 0.85rem; letter-spacing: 0.1em; text-transform: uppercase; color: #888; margin: 0 0 0.4rem; }
 /* Código de pedido: secundario (backup), el QR de arriba es lo que importa. */

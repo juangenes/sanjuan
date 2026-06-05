@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
 import toast from 'react-hot-toast';
 import {
@@ -8,6 +8,7 @@ import {
   getEstadoBancard,
   revertirBancard,
   pagarMockTotem,
+  prepararPedido,
   getConfig,
 } from '../../api';
 import { useCarrito } from '../../context/CarritoContext';
@@ -15,11 +16,11 @@ import '../Tienda/tienda-desktop.css';
 import styles from './Totem.module.css';
 
 // Tótem de autoservicio (estilo McDonald's). Pantalla táctil física en el predio:
-// el comensal arma su pedido y paga con QR de Bancard. El tótem NO imprime ni
-// dispara el retiro: como el cliente pagó con el celular, en la pantalla de éxito
-// le mostramos un QR grande para que SIGA DESDE SU CELULAR (autoretiro en
-// /pedido/:hash, donde pide el retiro y ve su número). El pedido pasa a PAGADO
-// solo cuando Bancard confirma, y desde ahí aparece en el panel de despacho.
+// el comensal arma su pedido y paga con QR de Bancard. El tótem NO imprime. Funciona
+// como la caja: al confirmarse el pago se dispara la comanda con TODO el pedido
+// (retira todo) y sale su número de retiro (#XX). Como no hay impresora, la pantalla
+// de éxito muestra un QR para que el cliente se lleve "el ticket" (con su #XX) en el
+// celular y lo muestre en RETIRO. NO hay que hacer nada más desde el celular.
 //
 // Estados: 'idle' (atrae) → 'menu' (arma) → 'pago' (QR + polling) → 'exito'.
 
@@ -63,6 +64,8 @@ export default function TotemPanel() {
   const [bypassPago, setBypassPago] = useState(false); // PRUEBA: saltea Bancard (flag de config)
 
   const { items, agregar, quitar, limpiar } = useCarrito();
+  const itemsRef = useRef([]); // foto del carrito para disparar la comanda al pagar
+  const pagadoRef = useRef(false); // evita procesar el pago dos veces (ya_pagado + poll)
 
   useEffect(() => {
     getProductos()
@@ -100,6 +103,7 @@ export default function TotemPanel() {
 
   // Vuelve al inicio limpiando todo el estado del pedido en curso.
   function reiniciar() {
+    pagadoRef.current = false;
     limpiar();
     setPago(null);
     setQrPago(null);
@@ -119,10 +123,10 @@ export default function TotemPanel() {
   async function irAPagar() {
     if (!items.length || creando) return;
     setCreando(true);
+    // Foto del carrito para disparar la comanda (retira todo) al confirmarse el pago.
+    itemsRef.current = items.map(i => ({ idproducto: i.idproducto, cantidad: i.cantidad }));
     try {
-      const pedido = await crearPedidoTotem({
-        items: items.map(i => ({ idproducto: i.idproducto, cantidad: i.cantidad })),
-      });
+      const pedido = await crearPedidoTotem({ items: itemsRef.current });
 
       // PRUEBA (revertible): saltea el QR de Bancard y marca pagado directo, como si
       // hubiera pagado OK. Va derecho a "seguí desde tu celular". Controlado por el flag
@@ -164,12 +168,20 @@ export default function TotemPanel() {
     setFase('menu');
   }
 
-  // Pago confirmado: el tótem NO imprime. Mostramos el QR para que el cliente siga
-  // el retiro desde su celular (autoretiro en /pedido/:hash, donde ve su #número).
-  function onPagado(hash) {
+  // Pago confirmado: disparamos la comanda con TODO el pedido (retira todo, como la
+  // caja) y guardamos su #XX. Si es antes del DÍA D, /preparar responde 403 y queda
+  // sin número (el cliente retira después). Mostramos el QR = "ticket" con el #XX.
+  async function onPagado(hash) {
+    if (pagadoRef.current) return; // ya lo procesamos (evita doble disparo)
+    pagadoRef.current = true;
     const codigo = hash.substring(0, 8).toUpperCase();
+    let numero = null;
+    try {
+      const r = await prepararPedido(hash, itemsRef.current);
+      numero = r?.numero ?? null;
+    } catch { /* 403 antes del DÍA D u otro: queda sin #XX, retira luego */ }
     limpiar();
-    setExito({ codigo, hash });
+    setExito({ codigo, hash, numero });
     setFase('exito');
   }
 
@@ -257,10 +269,10 @@ export default function TotemPanel() {
     );
   }
 
-  // ─── Pantalla de éxito (QR para seguir el retiro desde el celular) ──────
-  // El tótem no imprime ni dispara el retiro: el cliente pagó con su celular, así
-  // que lo mandamos a seguir desde ahí (autoretiro en /pedido/:hash, donde pide el
-  // retiro y ve su #número). El QR es el protagonista absoluto de esta pantalla.
+  // ─── Pantalla de éxito (QR = ticket de retiro) ──────────────────────────
+  // La comanda ya se disparó (retira todo). El QR es el "ticket": el cliente lo
+  // escanea para llevarse su #XX en el celular y mostrarlo en RETIRO. No hay que
+  // hacer nada más desde el celular.
   if (fase === 'exito') {
     return (
       <div className={styles.exitoPagina} onClick={reiniciar}>
@@ -270,13 +282,15 @@ export default function TotemPanel() {
 
           <div className={styles.seguiCallout}>
             <div className={styles.seguiEmoji}>📲</div>
-            <h3 className={styles.seguiTitulo}>LEÉ ESTE QR Y<br />SEGUÍ DESDE TU CELULAR</h3>
+            <h3 className={styles.seguiTitulo}>ESCANEÁ ESTE QR<br />PARA RETIRAR TU PEDIDO</h3>
             <div className={styles.exitoQr}>
               <QRCodeSVG value={`https://sanjuandicequesi.com/pedido/${exito?.hash}`} size={300} />
             </div>
+            {exito?.numero != null && (
+              <div className={styles.retiroNum}>RETIRO <strong>#{exito.numero}</strong></div>
+            )}
             <p className={styles.seguiAyuda}>
-              Desde tu celular <strong>pedís el retiro</strong> y ves <strong>tu número</strong> para
-              esperar tu pedido.
+              Llevate tu <strong>ticket</strong> en el celular y mostralo en <strong>RETIRO</strong>.
             </p>
           </div>
 

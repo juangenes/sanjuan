@@ -169,6 +169,11 @@ export default function Confirmacion() {
   // del día (tótem/caja) retira TODO de una: el que compra para comer ahora, come ahora.
   const esPreventa = pedido.origen === 'tienda';
 
+  // Walk-in ya despachado (tótem/caja): el #XX del retiro es "el ticket" que la
+  // persona muestra en RETIRO. Lo mostramos prominente arriba al abrir el pedido.
+  const ultimoRetiroNum = gruposRetiro[0]?.numero ?? null;
+  const mostrarTicket = !esPreventa && ultimoRetiroNum != null;
+
   // AUTORETIRO: ítems que todavía no se mandaron a preparar y selección actual.
   const pendientes = (pedido.items || []).filter(i => i.pendiente > 0);
   const hayPendientes = pendientes.length > 0;
@@ -277,6 +282,15 @@ export default function Confirmacion() {
         ) : (
           <>
             <p className={styles.codigoTop}>Código de pedido: <strong>{codigo}</strong></p>
+
+            {/* Ticket de retiro del walk-in: el #XX que se canta en el mostrador. */}
+            {mostrarTicket && (
+              <div className={styles.ticketRetiro}>
+                <span className={styles.ticketRetiroLbl}>🎫 Tu número de retiro</span>
+                <span className={styles.ticketRetiroNum}>#{ultimoRetiroNum}</span>
+                <span className={styles.ticketRetiroHint}>Mostrá este número en RETIRO 🔥</span>
+              </div>
+            )}
 
             {/* AUTORETIRO: el cliente elige cuánto de cada ítem pendiente quiere
                 que le preparen ahora y lo manda a la pantalla de RETIRO. */}
