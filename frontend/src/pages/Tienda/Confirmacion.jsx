@@ -6,7 +6,7 @@ import { getPedido, getRetirosPedido, generarQrBancard, getEstadoBancard, revert
 // Tiempo de vida del QR de pago en pantalla. Pasado este tiempo sin acreditarse,
 // reversamos el QR en Bancard (recomendación de Bancard: ~5 min + revert).
 const QR_VIDA_MS = 5 * 60 * 1000;
-import { compartirComprobante, compartirCanvas } from '../../utils/comprobante';
+import { compartirComprobante } from '../../utils/comprobante';
 import toast from 'react-hot-toast';
 import styles from './Confirmacion.module.css';
 
@@ -29,9 +29,9 @@ export default function Confirmacion() {
   const [qrPago, setQrPago] = useState(null);   // cadena EMVCo del QR de Bancard
   const [qrError, setQrError] = useState(false);
   const [qrVencido, setQrVencido] = useState(false);
-  const [guardandoQrPago, setGuardandoQrPago] = useState(false);
+  const [qrPagoImg, setQrPagoImg] = useState(null);   // dataURL PNG del QR de pago, para mostrarlo como imagen guardable
   const qrCanvasRef = useRef(null);
-  const qrPagoCanvasRef = useRef(null);   // canvas oculto del QR de pago, para exportarlo como imagen
+  const qrPagoCanvasRef = useRef(null);   // canvas oculto del QR de pago, fuente del bitmap
 
   // AUTORETIRO: cuánto de cada ítem pendiente quiere mandar a preparar (arranca
   // con todo lo pendiente). `confirmar` abre el modal "¿estás en el local?".
@@ -228,21 +228,19 @@ export default function Confirmacion() {
     setPreparando(false);
   }
 
-  async function guardarQrPago() {
-    const wrap = qrPagoCanvasRef.current;
-    const qrCanvas = wrap?.tagName === 'CANVAS' ? wrap : wrap?.querySelector('canvas');
-    if (!qrCanvas) { toast.error('No se pudo generar la imagen del QR'); return; }
-    const codigo = (hash || '').substring(0, 8).toUpperCase();
-    setGuardandoQrPago(true);
-    try {
-      const r = await compartirCanvas(qrCanvas, `qr-pago-${codigo}.png`, 'QR de pago');
-      if (r === 'downloaded') toast.success('QR descargado. Buscalo en tus descargas y escaneálo desde tu app bancaria.');
-    } catch {
-      toast.error('No se pudo guardar el QR');
-    } finally {
-      setGuardandoQrPago(false);
-    }
-  }
+  // Mostramos el QR de pago como imagen (bitmap) y no como SVG: así el cliente
+  // puede mantenerlo apretado y usar "Guardar imagen" de su celular para mandarlo
+  // a la galería (el gesto que la gente ya intenta; sobre un SVG no funciona).
+  // Generamos el PNG desde el canvas oculto y lo volcamos a un <img>.
+  useEffect(() => {
+    if (!qrPago) { setQrPagoImg(null); return; }
+    const id = requestAnimationFrame(() => {
+      const wrap = qrPagoCanvasRef.current;
+      const canvas = wrap?.tagName === 'CANVAS' ? wrap : wrap?.querySelector('canvas');
+      if (canvas) setQrPagoImg(canvas.toDataURL('image/png'));
+    });
+    return () => cancelAnimationFrame(id);
+  }, [qrPago]);
 
   async function descargarComprobante() {
     const wrap = qrCanvasRef.current;
@@ -280,32 +278,24 @@ export default function Confirmacion() {
               </p>
             ) : qrPago ? (
               <>
-                <div className={styles.qrWrap}>
-                  <QRCodeSVG value={qrPago} size={220} />
-                </div>
-                {/* Canvas oculto del QR de pago: el SVG de arriba no se puede
-                    exportar a imagen, así que generamos un bitmap aparte para
-                    poder guardarlo en la galería. */}
+                {/* Canvas oculto: es la fuente del bitmap. Lo mostramos como <img>
+                    (no como SVG) para que "mantener apretado → Guardar imagen"
+                    funcione nativo y la imagen llegue a la galería. */}
                 <div ref={qrPagoCanvasRef} style={{ position: 'absolute', left: '-9999px', top: 0 }} aria-hidden="true">
                   <QRCodeCanvas value={qrPago} size={480} />
+                </div>
+                <div className={styles.qrWrap}>
+                  {qrPagoImg
+                    ? <img src={qrPagoImg} width={220} height={220} alt="QR de pago" />
+                    : <QRCodeSVG value={qrPago} size={220} />}
                 </div>
                 <p className={styles.oAlternativa}>
                   Abrí <strong>Pago Móvil</strong> (o la app de tu banco) y escaneá este código.
                   La pantalla se actualiza sola cuando se acredite.
                 </p>
-                <button
-                  type="button"
-                  className={styles.btnDescargar}
-                  onClick={guardarQrPago}
-                  disabled={guardandoQrPago}
-                >
-                  {guardandoQrPago ? 'Guardando…' : '📥 Guardar QR en galería'}
-                </button>
                 <p className={styles.pasosQr}>
-                  Si no podés escanear desde otra pantalla:
-                  <strong> 1)</strong> Tocá “Guardar QR” ·
-                  <strong> 2)</strong> Abrí tu app bancaria ·
-                  <strong> 3)</strong> Escaneá el QR desde la galería
+                  📲 ¿No podés escanear desde otra pantalla? <strong>Mantené apretado el QR</strong> y
+                  tocá <strong>“Guardar imagen”</strong>. Después abrí tu app bancaria y escaneálo desde la galería.
                 </p>
                 <div className={styles.esperandoPago}>⏳ Esperando confirmación del pago…</div>
               </>
