@@ -81,9 +81,12 @@ const ESTILOS = `
 
   .codebox { background: #000; color: #fff; border-radius: 6px; padding: 1.8mm 2mm 2.4mm; margin: 1.5mm 0; }
   .codelbl { font-size: 11px; font-weight: 700; letter-spacing: 5px; }
-  .code { font-size: 31px; font-weight: 900; letter-spacing: 3px; line-height: 1.05;
+  .code { font-size: 48px; font-weight: 900; letter-spacing: 2px; line-height: 1.02;
           font-family: "Consolas", "Cascadia Mono", monospace; }
 
+  /* Código de PEDIDO: secundario, para cruzar la comanda con la compra del cliente. */
+  .pedido { font-size: 15px; font-weight: 800; letter-spacing: 3px; margin: .5mm 0 1mm;
+            font-family: "Consolas", "Cascadia Mono", monospace; }
   .meta { font-size: 13px; font-weight: 600; }
 
   .items { text-align: left; margin: 1mm 0 0; }
@@ -148,11 +151,12 @@ function imprimirHTML(html) {
 
 // Comanda de RETIRO (modelo fast food), estética restaurante. Mismo contenido que
 // imprimirComandaRetiro de eposPrint.js pero como HTML para el driver de Windows.
-// `comanda` = { codigo, familia, creado_en, items:[{ titulo, cantidad }] }
+// `comanda` = { numero, codigo, familia, creado_en, items:[{ titulo, cantidad }] }
 function comandaRetiroHTML(comanda) {
   const d = comanda.creado_en ? new Date(comanda.creado_en) : new Date();
   const hora = d.toLocaleTimeString('es-PY', { hour: '2-digit', minute: '2-digit' });
   const nombre = (comanda.familia || '').trim() || 'Mostrador';
+  const numero = comanda.numero ?? comanda.id ?? '';
   const items = comanda.items || [];
   const filas = items
     .map(it => `<div class="item"><span class="chk"></span>` +
@@ -169,8 +173,9 @@ function comandaRetiroHTML(comanda) {
     `<div class="rule"></div>` +
     `<div class="codebox">` +
       `<div class="codelbl">RETIRO</div>` +
-      `<div class="code">${esc(String(comanda.codigo || '').toUpperCase())}</div>` +
+      `<div class="code">#${esc(String(numero))}</div>` +
     `</div>` +
+    `<div class="pedido">PEDIDO ${esc(String(comanda.codigo || '').toUpperCase())}</div>` +
     `<div class="meta">${esc(nombre)} &middot; ${esc(hora)}</div>` +
     `<div class="dash"></div>` +
     `<div class="items">${filas}</div>` +
@@ -189,6 +194,7 @@ export async function imprimirComandaRetiroWeb(comanda) {
 // Comanda de muestra para el botón de prueba (misma plantilla, datos ficticios).
 export const COMANDA_PRUEBA = {
   id: 'prueba',
+  numero: '000',
   codigo: 'PRUEBA01',
   familia: 'Mostrador',
   creado_en: null,

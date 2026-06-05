@@ -78,8 +78,15 @@ async function obtenerColaRetiro() {
       : [];
     out.push({
       id: c.id,
+      // Número de comanda consecutivo y ÚNICO por retiro (autoincremental de
+      // expendio_envios). Es el #XXX que se canta para llamar a la gente: a
+      // diferencia de `codigo` (derivado del hash del pedido), no se repite aunque
+      // un mismo pedido genere varias comandas en retiros parciales.
+      numero: c.id,
       idot: c.idot,
       hash: c.hash,
+      // Código de PEDIDO (primeros 8 del hash), unificado con /admin, /pedido/:hash,
+      // comprobantes, etc. Sirve para cruzar la comanda con la compra del cliente.
       codigo: (c.hash || '').substring(0, 8).toUpperCase(),
       familia: c.familia,
       creado_en: c.creado_en,

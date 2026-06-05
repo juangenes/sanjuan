@@ -168,6 +168,11 @@
 .detTop { display: flex; align-items: baseline; justify-content: space-between; }
 .detCodigo { font-size: 2.6rem; font-weight: 900; letter-spacing: .04em; color: #ffd166; }
 .detHora { color: #7c93a8; font-size: 1rem; }
+/* Código de PEDIDO: secundario, debajo del #XXX (que es el protagonista). */
+.detPedidoCod {
+  margin-top: 0.15rem; font-size: 0.95rem; font-weight: 700; letter-spacing: .08em;
+  color: #8fa6bb; font-family: "Consolas", "Cascadia Mono", monospace;
+}
 .detFamilia { font-size: 1.3rem; font-weight: 700; color: #e7edf5; margin-top: 0.2rem; }
 .detPreparar {
   margin-top: 1.2rem; font-size: 0.8rem; font-weight: 800; letter-spacing: .1em;

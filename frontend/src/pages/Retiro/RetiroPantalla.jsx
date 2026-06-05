@@ -85,6 +85,7 @@ export default function RetiroPantalla() {
     ? cola
         .map((c, idx) => ({ c, idx }))
         .filter(({ c }) =>
+          String(c.numero ?? c.id).includes(q) ||
           (c.codigo || '').toLowerCase().includes(q) ||
           (c.familia || '').toLowerCase().includes(q))
     : cola.map((c, idx) => ({ c, idx }));
@@ -126,7 +127,7 @@ export default function RetiroPantalla() {
       quitadasRef.current.add(c.id);
       setCola(prev => prev.filter(x => x.id !== c.id));
       setImpresas(prev => [{ ...c, horaImpresa: horaCorta(Date.now()) }, ...prev].slice(0, 20));
-      toast.success(`Comanda ${c.codigo} impresa`);
+      toast.success(`Comanda #${c.numero ?? c.id} impresa`);
     } catch (err) {
       toast.error(err.code === 'SIN_IP' ? 'No hay ticketera configurada' : `No se imprimió: ${err.message}`);
     } finally {
@@ -152,7 +153,7 @@ export default function RetiroPantalla() {
     if (!impresoraLista()) { toast.error('No hay impresora configurada'); return; }
     try {
       await imprimirComandaSegunModo(c);
-      toast.success(`Comanda ${c.codigo} reimpresa`);
+      toast.success(`Comanda #${c.numero ?? c.id} reimpresa`);
     } catch (err) {
       toast.error(`No se pudo reimprimir: ${err.message}`);
     }
@@ -215,7 +216,7 @@ export default function RetiroPantalla() {
             <input
               className={styles.buscadorInput}
               type="search"
-              placeholder="Buscar código o familia…"
+              placeholder="Buscar #, código o nombre…"
               value={busqueda}
               onChange={(e) => setBusqueda(e.target.value)}
             />
@@ -237,8 +238,8 @@ export default function RetiroPantalla() {
               >
                 <span className={styles.liPos}>{idx + 1}</span>
                 <div className={styles.liInfo}>
-                  <span className={styles.liCod}>{c.codigo}</span>
-                  <span className={styles.liFam}>{c.familia}</span>
+                  <span className={styles.liCod}>#{c.numero ?? c.id}</span>
+                  <span className={styles.liFam}>{c.codigo} · {c.familia}</span>
                 </div>
                 <span className={styles.liHora}>{horaCorta(c.creado_en)}</span>
               </button>
@@ -250,8 +251,8 @@ export default function RetiroPantalla() {
               <div className={styles.historialTit}>Impresas en esta sesión</div>
               <div className={styles.histChips}>
                 {impresas.map(c => (
-                  <button key={`${c.id}-${c.horaImpresa}`} className={styles.histChip} onClick={() => reimprimir(c)} title="Reimprimir">
-                    <span className={styles.histCod}>{c.codigo}</span>
+                  <button key={`${c.id}-${c.horaImpresa}`} className={styles.histChip} onClick={() => reimprimir(c)} title={`Reimprimir · Pedido ${c.codigo}`}>
+                    <span className={styles.histCod}>#{c.numero ?? c.id}</span>
                     <span className={styles.histRe}>↻</span>
                   </button>
                 ))}
@@ -267,9 +268,10 @@ export default function RetiroPantalla() {
           ) : (
             <>
               <div className={styles.detTop}>
-                <span className={styles.detCodigo}>{sel.codigo}</span>
+                <span className={styles.detCodigo}>#{sel.numero ?? sel.id}</span>
                 <span className={styles.detHora}>{horaCorta(sel.creado_en)}</span>
               </div>
+              <div className={styles.detPedidoCod}>Pedido {sel.codigo}</div>
               <div className={styles.detFamilia}>{sel.familia}</div>
               <div className={styles.detPreparar}>PREPARAR / ENTREGAR</div>
               <ul className={styles.detItems}>

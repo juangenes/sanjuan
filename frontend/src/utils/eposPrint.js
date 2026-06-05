@@ -156,8 +156,10 @@ export async function imprimirBoleta(boleta, meta) {
 }
 
 // Imprime la COMANDA que cae en RETIRO (modelo fast food): la cocina la imprime
-// y la cuelga en el riel. `comanda` = { codigo, familia, idot, creado_en, items }
+// y la cuelga en el riel. `comanda` = { numero, codigo, familia, idot, creado_en, items }
 // donde items = [{ titulo, cantidad }]. Es de uso interno (qué preparar).
+// El #numero es consecutivo y único por retiro (se canta para llamar a la gente);
+// el codigo es el del PEDIDO, secundario, para cruzar con la compra del cliente.
 export async function imprimirComandaRetiro(comanda) {
   const ip = getTicketeraIP();
   if (!ip) {
@@ -170,13 +172,15 @@ export async function imprimirComandaRetiro(comanda) {
     ? new Date(comanda.creado_en).toLocaleString('es-PY')
     : new Date().toLocaleString('es-PY');
   const items = comanda.items || [];
+  const numero = comanda.numero ?? comanda.id ?? '';
 
   const comandos = [
     { text: 'RETIRO', align: 'center', bold: true, dw: true, dh: true },
     { text: separador() },
-    { text: 'CODIGO', align: 'center' },
-    { text: comanda.codigo, align: 'center', bold: true, dw: true, dh: true },
+    { text: 'N. DE COMANDA', align: 'center' },
+    { text: `#${numero}`, align: 'center', bold: true, dw: true, dh: true },
     { text: separador() },
+    { text: `Pedido:  ${comanda.codigo || ''}` },
     { text: `Nombre:  ${comanda.familia || ''}` },
     { text: `Hora:    ${fecha}` },
     { text: separador() },
