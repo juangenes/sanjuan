@@ -312,6 +312,10 @@ export default function CajaPanel() {
                 <p className={styles.exitoLabel}>Número de retiro</p>
                 <div className={styles.exitoCodigo}>#{exito.numero}</div>
                 <p className={styles.exitoPedidoCod}>Pedido {exito.codigo}</p>
+                <div className={styles.exitoQr}>
+                  <QRCodeCanvas value={`https://sanjuandicequesi.com/pedido/${exito.hash}`} size={170} />
+                  <span>📲 El cliente escanea y se lleva el ticket (con su #{exito.numero}) en el celular.</span>
+                </div>
                 <p className={styles.exitoNota}>La comanda salió a RETIRO. Se llama al comensal por su número.</p>
                 <div className={styles.exitoBtns}>
                   <button
