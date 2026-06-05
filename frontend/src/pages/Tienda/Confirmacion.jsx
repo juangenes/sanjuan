@@ -110,6 +110,20 @@ export default function Confirmacion() {
     setPrepCant(def);
   }, [pedido?.idpedido, pedido?.estado, pedido?.items]);
 
+  // Mostramos el QR de pago como imagen (bitmap) y no como SVG: así el cliente
+  // puede mantenerlo apretado y usar "Guardar imagen" para mandarlo a la galería
+  // (el gesto que la gente ya intenta; sobre un SVG no funciona). Generamos el
+  // PNG desde el canvas oculto y lo volcamos a un <img>.
+  useEffect(() => {
+    if (!qrPago) { setQrPagoImg(null); return; }
+    const id = requestAnimationFrame(() => {
+      const wrap = qrPagoCanvasRef.current;
+      const canvas = wrap?.tagName === 'CANVAS' ? wrap : wrap?.querySelector('canvas');
+      if (canvas) setQrPagoImg(canvas.toDataURL('image/png'));
+    });
+    return () => cancelAnimationFrame(id);
+  }, [qrPago]);
+
   if (loading) return <div className={styles.loading}>Cargando...</div>;
   if (!pedido) return <div className={styles.loading}>Pedido no encontrado</div>;
 
@@ -230,18 +244,6 @@ export default function Confirmacion() {
 
   // Mostramos el QR de pago como imagen (bitmap) y no como SVG: así el cliente
   // puede mantenerlo apretado y usar "Guardar imagen" de su celular para mandarlo
-  // a la galería (el gesto que la gente ya intenta; sobre un SVG no funciona).
-  // Generamos el PNG desde el canvas oculto y lo volcamos a un <img>.
-  useEffect(() => {
-    if (!qrPago) { setQrPagoImg(null); return; }
-    const id = requestAnimationFrame(() => {
-      const wrap = qrPagoCanvasRef.current;
-      const canvas = wrap?.tagName === 'CANVAS' ? wrap : wrap?.querySelector('canvas');
-      if (canvas) setQrPagoImg(canvas.toDataURL('image/png'));
-    });
-    return () => cancelAnimationFrame(id);
-  }, [qrPago]);
-
   async function descargarComprobante() {
     const wrap = qrCanvasRef.current;
     const qrCanvas = wrap?.tagName === 'CANVAS' ? wrap : wrap?.querySelector('canvas');
