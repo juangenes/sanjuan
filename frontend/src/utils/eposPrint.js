@@ -266,6 +266,40 @@ export async function imprimirTicketPedido(data) {
   return enviarAImpresora(ip, comandos);
 }
 
+// Comprobante de RETIRO para el cliente (preventa que retira en caja): muestra el
+// #XX que se canta en el mostrador y los ítems que se están preparando. NO es la
+// comanda de cocina ni reimprime el pago. `data` = { numero, codigo, nombre, items:[{titulo,cantidad}] }.
+export async function imprimirComprobanteRetiro({ numero, codigo, nombre, items }) {
+  const ip = getTicketeraIP();
+  if (!ip) {
+    const err = new Error('No hay IP de ticketera configurada');
+    err.code = 'SIN_IP';
+    throw err;
+  }
+
+  const fecha = new Date().toLocaleString('es-PY');
+  const comandos = [
+    { text: 'SAN JUAN DICE QUE SI', align: 'center', bold: true, dw: true },
+    { text: 'Comprobante de retiro', align: 'center' },
+    { text: separador() },
+    { text: 'NUMERO DE RETIRO', align: 'center' },
+    { text: `#${numero}`, align: 'center', bold: true, dw: true, dh: true },
+    ...(codigo ? [{ text: `Pedido ${codigo}`, align: 'center' }] : []),
+    { text: separador() },
+    { text: `Nombre:  ${nombre || ''}` },
+    { text: `Hora:    ${fecha}` },
+    { text: separador() },
+    { text: 'EN PREPARACION', bold: true },
+    ...(items || []).map(it => ({ text: `${it.cantidad} x ${it.titulo}`, bold: true })),
+    { text: separador() },
+    { text: 'Te llaman por tu numero', align: 'center' },
+    { feed: 3 },
+    { cut: true },
+  ];
+
+  return enviarAImpresora(ip, comandos);
+}
+
 // Ticket de prueba mínimo, para verificar la conexión con la impresora.
 export async function imprimirPrueba() {
   const ip = getTicketeraIP();
