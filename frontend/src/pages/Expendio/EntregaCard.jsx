@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { getPedidoExpendio, registrarEntrega, getHistorialExpendio } from '../../api';
-import { imprimirComprobanteRetiro, getTicketeraIP, setTicketeraIP } from '../../utils/eposPrint';
+import { imprimirComprobanteRetiroWeb } from '../../utils/webPrint';
 import toast from 'react-hot-toast';
 import styles from './Expendio.module.css';
 
@@ -89,18 +89,13 @@ export default function EntregaCard({ hash, onEntregado }) {
     }
   }
 
-  // Imprime el comprobante de retiro (con el #XX) del último despacho. La caja tiene
-  // ticketera; si falta la IP la pide una vez (misma key que el resto de la caja).
+  // Imprime el comprobante de retiro (con el #XX) del último despacho por USB
+  // (driver de Windows, impresora predeterminada de la PC).
   async function imprimirComprobante() {
     if (imprimiendo || !despacho) return;
     setImprimiendo(true);
     try {
-      if (!getTicketeraIP()) {
-        const ip = window.prompt('IP de la ticketera Epson (ej. 192.168.1.50):', '');
-        if (ip) setTicketeraIP(ip);
-      }
-      if (!getTicketeraIP()) { toast.error('No hay ticketera configurada'); return; }
-      await imprimirComprobanteRetiro({
+      await imprimirComprobanteRetiroWeb({
         numero: despacho.numero,
         codigo: pedido.hash.substring(0, 8).toUpperCase(),
         nombre: pedido.familia,

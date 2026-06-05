@@ -9,7 +9,7 @@ import {
 } from '../../api';
 import { useCarrito } from '../../context/CarritoContext';
 import { suscribirScope } from '../../utils/rtsSocket';
-import { imprimirTicketPedido, getTicketeraIP, setTicketeraIP } from '../../utils/eposPrint';
+import { imprimirTicketPedidoWeb } from '../../utils/webPrint';
 import EntregaCard from '../Expendio/EntregaCard';
 import '../Tienda/tienda-desktop.css';
 import styles from './Caja.module.css';
@@ -94,11 +94,6 @@ export default function CajaPanel() {
     }));
   const hasResults = filteredSections.some(g => g.productos.length > 0);
 
-  function configurarIp() {
-    const actual = getTicketeraIP();
-    const ip = window.prompt('IP de la ticketera Epson:', actual);
-    if (ip !== null) { setTicketeraIP(ip); toast.success(ip ? `Ticketera: ${ip}` : 'IP borrada'); }
-  }
 
   async function confirmarCobro({ nombre, metodo, recibido }) {
     const itemsPayload = items.map(i => ({ idproducto: i.idproducto, cantidad: i.cantidad }));
@@ -234,20 +229,14 @@ export default function CajaPanel() {
     }
   }
 
-  // Impresión explícita del ticket desde la pantalla de éxito.
+  // Impresión explícita del ticket desde la pantalla de éxito (USB / driver Windows).
   async function imprimirTicket() {
     if (imprimiendo) return;
     setImprimiendo(true);
     try {
-      if (!getTicketeraIP()) {
-        const ip = window.prompt('IP de la ticketera Epson (ej. 192.168.1.50):', '');
-        if (ip) setTicketeraIP(ip);
-      }
-      if (!getTicketeraIP()) { toast.error('No hay ticketera configurada'); return; }
-      await imprimirTicketPedido({
+      await imprimirTicketPedidoWeb({
         codigo: exito.codigo,
         numero: exito.numero,
-        hash: exito.hash,
         nombre: exito.nombre,
         total: exito.total,
         metodo: exito.metodo,
@@ -383,7 +372,6 @@ export default function CajaPanel() {
         <nav className="td-header-nav">
           <a className={modo === 'nuevo' ? 'activo' : ''} onClick={() => setModo('nuevo')}>🛒 Nuevo pedido</a>
           <a className={modo === 'preventa' ? 'activo' : ''} onClick={() => setModo('preventa')}>🎫 Preventa / Retiro</a>
-          <a onClick={configurarIp}>⚙ IP ticketera</a>
           <a onClick={() => { limpiar(); localStorage.clear(); navigate(`/caja/${num}`); }}>Salir</a>
         </nav>
       </header>

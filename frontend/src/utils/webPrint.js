@@ -98,6 +98,15 @@ const ESTILOS = `
 
   .foot { font-size: 12px; font-weight: 700; margin-top: 1mm;
           display: flex; align-items: center; justify-content: center; gap: 2mm; }
+
+  /* Ticket de cliente: líneas "cant x titulo .... Gs" y resumen de pago. */
+  .line { display: flex; justify-content: space-between; gap: 2mm; font-size: 13px; margin: 1mm 0; text-align: left; }
+  .line .ln { font-weight: 700; }
+  .line .lp { font-weight: 700; white-space: nowrap; }
+  .pay { display: flex; justify-content: space-between; font-size: 13px; font-weight: 700; margin: .6mm 0; }
+  .tot { display: flex; justify-content: space-between; font-size: 16px; font-weight: 900; margin: 1mm 0; }
+  .estado { font-size: 18px; font-weight: 900; letter-spacing: 1px; margin: 1mm 0 .5mm; }
+  .note { font-size: 12px; font-weight: 700; }
 `;
 
 // Lanza la impresión de un documento HTML completo a través del driver de Windows.
@@ -189,6 +198,82 @@ function comandaRetiroHTML(comanda) {
 // Imprime la comanda de RETIRO por el driver de Windows (impresora predeterminada).
 export async function imprimirComandaRetiroWeb(comanda) {
   return imprimirHTML(comandaRetiroHTML(comanda));
+}
+
+// Ticket de PEDIDO del cliente (caja): #XX de retiro grande + resumen de pago. Sin
+// QR (USB-only). `data` = { codigo, numero, nombre, total, metodo, recibido, vuelto,
+// items:[{ titulo, cantidad, subtotal }] }. Si no hay `numero`, muestra el código.
+function ticketPedidoHTML(data) {
+  const fecha = new Date().toLocaleString('es-PY', { dateStyle: 'short', timeStyle: 'short' });
+  const gs = (n) => `Gs. ${Number(n || 0).toLocaleString('es-PY')}`;
+  const nombre = (data.nombre || '').trim() || 'Mostrador';
+  const numero = data.numero;
+  const items = data.items || [];
+  const filas = items
+    .map(it => `<div class="line"><span class="ln">${esc(it.cantidad)}x ${esc(it.titulo)}</span>` +
+      `<span class="lp">${gs(it.subtotal)}</span></div>`)
+    .join('');
+  const metodoLabel = {
+    EFECTIVO: 'Efectivo', POS_DEBITO: 'POS Debito', POS_CREDITO: 'POS Credito',
+    QR: 'QR', TARJETA: 'Tarjeta', TRANSFERENCIA: 'Transferencia', INFONET: 'QR',
+  }[data.metodo] || data.metodo || '';
+  const codeBlock = numero != null
+    ? `<div class="codelbl">RETIRO</div><div class="code">#${esc(numero)}</div>`
+    : `<div class="codelbl">CODIGO</div><div class="code" style="font-size:31px">${esc(String(data.codigo || '').toUpperCase())}</div>`;
+
+  return `<!doctype html><html><head><meta charset="utf-8"><style>${ESTILOS}</style></head>` +
+    `<body><div class="t">` +
+    `<div class="brand">${fogataSVG(34)}<div class="bname">SAN JUAN 2026</div><div class="btag">Promo 2032</div></div>` +
+    `<div class="rule"></div>` +
+    `<div class="codebox">${codeBlock}</div>` +
+    (numero != null ? `<div class="pedido">PEDIDO ${esc(String(data.codigo || '').toUpperCase())}</div>` : '') +
+    `<div class="meta">${esc(nombre)} &middot; ${esc(fecha)}</div>` +
+    `<div class="dash"></div>` +
+    `<div class="items">${filas}</div>` +
+    `<div class="dash"></div>` +
+    `<div class="tot"><span>TOTAL</span><span>${gs(data.total)}</span></div>` +
+    (metodoLabel ? `<div class="pay"><span>Metodo</span><span>${esc(metodoLabel)}</span></div>` : '') +
+    (data.metodo === 'EFECTIVO'
+      ? `<div class="pay"><span>Recibido</span><span>${gs(data.recibido)}</span></div>` +
+        `<div class="pay"><span>Vuelto</span><span>${gs(data.vuelto)}</span></div>`
+      : '') +
+    `<div class="dash"></div>` +
+    `<div class="estado">&#10003; PAGADO</div>` +
+    `<div class="note">${numero != null ? 'Retiralo cuando llamen tu numero' : 'Retiralo en RETIRO con este codigo'}</div>` +
+    `</div></body></html>`;
+}
+
+// Imprime el ticket de pedido del cliente por el driver de Windows.
+export async function imprimirTicketPedidoWeb(data) {
+  return imprimirHTML(ticketPedidoHTML(data));
+}
+
+// Comprobante de RETIRO del cliente (preventa que retira en caja): #XX + ítems en
+// preparación. `data` = { numero, codigo, nombre, items:[{ titulo, cantidad }] }.
+function comprobanteRetiroHTML(data) {
+  const fecha = new Date().toLocaleString('es-PY', { dateStyle: 'short', timeStyle: 'short' });
+  const nombre = (data.nombre || '').trim() || 'Mostrador';
+  const filas = (data.items || [])
+    .map(it => `<div class="line"><span class="ln">${esc(it.cantidad)}x ${esc(it.titulo)}</span></div>`)
+    .join('');
+
+  return `<!doctype html><html><head><meta charset="utf-8"><style>${ESTILOS}</style></head>` +
+    `<body><div class="t">` +
+    `<div class="brand">${fogataSVG(34)}<div class="bname">SAN JUAN 2026</div><div class="btag">Promo 2032</div></div>` +
+    `<div class="rule"></div>` +
+    `<div class="codebox"><div class="codelbl">RETIRO</div><div class="code">#${esc(data.numero)}</div></div>` +
+    (data.codigo ? `<div class="pedido">PEDIDO ${esc(String(data.codigo).toUpperCase())}</div>` : '') +
+    `<div class="meta">${esc(nombre)} &middot; ${esc(fecha)}</div>` +
+    `<div class="dash"></div>` +
+    `<div class="items">${filas}</div>` +
+    `<div class="dash"></div>` +
+    `<div class="note">En preparacion &middot; te llaman por tu numero</div>` +
+    `</div></body></html>`;
+}
+
+// Imprime el comprobante de retiro por el driver de Windows.
+export async function imprimirComprobanteRetiroWeb(data) {
+  return imprimirHTML(comprobanteRetiroHTML(data));
 }
 
 // Comanda de muestra para el botón de prueba (misma plantilla, datos ficticios).
