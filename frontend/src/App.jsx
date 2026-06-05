@@ -6,6 +6,7 @@ import Landing from './pages/Landing/Landing';
 import Sorteo from './pages/Sorteo/Sorteo';
 import Tienda from './pages/Tienda/Tienda';
 import Confirmacion from './pages/Tienda/Confirmacion';
+import MisPedidos from './pages/Bolsa/MisPedidos';
 import PagoMock from './pages/Tienda/PagoMock';
 import AdminLogin from './pages/Admin/AdminLogin';
 import AdminDashboard from './pages/Admin/AdminDashboard';
@@ -40,6 +41,8 @@ export default function App() {
           <Route path="/sorteo" element={<Sorteo />} />
           <Route path="/tienda" element={<Tienda />} />
           <Route path="/pedido/:hash" element={<Confirmacion />} />
+          {/* AUTORETIRO agrupado por celular — "mi bolsa" (link firmado, vía WhatsApp) */}
+          <Route path="/mis/:token" element={<MisPedidos />} />
           <Route path="/pago/mock" element={<PagoMock />} />
 
           {/* Tarjetas — operador (login propio: leer tarjeta, ver saldo, cargar) */}

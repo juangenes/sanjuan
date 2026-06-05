@@ -4,7 +4,8 @@ const pedidoModel = require('../models/pedido.model');
 const entregaModel = require('../models/entrega.model');
 const expendioService = require('../services/expendio.service');
 const configService = require('../services/configuracion.service');
-const { authAdmin } = require('../middleware/auth');
+const telToken = require('../utils/telToken');
+const { authAdmin, authExpendio } = require('../middleware/auth');
 const { notificarDespacho } = require('../utils/rtsClient');
 
 // Público — crear pedido
@@ -18,6 +19,54 @@ router.post('/', async (req, res) => {
     res.status(201).json({ success: true, ...resultado });
   } catch (err) {
     res.status(400).json({ success: false, error: err.message });
+  }
+});
+
+// Público (AUTORETIRO agrupado) — "bolsa" de todos los pedidos PAGADOS de un
+// celular, identificada por un token firmado (telToken). El link se entrega SOLO
+// al WhatsApp de ese número: el canal ES la autenticación. Va ANTES de las rutas
+// con comodín `/:hash` para que Express no las capture.
+router.get('/bolsa/:token', async (req, res) => {
+  try {
+    const bolsa = await expendioService.obtenerBolsa(req.params.token);
+    if (!bolsa) return res.status(404).json({ error: 'Link inválido o vencido' });
+    res.json({ success: true, bolsa });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Público (AUTORETIRO agrupado) — dispara a RETIRO los ítems elegidos de la bolsa.
+// Igual que /:hash/preparar: gateado por DÍA D (enforcement real, no solo el front).
+router.post('/bolsa/:token/preparar', async (req, res) => {
+  try {
+    if (!configService.diaD()) {
+      return res.status(403).json({ error: 'El retiro todavía no está habilitado' });
+    }
+    const items = (req.body?.items || [])
+      .map(i => ({ idproducto: Number(i.idproducto), cantidad: Number(i.cantidad) }))
+      .filter(i => i.idproducto && i.cantidad > 0);
+    if (!items.length) return res.status(400).json({ error: 'No seleccionaste nada para retirar' });
+    const { numeros } = await expendioService.registrarEntregaBolsa(req.params.token, items, 'AUTORETIRO');
+    // `numeros` = los #XX que se cantan en el mostrador (uno por pedido afectado).
+    res.json({ success: true, numeros });
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+// Operadores (admin / caja / expendio) — genera el link firmado de la bolsa de un
+// celular + su resumen, para que un facilitador o cajero se lo envíe por WhatsApp a
+// ESE número (único canal de entrega). Minar el token requiere estar logueado: si
+// fuera abierto, cualquiera podría generar la bolsa de un número ajeno.
+router.get('/bolsa-link/:tel', authExpendio, async (req, res) => {
+  try {
+    const info = await expendioService.generarLinkBolsa(req.params.tel);
+    if (!info) return res.status(400).json({ error: 'Celular inválido' });
+    if (info.cantidad === 0) return res.status(404).json({ error: 'No hay pedidos pagados para ese número' });
+    res.json({ success: true, ...info });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
   }
 });
 

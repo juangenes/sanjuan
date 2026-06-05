@@ -85,6 +85,16 @@ export const getRetirosPedido = (hash) => api.get(`/pedidos/${hash}/retiros`).th
 export const prepararPedido = (hash, items) =>
   api.post(`/pedidos/${hash}/preparar`, { items }).then(r => r.data);
 
+// AUTORETIRO AGRUPADO — "bolsa" de todos los pedidos pagados de un celular,
+// identificada por un token firmado (se entrega solo al WhatsApp de ese número).
+export const getBolsa = (token) => api.get(`/pedidos/bolsa/${token}`).then(r => r.data.bolsa);
+export const prepararBolsa = (token, items) =>
+  api.post(`/pedidos/bolsa/${token}/preparar`, { items }).then(r => r.data);
+// Operador (admin/caja) — link firmado + resumen de la bolsa de un celular, para
+// enviarlo por WhatsApp. Devuelve { token, familia, cantidad, total }.
+export const getBolsaLink = (tel) =>
+  api.get(`/pedidos/bolsa-link/${encodeURIComponent(tel)}`).then(r => r.data);
+
 // Config pública del front (dia_d habilita el autoretiro del cliente/tótem).
 export const getConfig = () => api.get('/config').then(r => r.data);
 // Admin — ver/editar la configuración operativa (pantalla /admin/configuracion).

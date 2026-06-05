@@ -5,8 +5,9 @@ import toast from 'react-hot-toast';
 import {
   getProductos, tomarPedidoCaja, tomarPedidoCajaQr, getPedidosExpendio,
   generarQrBancard, getEstadoBancard, revertirBancard,
-  getLecturasCaja, atenderLecturaCaja, despacharPedidoCaja, getConfig,
+  getLecturasCaja, atenderLecturaCaja, despacharPedidoCaja, getConfig, getBolsaLink,
 } from '../../api';
+import { normNum, waLinkBolsa } from '../../utils/bolsa';
 import { useCarrito } from '../../context/CarritoContext';
 import { suscribirScope } from '../../utils/rtsSocket';
 import { imprimirTicketPedidoWeb } from '../../utils/webPrint';
@@ -497,6 +498,20 @@ function PreventaRetiro({ caja }) {
   const [cargando, setCargando] = useState(true);
   const [lecturas, setLecturas] = useState([]); // cola del lector del celular para esta caja
   const [online, setOnline] = useState(false);
+  const [numEnvio, setNumEnvio] = useState(''); // celular para mandarle su link de retiro
+
+  // Manda por WhatsApp, al celular del cliente, el link ÚNICO y vivo de su bolsa
+  // (todos sus pedidos pagados). El backend valida que el número tenga pedidos.
+  async function enviarBolsa() {
+    const objetivo = normNum(numEnvio);
+    if (objetivo.length < 6) { toast.error('Ingresá un celular válido'); return; }
+    try {
+      const info = await getBolsaLink(objetivo);
+      window.open(waLinkBolsa(objetivo, info), '_blank');
+    } catch (err) {
+      toast.error(err.response?.data?.error || 'No se pudo generar el link');
+    }
+  }
 
   function cargar() {
     setCargando(true);
@@ -603,6 +618,27 @@ function PreventaRetiro({ caja }) {
           </div>
         </div>
       )}
+
+      {/* Enviar al cliente, por WhatsApp, el link vivo para retirar TODOS sus
+          pedidos pagados (agrupados por su celular). Mismo flujo que en /admin. */}
+      <div style={{ maxWidth: 520, margin: '0 auto .8rem', display: 'flex', gap: '.5rem', alignItems: 'center' }}>
+        <input
+          type="tel"
+          value={numEnvio}
+          onChange={e => setNumEnvio(e.target.value)}
+          onKeyDown={e => { if (e.key === 'Enter') enviarBolsa(); }}
+          placeholder="📲 Celular del cliente para enviarle sus pedidos"
+          style={{ flex: 1, minWidth: 0, padding: '0.65rem 0.9rem', borderRadius: 12, border: '1px solid #ccc' }}
+        />
+        <button
+          type="button"
+          onClick={enviarBolsa}
+          title="Enviar a ese número, por WhatsApp, el link para retirar todos sus pedidos"
+          style={{ padding: '0.65rem 1rem', borderRadius: 12, border: 'none', cursor: 'pointer', background: '#25D366', color: '#fff', fontWeight: 700, whiteSpace: 'nowrap' }}
+        >
+          Enviar
+        </button>
+      </div>
 
       <div className="td-search" style={{ maxWidth: 520, margin: '0 auto 1rem' }}>
         <span className="td-search-icon">🔍</span>
