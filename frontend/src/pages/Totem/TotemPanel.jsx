@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
 import toast from 'react-hot-toast';
 import {
@@ -7,22 +7,17 @@ import {
   generarQrBancard,
   getEstadoBancard,
   revertirBancard,
-  prepararPedido,
-  getConfig,
 } from '../../api';
 import { useCarrito } from '../../context/CarritoContext';
-import {
-  imprimirTicketPedido,
-  getTicketeraIP,
-  setTicketeraIP,
-} from '../../utils/eposPrint';
 import '../Tienda/tienda-desktop.css';
 import styles from './Totem.module.css';
 
 // Tótem de autoservicio (estilo McDonald's). Pantalla táctil física en el predio:
-// el comensal arma su pedido, paga con QR de Bancard y se lleva un ticket impreso
-// con su CÓDIGO DE RETIRO. El pedido pasa a PAGADO solo cuando Bancard confirma,
-// y desde ahí aparece en el panel de despacho.
+// el comensal arma su pedido y paga con QR de Bancard. El tótem NO imprime ni
+// dispara el retiro: como el cliente pagó con el celular, en la pantalla de éxito
+// le mostramos un QR grande para que SIGA DESDE SU CELULAR (autoretiro en
+// /pedido/:hash, donde pide el retiro y ve su número). El pedido pasa a PAGADO
+// solo cuando Bancard confirma, y desde ahí aparece en el panel de despacho.
 //
 // Estados: 'idle' (atrae) → 'menu' (arma) → 'pago' (QR + polling) → 'exito'.
 
@@ -61,21 +56,16 @@ export default function TotemPanel() {
   const [qrPago, setQrPago] = useState(null); // cadena EMVCo
   const [qrError, setQrError] = useState(false);
   const [creando, setCreando] = useState(false);
-  const [exito, setExito] = useState(null);  // { codigo, impreso }
+  const [exito, setExito] = useState(null);  // { codigo, hash }
   const [ttl, setTtl] = useState(0);         // cuenta regresiva visible
-  const [retiro, setRetiro] = useState('preguntar'); // preguntar | enviando | enviado
-  const [diaD, setDiaD] = useState(false); // DÍA D: habilita el autoretiro
 
   const { items, agregar, quitar, limpiar } = useCarrito();
-  const lineasRef = useRef([]); // foto del carrito para el ticket
-  const itemsRef = useRef([]);  // ítems (idproducto+cantidad) para disparar el autoretiro
 
   useEffect(() => {
     getProductos()
       .then(setProductos)
       .catch(() => toast.error('No se pudieron cargar los productos'))
       .finally(() => setLoading(false));
-    getConfig().then(c => setDiaD(!!c.dia_d)).catch(() => {});
   }, []);
 
   const total = useMemo(
@@ -103,12 +93,6 @@ export default function TotemPanel() {
     }));
   const hasResults = filteredSections.some(g => g.productos.length > 0);
 
-  function configurarIp() {
-    const actual = getTicketeraIP();
-    const ip = window.prompt('IP de la ticketera Epson:', actual);
-    if (ip !== null) { setTicketeraIP(ip); toast.success(ip ? `Ticketera: ${ip}` : 'IP borrada'); }
-  }
-
   // Vuelve al inicio limpiando todo el estado del pedido en curso.
   function reiniciar() {
     limpiar();
@@ -116,24 +100,9 @@ export default function TotemPanel() {
     setQrPago(null);
     setQrError(false);
     setExito(null);
-    setRetiro('preguntar');
     setSearch('');
     setActiveTab('TODOS');
     setFase('idle');
-  }
-
-  // El tótem ya no auto-dispara a RETIRO al pagar: se le pregunta al cliente en la
-  // pantalla de éxito. Acá mandamos TODO el pedido a preparar (autoretiro).
-  async function prepararRetiroTotem() {
-    if (!exito?.hash || retiro !== 'preguntar') return;
-    setRetiro('enviando');
-    try {
-      await prepararPedido(exito.hash, itemsRef.current);
-      setRetiro('enviado');
-    } catch (err) {
-      toast.error(err.response?.data?.error || 'No se pudo enviar a preparar');
-      setRetiro('preguntar');
-    }
   }
 
   function empezar() {
@@ -145,14 +114,6 @@ export default function TotemPanel() {
   async function irAPagar() {
     if (!items.length || creando) return;
     setCreando(true);
-    // Foto del carrito (con precios del día) para el ticket, antes de limpiarlo.
-    lineasRef.current = items.map(i => ({
-      titulo: i.titulo,
-      cantidad: i.cantidad,
-      subtotal: precioTotem(i) * i.cantidad,
-    }));
-    // Ítems para el AUTORETIRO ("¿retirar todo?" en la pantalla de éxito).
-    itemsRef.current = items.map(i => ({ idproducto: i.idproducto, cantidad: i.cantidad }));
     try {
       const pedido = await crearPedidoTotem({
         items: items.map(i => ({ idproducto: i.idproducto, cantidad: i.cantidad })),
@@ -183,28 +144,12 @@ export default function TotemPanel() {
     setFase('menu');
   }
 
-  // Pago confirmado: imprime el ticket y muestra el código de retiro.
-  async function onPagado(hash) {
+  // Pago confirmado: el tótem NO imprime. Mostramos el QR para que el cliente siga
+  // el retiro desde su celular (autoretiro en /pedido/:hash, donde ve su #número).
+  function onPagado(hash) {
     const codigo = hash.substring(0, 8).toUpperCase();
-    let impreso = false;
-    try {
-      if (getTicketeraIP()) {
-        await imprimirTicketPedido({
-          codigo,
-          hash,
-          nombre: 'Autoservicio',
-          total: pago?.total,
-          metodo: 'QR',
-          items: lineasRef.current,
-        });
-        impreso = true;
-      }
-    } catch (err) {
-      toast.error(`Pago OK, pero no se imprimió: ${err.message}`);
-    }
     limpiar();
-    setExito({ codigo, hash, impreso });
-    setExito({ codigo, hash, impreso });
+    setExito({ codigo, hash });
     setFase('exito');
   }
 
@@ -251,7 +196,6 @@ export default function TotemPanel() {
   if (fase === 'idle') {
     return (
       <div className={styles.idle} onClick={empezar}>
-        <button className={styles.cfgIp} onClick={(e) => { e.stopPropagation(); configurarIp(); }}>⚙</button>
         <div className={styles.idleInner}>
           <div className={styles.idleEmoji}>🔥</div>
           <h1 className={styles.idleTitulo}>SAN JUAN<br />DICE QUE SI</h1>
@@ -293,7 +237,10 @@ export default function TotemPanel() {
     );
   }
 
-  // ─── Pantalla de éxito (código de retiro + ticket impreso) ──────────────
+  // ─── Pantalla de éxito (QR para seguir el retiro desde el celular) ──────
+  // El tótem no imprime ni dispara el retiro: el cliente pagó con su celular, así
+  // que lo mandamos a seguir desde ahí (autoretiro en /pedido/:hash, donde pide el
+  // retiro y ve su #número). El QR es el protagonista absoluto de esta pantalla.
   if (fase === 'exito') {
     return (
       <div className={styles.exitoPagina} onClick={reiniciar}>
@@ -301,62 +248,20 @@ export default function TotemPanel() {
           <div className={styles.exitoCheck}>✓</div>
           <h2>¡Pago confirmado!</h2>
 
-          {/* ¿Retirar ahora? El tótem ya no dispara solo a RETIRO: le preguntamos
-              al cliente. Si dice que sí, mandamos TODO el pedido a preparar.
-              Solo en DÍA D (antes del evento el retiro está deshabilitado). */}
-          {diaD && (retiro === 'enviado' ? (
-            <div style={{
-              margin: '0 0 1.25rem', padding: '1.25rem', borderRadius: 16,
-              background: '#dcfce7', border: '2px solid #22c55e',
-            }}>
-              <div style={{ fontSize: '2.2rem' }}>🔥</div>
-              <h3 style={{ margin: '.25rem 0', fontWeight: 900, color: '#15803d', fontSize: '1.4rem' }}>
-                ¡Tu pedido se está preparando!
-              </h3>
-              <p style={{ margin: 0, color: '#166534', fontWeight: 700 }}>
-                Pasá a buscarlo por <strong>RETIRO</strong>.
-              </p>
+          <div className={styles.seguiCallout}>
+            <div className={styles.seguiEmoji}>📲</div>
+            <h3 className={styles.seguiTitulo}>LEÉ ESTE QR Y<br />SEGUÍ DESDE TU CELULAR</h3>
+            <div className={styles.exitoQr}>
+              <QRCodeSVG value={`https://sanjuandicequesi.com/pedido/${exito?.hash}`} size={300} />
             </div>
-          ) : (
-            <div style={{
-              margin: '0 0 1.25rem', padding: '1.25rem', borderRadius: 16,
-              background: 'linear-gradient(180deg,#fff7ed 0%,#ffedd5 100%)', border: '2px solid #fb923c',
-            }}>
-              <h3 style={{ margin: '0 0 .9rem', fontWeight: 900, color: '#9a3412', fontSize: '1.5rem' }}>
-                ¿Preparamos tu pedido ahora?
-              </h3>
-              <button
-                onClick={(e) => { e.stopPropagation(); prepararRetiroTotem(); }}
-                disabled={retiro === 'enviando'}
-                style={{
-                  width: '100%', padding: '1.4rem 1rem', borderRadius: 16, border: 'none',
-                  background: retiro === 'enviando' ? '#d6d3d1' : 'linear-gradient(180deg,#fb923c 0%,#ea580c 100%)',
-                  color: '#fff', fontWeight: 900, fontSize: '1.6rem', letterSpacing: '.02em',
-                  textTransform: 'uppercase', cursor: 'pointer', boxSizing: 'border-box',
-                  boxShadow: retiro === 'enviando' ? 'none' : '0 6px 0 #c2410c',
-                }}
-              >
-                {retiro === 'enviando' ? 'Enviando…' : '🔥 Sí, prepará mi pedido'}
-              </button>
-              <p style={{ margin: '.75rem 0 0', fontSize: '.85rem', color: '#9a3412' }}>
-                Si todavía no, retiralo después escaneando el QR de abajo. 👇
-              </p>
-            </div>
-          ))}
-
-          <div className={styles.exitoQr}>
-            <QRCodeSVG value={`https://sanjuandicequesi.com/pedido/${exito?.hash}`} size={220} />
+            <p className={styles.seguiAyuda}>
+              Desde tu celular <strong>pedís el retiro</strong> y ves <strong>tu número</strong> para
+              esperar tu pedido.
+            </p>
           </div>
-          <p className={styles.exitoQrAyuda}>
-            📲 <strong>Escaneá este QR con tu celular</strong> para guardar tu pedido
-            y pedir el retiro cuando quieras.
-          </p>
 
-          <p className={styles.exitoLabel}>O usá tu código de retiro</p>
+          <p className={styles.exitoLabel}>Código de pedido</p>
           <div className={styles.exitoCodigo}>{exito?.codigo}</div>
-          {exito?.impreso && (
-            <p className={styles.exitoNota}>🧾 También podés retirar tu ticket impreso.</p>
-          )}
 
           <button className={styles.btnNuevo} onClick={reiniciar}>Listo · nuevo pedido ({ttl}s)</button>
         </div>
@@ -372,7 +277,6 @@ export default function TotemPanel() {
           <div><h1>🔥 San Juan · Autoservicio</h1></div>
         </div>
         <nav className="td-header-nav">
-          <a onClick={configurarIp}>⚙ IP ticketera</a>
           <a onClick={reiniciar}>✕ Cancelar</a>
         </nav>
       </header>

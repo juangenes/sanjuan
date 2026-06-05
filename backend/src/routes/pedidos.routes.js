@@ -49,8 +49,10 @@ router.post('/:hash/preparar', async (req, res) => {
       .map(i => ({ idproducto: Number(i.idproducto), cantidad: Number(i.cantidad) }))
       .filter(i => i.idproducto && i.cantidad > 0);
     if (!items.length) return res.status(400).json({ error: 'No seleccionaste nada para preparar' });
-    const { idot } = await expendioService.registrarEntrega(req.params.hash, items, 'AUTORETIRO');
-    res.json({ success: true, idot });
+    const { idot, comandaId } = await expendioService.registrarEntrega(req.params.hash, items, 'AUTORETIRO');
+    // `numero` (= comandaId) es el #XX que se canta en el mostrador. Lo devolvemos
+    // para que el celular se lo muestre al cliente apenas dispara el autoretiro.
+    res.json({ success: true, idot, numero: comandaId });
   } catch (err) {
     res.status(400).json({ error: err.message });
   }

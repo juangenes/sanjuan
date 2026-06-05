@@ -143,6 +143,7 @@ export default function CajaPanel() {
     setImpreso(false);
     setExito({
       codigo,
+      numero: pedido.numero ?? null, // #XX de retiro (el que se canta en el mostrador)
       hash: pedido.hash,
       idpedido: pedido.idpedido,
       vuelto: pedido.vuelto,
@@ -167,6 +168,7 @@ export default function CajaPanel() {
       if (cancelado) return;
       setExito({
         codigo: hash.substring(0, 8).toUpperCase(),
+        numero: null, // QR: el #XX lo genera el callback de Bancard (2da etapa)
         hash, idpedido, vuelto: 0, metodo: 'INFONET',
         nombre, total, recibido: 0, lineas,
       });
@@ -225,6 +227,7 @@ export default function CajaPanel() {
       if (!getTicketeraIP()) { toast.error('No hay ticketera configurada'); return; }
       await imprimirTicketPedido({
         codigo: exito.codigo,
+        numero: exito.numero,
         hash: exito.hash,
         nombre: exito.nombre,
         total: exito.total,
@@ -289,8 +292,11 @@ export default function CajaPanel() {
           <div className={styles.exitoCard}>
             <div className={styles.exitoCheck}>✓</div>
             <h2>Pedido cobrado</h2>
-            <p className={styles.exitoLabel}>Código de retiro</p>
-            <div className={styles.exitoCodigo}>{exito.codigo}</div>
+            <p className={styles.exitoLabel}>{exito.numero != null ? 'Número de retiro' : 'Código de retiro'}</p>
+            <div className={styles.exitoCodigo}>{exito.numero != null ? `#${exito.numero}` : exito.codigo}</div>
+            {exito.numero != null && (
+              <p className={styles.exitoPedidoCod}>Pedido {exito.codigo}</p>
+            )}
             {exito.metodo === 'EFECTIVO' && (
               <div className={styles.exitoVuelto}>Vuelto: Gs. {fmtGs(exito.vuelto)}</div>
             )}
@@ -298,7 +304,7 @@ export default function CajaPanel() {
               <QRCodeCanvas value={`https://sanjuandicequesi.com/pedido/${exito.hash}`} size={180} />
               <span>El comensal puede escanear este código en RETIRO, sin imprimir.</span>
             </div>
-            <p className={styles.exitoNota}>La comanda salió en RETIRO. El comensal retira con este código.</p>
+            <p className={styles.exitoNota}>La comanda salió en RETIRO. El comensal retira con {exito.numero != null ? 'este número' : 'este código'}.</p>
             <div className={styles.exitoBtns}>
               <button
                 className={`${styles.btnImprimir} ${impreso ? styles.btnImpreso : ''}`}

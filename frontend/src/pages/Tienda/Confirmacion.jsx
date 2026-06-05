@@ -36,6 +36,8 @@ export default function Confirmacion() {
   const [prepCant, setPrepCant] = useState({}); // idproducto -> cantidad
   const [preparando, setPreparando] = useState(false);
   const [confirmar, setConfirmar] = useState(false);
+  const [ultimoNumero, setUltimoNumero] = useState(null); // #XX del último autoretiro disparado
+  const [modoRetiro, setModoRetiro] = useState(null); // null = elegir TODO/POR PARTES · 'partes' = steppers
 
   useEffect(() => {
     Promise.all([
@@ -151,15 +153,36 @@ export default function Confirmacion() {
     }
   }
 
+  // RETIROS agrupados por comanda (#número): cada autoretiro disparado es un grupo
+  // con su #XX. Las líneas vienen ordenadas por fecha, así que agrupamos por idot
+  // consecutivo. Los más nuevos arriba para que el último retiro quede primero.
+  const gruposRetiro = [];
+  for (const r of retiros) {
+    const last = gruposRetiro[gruposRetiro.length - 1];
+    if (last && last.idot === r.idot) last.lineas.push(r);
+    else gruposRetiro.push({ idot: r.idot, numero: r.numero, fecha: r.fecha, lineas: [r] });
+  }
+  gruposRetiro.reverse();
+
   // AUTORETIRO: ítems que todavía no se mandaron a preparar y selección actual.
   const pendientes = (pedido.items || []).filter(i => i.pendiente > 0);
   const hayPendientes = pendientes.length > 0;
+  const totalPendiente = pendientes.reduce((a, it) => a + it.pendiente, 0);
   const totalSel = pendientes.reduce((a, it) => a + (prepCant[it.idproducto] || 0), 0);
 
   const incPrep = (id, max) =>
     setPrepCant(c => ({ ...c, [id]: Math.min((c[id] || 0) + 1, max) }));
   const decPrep = (id) =>
     setPrepCant(c => ({ ...c, [id]: Math.max((c[id] || 0) - 1, 0) }));
+
+  // RETIRAR TODO: pre-selecciona todo lo pendiente y abre la confirmación
+  // ("¿estás en el local?"), sin pasar por los steppers.
+  function retirarTodo() {
+    const full = {};
+    for (const it of pendientes) full[it.idproducto] = it.pendiente;
+    setPrepCant(full);
+    setConfirmar(true);
+  }
 
   async function preparar() {
     const items = pendientes
@@ -168,8 +191,10 @@ export default function Confirmacion() {
     if (!items.length) { setConfirmar(false); return; }
     setPreparando(true);
     let ok = false;
+    let numero = null;
     try {
-      await prepararPedido(hash, items);
+      const r = await prepararPedido(hash, items);
+      numero = r?.numero ?? null; // #XX de esta comanda (el que se canta en RETIRO)
       ok = true;
       toast.success('¡Tu pedido se está preparando! 🔥');
     } catch (err) {
@@ -187,7 +212,7 @@ export default function Confirmacion() {
       setPedido(p);
       setRetiros(r);
     } catch { /* si el refetch falla, dejamos el estado como estaba */ }
-    if (ok) { setTab('retiros'); setConfirmar(false); }
+    if (ok) { setUltimoNumero(numero); setModoRetiro(null); setTab('retiros'); setConfirmar(false); }
     setPreparando(false);
   }
 
@@ -256,9 +281,43 @@ export default function Confirmacion() {
                 background: 'linear-gradient(180deg,#fff7ed 0%,#ffedd5 100%)',
                 border: '2px solid #fb923c', boxSizing: 'border-box',
               }}>
-                <h3 style={{ margin: '0 0 .25rem', fontSize: '1.15rem', fontWeight: 900, color: '#9a3412', textAlign: 'center' }}>
+                <h3 style={{ margin: '0 0 .85rem', fontSize: '1.15rem', fontWeight: 900, color: '#9a3412', textAlign: 'center' }}>
                   🔥 ¿Listo para retirar?
                 </h3>
+
+                {modoRetiro !== 'partes' ? (
+                  <>
+                    <p style={{ margin: '0 0 .85rem', fontSize: '.9rem', color: '#9a3412', textAlign: 'center', fontWeight: 700 }}>
+                      Tenés dos opciones:
+                    </p>
+                    <button
+                      type="button"
+                      disabled={preparando}
+                      onClick={retirarTodo}
+                      style={{
+                        width: '100%', padding: '1.2rem 1rem', borderRadius: 14, border: 'none',
+                        boxSizing: 'border-box', cursor: 'pointer',
+                        background: 'linear-gradient(180deg,#fb923c 0%,#ea580c 100%)', color: '#fff',
+                        fontWeight: 900, fontSize: '1.3rem', letterSpacing: '.02em', textTransform: 'uppercase',
+                        boxShadow: '0 6px 0 #c2410c, 0 8px 18px rgba(0,0,0,.2)',
+                      }}
+                    >
+                      🔥 Retirar todo ({totalPendiente} u.)
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setModoRetiro('partes')}
+                      style={{
+                        width: '100%', marginTop: '.6rem', padding: '.85rem', borderRadius: 12,
+                        border: '2px solid #fb923c', background: '#fff', color: '#9a3412',
+                        fontWeight: 800, fontSize: '1rem', cursor: 'pointer', boxSizing: 'border-box',
+                      }}
+                    >
+                      Retirar por partes
+                    </button>
+                  </>
+                ) : (
+                  <>
                 <p style={{ margin: '0 0 .85rem', fontSize: '.85rem', color: '#9a3412', textAlign: 'center' }}>
                   Elegí cuánto querés que te preparen <strong>ahora</strong>.
                 </p>
@@ -311,8 +370,21 @@ export default function Confirmacion() {
                     boxShadow: totalSel === 0 ? 'none' : '0 6px 0 #c2410c, 0 8px 18px rgba(0,0,0,.2)',
                   }}
                 >
-                  {preparando ? 'Enviando…' : `🔥 Preparáme mi pedido${totalSel > 0 ? ` (${totalSel} u.)` : ''}`}
+                  {preparando ? 'Enviando…' : `🔥 Preparar selección${totalSel > 0 ? ` (${totalSel} u.)` : ''}`}
                 </button>
+                    <button
+                      type="button"
+                      onClick={() => setModoRetiro(null)}
+                      style={{
+                        width: '100%', marginTop: '.5rem', padding: '.6rem', borderRadius: 10,
+                        border: 'none', background: 'transparent', color: '#9a3412',
+                        fontWeight: 700, fontSize: '.9rem', cursor: 'pointer', boxSizing: 'border-box',
+                      }}
+                    >
+                      ← Volver a las opciones
+                    </button>
+                  </>
+                )}
               </div>
             )}
 
@@ -376,18 +448,32 @@ export default function Confirmacion() {
 
         {tab === 'retiros' && (
           <div className={styles.retirosWrap}>
-            {retiros.length === 0 ? (
+            {ultimoNumero != null && (
+              <div className={styles.numeroBanner}>
+                <span className={styles.numeroBannerLbl}>Tu número de retiro</span>
+                <span className={styles.numeroBannerNum}>#{ultimoNumero}</span>
+                <span className={styles.numeroBannerHint}>🔥 Tu pedido se está preparando · escuchá cuando llamen tu número</span>
+              </div>
+            )}
+            {gruposRetiro.length === 0 ? (
               <em className={styles.sinRetiros}>Aún no se realizaron retiros.</em>
             ) : (
-              retiros.map((r, i) => (
-                <div key={i} className={styles.retiroLinea}>
-                  <span>
-                    {r.titulo}
-                    <span className={styles.retiroDetalle}> · {r.cantidad} u.</span>
-                  </span>
-                  <span className={styles.retiroFecha}>
-                    {new Date(r.fecha).toLocaleString('es-PY', { dateStyle: 'short', timeStyle: 'short' })}
-                  </span>
+              gruposRetiro.map((g, gi) => (
+                <div key={gi} className={styles.retiroGrupo}>
+                  <div className={styles.retiroGrupoHead}>
+                    <span className={styles.retiroNum}>{g.numero != null ? `#${g.numero}` : 'Retiro'}</span>
+                    <span className={styles.retiroFecha}>
+                      {new Date(g.fecha).toLocaleString('es-PY', { dateStyle: 'short', timeStyle: 'short' })}
+                    </span>
+                  </div>
+                  {g.lineas.map((r, i) => (
+                    <div key={i} className={styles.retiroLinea}>
+                      <span>
+                        {r.titulo}
+                        <span className={styles.retiroDetalle}> · {r.cantidad} u.</span>
+                      </span>
+                    </div>
+                  ))}
                 </div>
               ))
             )}

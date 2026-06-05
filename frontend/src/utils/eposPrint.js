@@ -197,8 +197,12 @@ export async function imprimirComandaRetiro(comanda) {
 }
 
 // Imprime el TICKET DE PEDIDO que se lleva el comensal (su comprobante para
-// retirar en expendio). `data` = { codigo, hash, nombre, total, metodo, recibido,
-// vuelto, operador, items:[{ titulo, cantidad, subtotal }] }.
+// retirar en expendio). `data` = { codigo, numero, hash, nombre, total, metodo,
+// recibido, vuelto, operador, items:[{ titulo, cantidad, subtotal }] }.
+// Si hay `numero` (comanda ya disparada a RETIRO, ej. caja al contado), lo
+// imprimimos GRANDE como "RETIRO #59" — es el número que se canta en el mostrador,
+// clave para el comensal sin celular. Si no (ej. pago QR, la comanda la dispara el
+// callback más tarde), caemos al código de pedido como antes.
 // El QR (hash completo) lo escanea el lector del expendio para rutear el pedido.
 export async function imprimirTicketPedido(data) {
   const ip = getTicketeraIP();
@@ -217,8 +221,16 @@ export async function imprimirTicketPedido(data) {
     { text: 'Ticket de Pedido', align: 'center' },
     { text: separador() },
     ...(data.hash ? [{ qr: data.hash }] : []),
-    { text: 'CODIGO DE RETIRO', align: 'center' },
-    { text: data.codigo, align: 'center', bold: true, dw: true, dh: true },
+    ...(data.numero != null
+      ? [
+          { text: 'NUMERO DE RETIRO', align: 'center' },
+          { text: `#${data.numero}`, align: 'center', bold: true, dw: true, dh: true },
+          { text: `Pedido ${data.codigo}`, align: 'center' },
+        ]
+      : [
+          { text: 'CODIGO DE RETIRO', align: 'center' },
+          { text: data.codigo, align: 'center', bold: true, dw: true, dh: true },
+        ]),
     { text: separador() },
     { text: `Nombre:  ${data.nombre || 'Mostrador'}` },
     { text: `Fecha:   ${fecha}` },
@@ -246,7 +258,7 @@ export async function imprimirTicketPedido(data) {
     { feed: 1 },
     { text: '✓ PAGADO', align: 'center', bold: true, dw: true },
     { text: 'Retiralo en RETIRO', align: 'center' },
-    { text: 'mostrando este codigo', align: 'center' },
+    { text: data.numero != null ? 'cuando llamen tu numero' : 'mostrando este codigo', align: 'center' },
     { feed: 3 },
     { cut: true },
   );

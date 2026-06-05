@@ -133,16 +133,42 @@
   display: flex; align-items: center; justify-content: center;
 }
 .exitoCard h2 { margin: 0 0 1.5rem; color: #0B2E55; }
+
+/* Callout protagonista: "LEÉ ESTE QR Y SEGUÍ DESDE TU CELULAR" con el QR adentro. */
+.seguiCallout {
+  margin: 0 0 1.5rem;
+  padding: 1.5rem 1.25rem 1.25rem;
+  border-radius: 20px;
+  background: linear-gradient(180deg,#fff7ed 0%,#ffedd5 100%);
+  border: 3px solid #fb923c;
+}
+.seguiEmoji { font-size: 2.4rem; line-height: 1; }
+.seguiTitulo {
+  margin: 0.5rem 0 1rem;
+  font-size: 1.7rem;
+  font-weight: 900;
+  letter-spacing: 0.02em;
+  line-height: 1.15;
+  color: #9a3412;
+}
+.seguiAyuda {
+  margin: 0.75rem 0 0;
+  font-size: 1.05rem;
+  line-height: 1.5;
+  color: #7c2d12;
+}
+
 .exitoLabel { font-size: 0.85rem; letter-spacing: 0.1em; text-transform: uppercase; color: #888; margin: 0 0 0.4rem; }
+/* Código de pedido: secundario (backup), el QR de arriba es lo que importa. */
 .exitoCodigo {
   font-family: monospace;
-  font-size: 3.4rem;
+  font-size: 1.9rem;
   font-weight: 900;
   letter-spacing: 0.1em;
-  color: #0B2E55;
+  color: #54657a;
   background: #eef3f9;
   border-radius: 14px;
-  padding: 0.8rem 0;
+  padding: 0.6rem 0;
 }
 .exitoQr {
   display: flex;

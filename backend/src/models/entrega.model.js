@@ -109,11 +109,14 @@ async function historialBoletas(idpedido) {
 }
 
 async function retirosPorPedido(idpedido) {
+  // `numero` = id de la comanda en RETIRO (el #XX que se canta), unido por idot.
+  // LEFT JOIN porque retiros viejos podrían no tener comanda asociada.
   const [rows] = await db.query(
-    `SELECT pe.idot, pe.fecha, p.titulo, pe.cantidad, pp.precio_unitario
+    `SELECT pe.idot, ee.id AS numero, pe.fecha, p.titulo, pe.cantidad, pp.precio_unitario
      FROM pedidos_entregas pe
      JOIN productos p ON pe.idproducto = p.idproducto
      JOIN pedidos_productos pp ON pp.idproducto = pe.idproducto AND pp.idpedido = pe.idpedido
+     LEFT JOIN expendio_envios ee ON ee.idot = pe.idot
      WHERE pe.idpedido = ?
      ORDER BY pe.fecha ASC, pe.id ASC`,
     [idpedido]

@@ -31,18 +31,23 @@ async function tomarPedido({ nombre, cedula, contacto, items, metodo, recibido }
   // rompemos el cobro: el pedido ya quedó PAGADO y se puede re-disparar desde el
   // modo "Preventa / Retiro" buscándolo por su código.
   let comanda = false;
+  let numero = null; // #XX de retiro: el comandaId que se canta en el mostrador.
   try {
-    await expendioService.registrarEntrega(
+    const r = await expendioService.registrarEntrega(
       pedido.hash,
       items.map(i => ({ idproducto: i.idproducto, cantidad: i.cantidad })),
       operador
     );
     comanda = true;
+    // El comandaId es el número consecutivo y único de la comanda en RETIRO.
+    // Lo devolvemos para imprimirlo en el ticket del comensal (clave para quien
+    // no tiene celular: se lleva su #XX impreso y sabe cuándo lo llaman).
+    numero = r?.comandaId ?? null;
   } catch (err) {
     console.error('[caja] cobro OK pero no se disparó la comanda a retiro:', err.message);
   }
 
-  return { ...pedido, comanda };
+  return { ...pedido, comanda, numero };
 }
 
 // Caja con pago por QR de Bancard: NO cobra en el acto. Crea el pedido PENDIENTE
