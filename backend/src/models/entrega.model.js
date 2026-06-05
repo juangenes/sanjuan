@@ -110,15 +110,14 @@ async function historialBoletas(idpedido) {
 
 async function retirosPorPedido(idpedido) {
   // `numero` = id de la comanda en RETIRO (el #XX que se canta), unido por idot.
-  // LEFT JOIN porque retiros viejos podrían no tener comanda asociada. Las columnas
-  // idot tienen colaciones distintas (pedidos_entregas=general_ci, expendio_envios=
-  // unicode_ci); forzamos una común en el JOIN para evitar "illegal mix of collations".
+  // LEFT JOIN porque retiros viejos podrían no tener comanda asociada. Ambas columnas
+  // idot comparten colación (general_ci) desde 20260605120000_align_idot_collation.
   const [rows] = await db.query(
     `SELECT pe.idot, ee.id AS numero, pe.fecha, p.titulo, pe.cantidad, pp.precio_unitario
      FROM pedidos_entregas pe
      JOIN productos p ON pe.idproducto = p.idproducto
      JOIN pedidos_productos pp ON pp.idproducto = pe.idproducto AND pp.idpedido = pe.idpedido
-     LEFT JOIN expendio_envios ee ON ee.idot COLLATE utf8mb4_general_ci = pe.idot
+     LEFT JOIN expendio_envios ee ON ee.idot = pe.idot
      WHERE pe.idpedido = ?
      ORDER BY pe.fecha ASC, pe.id ASC`,
     [idpedido]
