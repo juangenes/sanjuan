@@ -45,9 +45,19 @@ export default function RetiroPantalla() {
         .sort((a, b) => new Date(a.creado_en) - new Date(b.creado_en));
       setCola(visible);
     } catch (err) {
+      // Token vencido o de otro rol (401/403): el server rechaza la cola. Antes
+      // esto se tragaba en silencio y dejaba "Esperando comandas…" para siempre,
+      // como si no hubiera pedidos. Ahora avisamos y mandamos a re-loguear.
+      const status = err.response?.status;
+      if (status === 401 || status === 403) {
+        localStorage.removeItem('sanjuan_token');
+        toast.error('Sesión vencida — volvé a iniciar sesión');
+        navigate('/caja');
+        return;
+      }
       console.error('[retiro] no se pudo cargar la cola:', err.message);
     }
-  }, []);
+  }, [navigate]);
 
   useEffect(() => {
     if (!localStorage.getItem('sanjuan_token')) { navigate('/caja'); return; }
