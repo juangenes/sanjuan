@@ -8,12 +8,8 @@ import {
   getEstadoBancard,
   revertirBancard,
   pagarMockTotem,
+  getConfig,
 } from '../../api';
-
-// PRUEBA (revertible): saltea el pago de Bancard en el tótem para ver el flujo
-// completo (pedido → "seguí desde tu celular" → autoretiro → #XX). Requiere también
-// BYPASS_PAGO_TOTEM=true en el server. Para revertir: poner BYPASS_PAGO = false.
-const BYPASS_PAGO = true;
 import { useCarrito } from '../../context/CarritoContext';
 import '../Tienda/tienda-desktop.css';
 import styles from './Totem.module.css';
@@ -64,6 +60,7 @@ export default function TotemPanel() {
   const [creando, setCreando] = useState(false);
   const [exito, setExito] = useState(null);  // { codigo, hash }
   const [ttl, setTtl] = useState(0);         // cuenta regresiva visible
+  const [bypassPago, setBypassPago] = useState(false); // PRUEBA: saltea Bancard (flag de config)
 
   const { items, agregar, quitar, limpiar } = useCarrito();
 
@@ -72,6 +69,8 @@ export default function TotemPanel() {
       .then(setProductos)
       .catch(() => toast.error('No se pudieron cargar los productos'))
       .finally(() => setLoading(false));
+    // Flag de prueba (tabla configuración): si está, el tótem saltea el pago real.
+    getConfig().then(c => setBypassPago(!!c.bypass_pago_totem)).catch(() => {});
   }, []);
 
   const total = useMemo(
@@ -126,10 +125,10 @@ export default function TotemPanel() {
       });
 
       // PRUEBA (revertible): saltea el QR de Bancard y marca pagado directo, como si
-      // hubiera pagado OK. Va derecho a "seguí desde tu celular". Ver BYPASS_PAGO arriba.
-      // Si el server NO tiene BYPASS_PAGO_TOTEM (403), caemos al QR normal: así el
-      // tótem nunca queda roto por tener el flag prendido sin el env del lado server.
-      if (BYPASS_PAGO) {
+      // hubiera pagado OK. Va derecho a "seguí desde tu celular". Controlado por el flag
+      // `bypass_pago_totem` de la config. Si el server lo tiene apagado (403), caemos al
+      // QR normal: así el tótem nunca queda roto por un desfasaje de flags.
+      if (bypassPago) {
         try {
           await pagarMockTotem(pedido.hash);
           onPagado(pedido.hash);

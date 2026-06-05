@@ -30,4 +30,11 @@ function diaD() {
   return getBool('dia_d');
 }
 
-module.exports = { cargar, getRaw, getBool, set, diaD, snapshot: () => ({ ...cache }) };
+// PRUEBA (revertible): si está en true, el tótem saltea el pago de Bancard y marca
+// pagado directo (para ver el flujo completo sin pagar). Se prende/apaga desde
+// /admin/configuracion. Apagar antes de operar con clientes reales.
+function bypassPagoTotem() {
+  return getBool('bypass_pago_totem');
+}
+
+module.exports = { cargar, getRaw, getBool, set, diaD, bypassPagoTotem, snapshot: () => ({ ...cache }) };

@@ -1,6 +1,7 @@
 const router = require('express').Router();
 const pedidoModel = require('../models/pedido.model');
 const bancard = require('../services/bancard.service');
+const configService = require('../services/configuracion.service');
 
 // ───────────────────────────────────────────────────────────────────────────
 // Pago con QR de Bancard/Infonet (método de pago 'INFONET').
@@ -96,11 +97,11 @@ router.get('/estado/:hash', async (req, res) => {
 // POST /api/bancard/pagar-mock/:hash
 // PRUEBA (revertible): saltea el pago real del TÓTEM. Marca el pedido PAGADO sin
 // pasar por Bancard, para ver el flujo completo tótem → celular → retiro sin pagar.
-// Gateado por BYPASS_PAGO_TOTEM=true (apagado por defecto: en prod normal devuelve
-// 403 y no afecta al Bancard real de caja/tienda). Para revertir: quitar el env
-// (y poner BYPASS_PAGO=false en el front del tótem). NO usar con clientes reales.
+// Gateado por el flag `bypass_pago_totem` de la tabla configuración (se prende/apaga
+// en /admin/configuracion). Apagado por defecto: en prod normal devuelve 403 y no
+// afecta al Bancard real de caja/tienda. NO usar con clientes reales.
 router.post('/pagar-mock/:hash', async (req, res) => {
-  if (String(process.env.BYPASS_PAGO_TOTEM).toLowerCase() !== 'true') {
+  if (!configService.bypassPagoTotem()) {
     return res.status(403).json({ error: 'Bypass de pago no habilitado' });
   }
   try {

@@ -5,7 +5,7 @@ const { authAdmin } = require('../middleware/auth');
 // Público — config que necesita el front sin login (tótem, /pedido/:hash).
 // Solo expone flags no sensibles. Hoy: dia_d (habilita el autoretiro).
 router.get('/', (req, res) => {
-  res.json({ dia_d: configService.diaD() });
+  res.json({ dia_d: configService.diaD(), bypass_pago_totem: configService.bypassPagoTotem() });
 });
 
 // Admin — ver toda la configuración (para la pantalla /admin/configuracion).
