@@ -53,8 +53,7 @@ export default function CajaPanel() {
   const [qrPago, setQrPago] = useState(null); // { hash, idpedido, nombre, total, lineas, data, error } — pago QR en curso
   const [imprimiendo, setImprimiendo] = useState(false);
   const [impreso, setImpreso] = useState(false);
-  const [despachando, setDespachando] = useState(false); // disparando "retirar todo"
-  const [diaD, setDiaD] = useState(false); // DÍA D: habilita preguntar el retiro al cobrar
+  const [diaD, setDiaD] = useState(false); // DÍA D: walk-in dispara la comanda al cobrar
   const [modo, setModo] = useState('nuevo'); // 'nuevo' (walk-in) | 'preventa' (retiro)
   const { items, agregar, quitar, limpiar } = useCarrito();
   const navigate = useNavigate();
@@ -133,16 +132,18 @@ export default function CajaPanel() {
     const pedido = await tomarPedidoCaja(payload);
     const codigo = pedido.hash.substring(0, 8).toUpperCase();
 
-    // COBRO cerrado, pero el RETIRO NO se disparó: la pantalla de éxito le pregunta
-    // al cliente "¿retirás todo ahora o por partes?". El #XX recién aparece cuando
-    // elige "todo ahora" (despacharPedidoCaja).
     limpiar();
     setCobroOpen(false);
     setImpreso(false);
+
+    // Walk-in del DÍA D = retira TODO en el acto: disparamos la comanda y sale el #XX.
+    // (No preguntamos "por partes": el que compra en el día come ahora. El retiro
+    // parcial queda solo para la preventa, desde el celular.) Antes del DÍA D no se
+    // dispara: el éxito muestra el QR para retirar después.
+    const numero = await despacharCajaSiDiaD(pedido.hash);
     setExito({
       codigo,
-      numero: null,        // se llena al despachar "todo ahora"
-      porPartes: false,    // true si el cliente elige seguir por su celular
+      numero,
       hash: pedido.hash,
       idpedido: pedido.idpedido,
       vuelto: pedido.vuelto,
@@ -154,20 +155,35 @@ export default function CajaPanel() {
     });
   }
 
+  // Si es DÍA D, dispara la comanda con todo el pedido y devuelve su #XX; si no,
+  // devuelve null (el retiro se hará después). No rompe el cobro si falla.
+  async function despacharCajaSiDiaD(hash) {
+    if (!diaD) return null;
+    try {
+      const r = await despacharPedidoCaja(hash);
+      return r.numero;
+    } catch (err) {
+      toast.error(err.response?.data?.error || 'Cobrado, pero no se pudo enviar a RETIRO');
+      return null;
+    }
+  }
+
   // Pago con QR en curso: genera el QR de Bancard y poletea el estado hasta que
-  // el callback confirme el pago. Al confirmarse, pasa a la pantalla de éxito, que
-  // pregunta el retiro igual que en efectivo (el callback ya no dispara la comanda).
+  // el callback confirme el pago. Al confirmarse, dispara la comanda (retira todo)
+  // igual que en efectivo y muestra el #XX.
   useEffect(() => {
     if (!qrPago?.hash) return;
     const { hash, idpedido, nombre, total, lineas } = qrPago;
     let cancelado = false;
     let timer;
 
-    function alPagar() {
+    async function alPagar() {
+      if (cancelado) return;
+      const numero = await despacharCajaSiDiaD(hash);
       if (cancelado) return;
       setExito({
         codigo: hash.substring(0, 8).toUpperCase(),
-        numero: null, porPartes: false,
+        numero,
         hash, idpedido, vuelto: 0, metodo: 'INFONET',
         nombre, total, recibido: 0, lineas,
       });
@@ -212,21 +228,6 @@ export default function CajaPanel() {
   function cancelarQr() {
     if (qrPago?.hash) revertirBancard(qrPago.hash).catch(() => {});
     setQrPago(null);
-  }
-
-  // "Retirar todo ahora": dispara la comanda con todo el pedido y trae el #XX.
-  async function retirarTodoCaja() {
-    if (despachando || !exito?.hash) return;
-    setDespachando(true);
-    try {
-      const r = await despacharPedidoCaja(exito.hash);
-      setExito(e => ({ ...e, numero: r.numero }));
-      toast.success(`Comanda #${r.numero} enviada a RETIRO`);
-    } catch (err) {
-      toast.error(err.response?.data?.error || 'No se pudo enviar a RETIRO');
-    } finally {
-      setDespachando(false);
-    }
   }
 
   // Impresión explícita del ticket desde la pantalla de éxito (USB / driver Windows).
@@ -295,7 +296,6 @@ export default function CajaPanel() {
 
   if (exito) {
     const despachado = exito.numero != null;        // ya se disparó la comanda (#XX)
-    const preguntando = diaD && !despachado && !exito.porPartes; // mostramos TODO/POR PARTES
     return (
       <div className={styles.pagina}>
         <div className={styles.exitoWrap}>
@@ -306,26 +306,7 @@ export default function CajaPanel() {
               <div className={styles.exitoVuelto}>Vuelto: Gs. {fmtGs(exito.vuelto)}</div>
             )}
 
-            {preguntando ? (
-              /* COBRO listo. Ahora el RETIRO: ¿todo ahora o por partes? */
-              <>
-                <p className={styles.exitoNota} style={{ margin: '1rem 0 .75rem' }}>
-                  ¿Cómo va a retirar el pedido?
-                </p>
-                <div className={styles.exitoBtns} style={{ flexDirection: 'column' }}>
-                  <button className={styles.btnImprimir} disabled={despachando} onClick={retirarTodoCaja}>
-                    {despachando ? 'Enviando…' : '🔥 Retirar TODO ahora'}
-                  </button>
-                  <button
-                    className={styles.btnNuevo}
-                    disabled={despachando}
-                    onClick={() => setExito(e => ({ ...e, porPartes: true }))}
-                  >
-                    Va a retirar por partes
-                  </button>
-                </div>
-              </>
-            ) : despachado ? (
+            {despachado ? (
               /* Comanda disparada: el #XX es lo que se canta en el mostrador. */
               <>
                 <p className={styles.exitoLabel}>Número de retiro</p>

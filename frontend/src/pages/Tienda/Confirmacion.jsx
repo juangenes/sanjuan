@@ -164,6 +164,11 @@ export default function Confirmacion() {
   }
   gruposRetiro.reverse();
 
+  // Solo la PREVENTA (comprada por adelantado en la tienda) puede retirar "por
+  // partes" — ahí tiene sentido repartir el retiro a lo largo del evento. El walk-in
+  // del día (tótem/caja) retira TODO de una: el que compra para comer ahora, come ahora.
+  const esPreventa = pedido.origen === 'tienda';
+
   // AUTORETIRO: ítems que todavía no se mandaron a preparar y selección actual.
   const pendientes = (pedido.items || []).filter(i => i.pendiente > 0);
   const hayPendientes = pendientes.length > 0;
@@ -285,7 +290,23 @@ export default function Confirmacion() {
                   🔥 ¿Listo para retirar?
                 </h3>
 
-                {modoRetiro !== 'partes' ? (
+                {!esPreventa ? (
+                  /* Walk-in (tótem/caja del día): retira TODO, sin "por partes". */
+                  <button
+                    type="button"
+                    disabled={preparando}
+                    onClick={retirarTodo}
+                    style={{
+                      width: '100%', padding: '1.2rem 1rem', borderRadius: 14, border: 'none',
+                      boxSizing: 'border-box', cursor: 'pointer',
+                      background: 'linear-gradient(180deg,#fb923c 0%,#ea580c 100%)', color: '#fff',
+                      fontWeight: 900, fontSize: '1.3rem', letterSpacing: '.02em', textTransform: 'uppercase',
+                      boxShadow: '0 6px 0 #c2410c, 0 8px 18px rgba(0,0,0,.2)',
+                    }}
+                  >
+                    🔥 Retirar todo ({totalPendiente} u.)
+                  </button>
+                ) : modoRetiro !== 'partes' ? (
                   <>
                     <p style={{ margin: '0 0 .85rem', fontSize: '.9rem', color: '#9a3412', textAlign: 'center', fontWeight: 700 }}>
                       Tenés dos opciones:
