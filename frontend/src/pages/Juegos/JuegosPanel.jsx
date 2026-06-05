@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { getCreditosPendientes, dispensarCreditos } from '../../api';
 import QrScanner from '../../components/QrScanner';
+import { suscribirScope } from '../../utils/rtsSocket';
 import toast from 'react-hot-toast';
 import styles from './Juegos.module.css';
 
@@ -13,6 +14,7 @@ export default function JuegosPanel({ onSalir }) {
   const [cargandoLista, setCargandoLista] = useState(true);
   const [busqueda, setBusqueda] = useState('');
   const [sel, setSel] = useState(null); // pedido seleccionado para cargar
+  const [enVivo, setEnVivo] = useState(false); // conexión al push de la caja
 
   const refrescar = useCallback(async ({ silencioso = false } = {}) => {
     try {
@@ -28,8 +30,8 @@ export default function JuegosPanel({ onSalir }) {
     }
   }, [onSalir]);
 
-  // Carga inicial + refresco automático (cuando estamos en la lista) cada 8s,
-  // así aparecen los pedidos nuevos que va cobrando la caja sin tocar nada.
+  // Carga inicial de la lista al montar. De ahí en más, los pedidos nuevos llegan
+  // por el push en vivo (RTS) y, como respaldo, por el refresco automático.
   useEffect(() => {
     let vivo = true;
     getCreditosPendientes()
@@ -39,9 +41,25 @@ export default function JuegosPanel({ onSalir }) {
     return () => { vivo = false; };
   }, [onSalir]);
 
+  // Push en vivo: la caja, al cobrar un pedido con créditos de juego, emite por RTS
+  // y acá refrescamos al instante — sin recargar la página ni esperar el poll. Misma
+  // mecánica que usa la pantalla de caja para las lecturas.
+  useEffect(() => {
+    if (sel) return; // mientras se carga un pedido no tocamos la lista
+    const cleanup = suscribirScope(
+      'sanjuan-tarjetas',
+      'tarjetas',
+      () => refrescar({ silencioso: true }),
+      setEnVivo,
+    );
+    return cleanup;
+  }, [sel, refrescar]);
+
+  // Respaldo: si el RTS no está disponible (no llega el push), igual refrescamos solos
+  // cada 20s para no quedar nunca con la lista vieja.
   useEffect(() => {
     if (sel) return; // no refrescar mientras se está cargando un pedido
-    const id = setInterval(() => refrescar({ silencioso: true }), 8000);
+    const id = setInterval(() => refrescar({ silencioso: true }), 20000);
     return () => clearInterval(id);
   }, [sel, refrescar]);
 
@@ -85,7 +103,16 @@ export default function JuegosPanel({ onSalir }) {
         />
 
         <div className={styles.listaHead}>
-          <span>{cargandoLista ? 'Cargando…' : `${filtrados.length} pedido${filtrados.length !== 1 ? 's' : ''} por acreditar`}</span>
+          <span>
+            {cargandoLista ? 'Cargando…' : `${filtrados.length} pedido${filtrados.length !== 1 ? 's' : ''} por acreditar`}
+            <span
+              title={enVivo ? 'Actualización en vivo activa' : 'Sin conexión en vivo — refresco automático cada 20s'}
+              style={{
+                display: 'inline-block', width: 8, height: 8, borderRadius: '50%', marginLeft: 8,
+                background: enVivo ? '#22c55e' : '#cbd5e1', verticalAlign: 'middle',
+              }}
+            />
+          </span>
           <button className={styles.btnRefrescar} onClick={() => refrescar()} disabled={cargandoLista}>↻</button>
         </div>
 

@@ -1,8 +1,10 @@
 const router = require('express').Router();
 const pedidoModel = require('../models/pedido.model');
+const tarjetaModel = require('../models/tarjeta.model');
 const pedidoService = require('../services/pedido.service');
 const bancard = require('../services/bancard.service');
 const configService = require('../services/configuracion.service');
+const { notificarTarjetas } = require('../utils/rtsClient');
 
 // ───────────────────────────────────────────────────────────────────────────
 // Pago con QR de Bancard/Infonet (método de pago 'INFONET').
@@ -233,6 +235,17 @@ router.post('/revertir', async (req, res) => {
 async function confirmarPagoPedido(pedido, { ticket = null, authorization = null } = {}) {
   if (pedido.estado === 'PAGADO') return;
   await pedidoModel.marcarPagadoBancard(pedido.idpedido, { ticket, authorization });
+
+  // Si el pedido lleva créditos de juego (caja 5 cobrando por QR, p. ej.), avisar al
+  // acreditador de /tarjetas para que la compra le aparezca al instante. Fire-and-forget:
+  // jamás romper la confirmación del pago por un fallo del realtime.
+  try {
+    if (await tarjetaModel.pedidoTieneJuego(pedido.idpedido)) {
+      notificarTarjetas({ hash: pedido.hash, idpedido: pedido.idpedido });
+    }
+  } catch (e) {
+    console.warn('[tarjetas] no se pudo notificar el pago de juego:', e.message);
+  }
 
   // NINGÚN origen auto-dispara la comanda a RETIRO al pagarse. El retiro lo pide
   // siempre el cliente explícitamente: la tienda/tótem con el AUTORETIRO desde su

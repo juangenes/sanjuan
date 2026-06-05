@@ -5,7 +5,7 @@ const pedidoProductoModel = require('../models/pedidoProducto.model');
 const entregaModel = require('../models/entrega.model');
 const productoModel = require('../models/producto.model');
 const { generarHash } = require('../utils/hash');
-const { notificarDespacho } = require('../utils/rtsClient');
+const { notificarDespacho, notificarTarjetas } = require('../utils/rtsClient');
 
 const METODOS_COBRO = ['EFECTIVO', 'POS_DEBITO', 'POS_CREDITO'];
 
@@ -26,6 +26,7 @@ async function crearPedido({ cedula, familia, contacto, items, metodo_pago }, op
   try {
     // Validar stock y calcular total según la lista de precios elegida
     let total = 0;
+    let tieneJuego = false; // ¿alguna línea suma créditos de tarjetita?
     const itemsValidados = [];
 
     for (const item of items) {
@@ -35,6 +36,7 @@ async function crearPedido({ cedula, familia, contacto, items, metodo_pago }, op
       if (producto.stock < item.cantidad) {
         throw new Error(`Stock insuficiente para ${producto.titulo}. Disponible: ${producto.stock}`);
       }
+      if (producto.categoria === 'JUEGO' && Number(producto.creditos_por_unidad) > 0) tieneJuego = true;
       const precio = lista === 'normal'
         ? (Number(producto.precio_normal) || Number(producto.precio_preventa))
         : (Number(producto.precio_preventa) || Number(producto.precio_normal));
@@ -86,6 +88,9 @@ async function crearPedido({ cedula, familia, contacto, items, metodo_pago }, op
     await conn.commit();
     // Si la caja lo cobró (queda PAGADO), avisar al panel de despacho en vivo.
     if (cobro) notificarDespacho({ motivo: 'caja', hash });
+    // Y si trae créditos de juego, avisar al acreditador de /tarjetas para que la
+    // nueva compra le caiga al instante (sin recargar la página).
+    if (cobro && tieneJuego) notificarTarjetas({ hash, idpedido });
     return { idpedido, hash, total, vuelto };
   } catch (err) {
     await conn.rollback();
