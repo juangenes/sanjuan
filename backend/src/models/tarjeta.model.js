@@ -166,6 +166,20 @@ async function dispensar(hash, codigoTarjeta, cantidad, operador) {
   return { saldoTarjeta, pendiente: pendienteRestante };
 }
 
+// ¿El pedido tiene líneas de JUEGO con créditos? Lo usan los puntos de cobro (caja
+// QR / Bancard) para decidir si avisar al acreditador por realtime cuando el pedido
+// queda PAGADO, sin recalcular toda la cola de pendientes.
+async function pedidoTieneJuego(idpedido) {
+  const [[row]] = await db.query(`
+    SELECT 1 AS hay
+    FROM pedidos_productos pp
+    JOIN productos pr ON pr.idproducto = pp.idproducto
+    WHERE pp.idpedido = ? AND pr.categoria = 'JUEGO' AND pr.creditos_por_unidad > 0
+    LIMIT 1
+  `, [idpedido]);
+  return !!row;
+}
+
 async function movimientos(idtarjeta) {
   const [rows] = await db.query(
     `SELECT 'CARGA' AS tipo, tc.cantidad, tc.valor_unitario, tc.fecha, tc.operador, NULL AS puesto
@@ -181,4 +195,4 @@ async function movimientos(idtarjeta) {
   return rows;
 }
 
-module.exports = { buscarPorCodigo, cargar, saldo, consumir, movimientos, pedidosConCreditosPendientes, dispensar };
+module.exports = { buscarPorCodigo, cargar, saldo, consumir, movimientos, pedidosConCreditosPendientes, dispensar, pedidoTieneJuego };

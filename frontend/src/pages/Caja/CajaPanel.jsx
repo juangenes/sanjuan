@@ -5,8 +5,9 @@ import toast from 'react-hot-toast';
 import {
   getProductos, tomarPedidoCaja, tomarPedidoCajaQr, getPedidosExpendio,
   generarQrBancard, getEstadoBancard, revertirBancard,
-  getLecturasCaja, atenderLecturaCaja, despacharPedidoCaja, getConfig,
+  getLecturasCaja, atenderLecturaCaja, despacharPedidoCaja, getConfig, getBolsaLink,
 } from '../../api';
+import { normNum, waLinkBolsa } from '../../utils/bolsa';
 import { useCarrito } from '../../context/CarritoContext';
 import { suscribirScope } from '../../utils/rtsSocket';
 import { imprimirTicketPedidoWeb } from '../../utils/webPrint';
@@ -22,7 +23,12 @@ const TABS = [
   { key: 'FIGURITAS', label: '✨ Figuritas' },
   { key: 'JUEGO', label: '🎯 Juegos' },
 ];
-const SECCIONES = TABS.slice(1);
+// La caja 5 es exclusiva de juegos; las cajas 1-4 no venden juegos.
+const SOLO_JUEGOS = (num) => String(num) === '5';
+const tabsDeCaja = (num) =>
+  SOLO_JUEGOS(num)
+    ? TABS.filter(t => t.key === 'JUEGO')
+    : TABS.filter(t => t.key !== 'JUEGO');
 
 const METODOS = [
   { key: 'EFECTIVO', label: '💵 Efectivo' },
@@ -45,9 +51,12 @@ function imgSrc(p) {
 }
 
 export default function CajaPanel() {
+  const { num } = useParams();
+  const tabs = useMemo(() => tabsDeCaja(num), [num]);
+  const secciones = useMemo(() => tabs.filter(t => t.key !== 'TODOS'), [tabs]);
   const [productos, setProductos] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState('TODOS');
+  const [activeTab, setActiveTab] = useState(() => (SOLO_JUEGOS(num) ? 'JUEGO' : 'TODOS'));
   const [search, setSearch] = useState('');
   const [cobroOpen, setCobroOpen] = useState(false);
   const [exito, setExito] = useState(null); // { codigo, hash, idpedido, vuelto, metodo, nombre, total, recibido, lineas }
@@ -58,7 +67,6 @@ export default function CajaPanel() {
   const [modo, setModo] = useState('nuevo'); // 'nuevo' (walk-in) | 'preventa' (retiro)
   const { items, agregar, quitar, limpiar } = useCarrito();
   const navigate = useNavigate();
-  const { num } = useParams();
 
   useEffect(() => {
     if (!localStorage.getItem('sanjuan_token')) { navigate(`/caja/${num}`); return; }
@@ -78,13 +86,13 @@ export default function CajaPanel() {
 
   const counts = useMemo(() => {
     const c = { TODOS: totalUnits };
-    SECCIONES.forEach(s => {
+    secciones.forEach(s => {
       c[s.key] = items.filter(i => i.categoria === s.key).reduce((a, i) => a + i.cantidad, 0);
     });
     return c;
-  }, [items, totalUnits]);
+  }, [items, totalUnits, secciones]);
 
-  const filteredSections = SECCIONES
+  const filteredSections = secciones
     .filter(s => activeTab === 'TODOS' || activeTab === s.key)
     .map(s => ({
       seccion: s,
@@ -95,7 +103,7 @@ export default function CajaPanel() {
   const hasResults = filteredSections.some(g => g.productos.length > 0);
 
 
-  async function confirmarCobro({ nombre, metodo, recibido }) {
+  async function confirmarCobro({ nombre, contacto, metodo, recibido }) {
     const itemsPayload = items.map(i => ({ idproducto: i.idproducto, cantidad: i.cantidad }));
     // Foto del carrito para el ticket (con precios del día), antes de limpiarlo.
     const lineas = items.map(i => ({
@@ -108,7 +116,7 @@ export default function CajaPanel() {
     // pasamos a la pantalla de QR; el pago lo confirma el callback de Bancard y
     // lo detectamos por polling. La comanda a RETIRO la dispara el callback.
     if (metodo === 'INFONET') {
-      const pedido = await tomarPedidoCajaQr({ nombre, items: itemsPayload });
+      const pedido = await tomarPedidoCajaQr({ nombre, contacto, items: itemsPayload });
       limpiar();
       setCobroOpen(false);
       setQrPago({
@@ -125,6 +133,7 @@ export default function CajaPanel() {
 
     const payload = {
       nombre,
+      contacto,
       metodo,
       recibido: metodo === 'EFECTIVO' ? Number(recibido) : null,
       items: itemsPayload,
@@ -368,7 +377,7 @@ export default function CajaPanel() {
       <main className="td-main">
         <div className="td-toolbar">
           <div className="td-tabs">
-            {TABS.map(t => (
+            {tabs.map(t => (
               <button key={t.key} className={`td-tab ${activeTab === t.key ? 'active' : ''}`} onClick={() => setActiveTab(t.key)} type="button">
                 <span>{t.label}</span>
                 {counts[t.key] > 0 && <span className="td-tab-count">{counts[t.key]}</span>}
@@ -491,6 +500,20 @@ function PreventaRetiro({ caja }) {
   const [cargando, setCargando] = useState(true);
   const [lecturas, setLecturas] = useState([]); // cola del lector del celular para esta caja
   const [online, setOnline] = useState(false);
+  const [numEnvio, setNumEnvio] = useState(''); // celular para mandarle su link de retiro
+
+  // Manda por WhatsApp, al celular del cliente, el link ÚNICO y vivo de su bolsa
+  // (todos sus pedidos pagados). El backend valida que el número tenga pedidos.
+  async function enviarBolsa() {
+    const objetivo = normNum(numEnvio);
+    if (objetivo.length < 6) { toast.error('Ingresá un celular válido'); return; }
+    try {
+      const info = await getBolsaLink(objetivo);
+      window.open(waLinkBolsa(objetivo, info), '_blank');
+    } catch (err) {
+      toast.error(err.response?.data?.error || 'No se pudo generar el link');
+    }
+  }
 
   function cargar() {
     setCargando(true);
@@ -598,6 +621,27 @@ function PreventaRetiro({ caja }) {
         </div>
       )}
 
+      {/* Enviar al cliente, por WhatsApp, el link vivo para retirar TODOS sus
+          pedidos pagados (agrupados por su celular). Mismo flujo que en /admin. */}
+      <div style={{ maxWidth: 520, margin: '0 auto .8rem', display: 'flex', gap: '.5rem', alignItems: 'center' }}>
+        <input
+          type="tel"
+          value={numEnvio}
+          onChange={e => setNumEnvio(e.target.value)}
+          onKeyDown={e => { if (e.key === 'Enter') enviarBolsa(); }}
+          placeholder="📲 Celular del cliente para enviarle sus pedidos"
+          style={{ flex: 1, minWidth: 0, padding: '0.65rem 0.9rem', borderRadius: 12, border: '1px solid #ccc' }}
+        />
+        <button
+          type="button"
+          onClick={enviarBolsa}
+          title="Enviar a ese número, por WhatsApp, el link para retirar todos sus pedidos"
+          style={{ padding: '0.65rem 1rem', borderRadius: 12, border: 'none', cursor: 'pointer', background: '#25D366', color: '#fff', fontWeight: 700, whiteSpace: 'nowrap' }}
+        >
+          Enviar
+        </button>
+      </div>
+
       <div className="td-search" style={{ maxWidth: 520, margin: '0 auto 1rem' }}>
         <span className="td-search-icon">🔍</span>
         <input value={filtro} onChange={e => setFiltro(e.target.value)} placeholder="Buscar por código, nombre o cédula..." autoFocus />
@@ -642,6 +686,7 @@ function PreventaRetiro({ caja }) {
 
 function CobroModal({ total, onClose, onConfirm }) {
   const [nombre, setNombre] = useState('');
+  const [telefono, setTelefono] = useState('');
   const [metodo, setMetodo] = useState('EFECTIVO');
   const [recibido, setRecibido] = useState('');
   const [loading, setLoading] = useState(false);
@@ -654,7 +699,7 @@ function CobroModal({ total, onClose, onConfirm }) {
     if (!ok || loading) return;
     setLoading(true);
     try {
-      await onConfirm({ nombre, metodo, recibido });
+      await onConfirm({ nombre, contacto: telefono, metodo, recibido });
     } catch (err) {
       toast.error(err.response?.data?.error || 'Error al cobrar');
       setLoading(false);
@@ -672,6 +717,13 @@ function CobroModal({ total, onClose, onConfirm }) {
           <div className={styles.campo}>
             <label>Nombre <span style={{ opacity: .5 }}>(opcional)</span></label>
             <input value={nombre} onChange={e => setNombre(e.target.value)} placeholder="Ej: Juan / Mostrador" autoFocus />
+          </div>
+
+          {/* Celular opcional: habilita el AUTORETIRO por WhatsApp. Si lo carga, su
+              compra se agrupa bajo ese número y puede retirar después desde su celu. */}
+          <div className={styles.campo}>
+            <label>Celular <span style={{ opacity: .5 }}>(opcional · para retirar por WhatsApp)</span></label>
+            <input type="tel" value={telefono} onChange={e => setTelefono(e.target.value)} placeholder="Ej: 0981 123 456" />
           </div>
 
           <div className={styles.metodos}>

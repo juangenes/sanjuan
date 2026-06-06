@@ -2,6 +2,8 @@ const pedidoModel = require('../models/pedido.model');
 const pedidoProductoModel = require('../models/pedidoProducto.model');
 const entregaModel = require('../models/entrega.model');
 const envioModel = require('../models/envioExpendio.model');
+const configService = require('./configuracion.service');
+const telToken = require('../utils/telToken');
 const { notificarDespacho, notificarRetiro } = require('../utils/rtsClient');
 
 // Modelo unificado "fast food": no hay estaciones. Toda comanda va a una única
@@ -67,6 +69,120 @@ async function obtenerHistorial(hash) {
   return historial;
 }
 
+// Detalle de un pedido con el saldo pendiente por ítem (lo pedido menos lo ya
+// entregado). Reutilizado por la bolsa de autoretiro para armar y repartir.
+async function detalleConPendiente(idpedido) {
+  const items = await pedidoProductoModel.obtenerPorPedido(idpedido);
+  const entregas = await entregaModel.obtenerEntregasPorPedido(idpedido);
+  const entregadoMap = {};
+  for (const e of entregas) entregadoMap[e.idproducto] = Number(e.entregado);
+  return items.map(it => {
+    const entregado = entregadoMap[it.idproducto] || 0;
+    return { ...it, entregado, pendiente: it.cantidad - entregado };
+  });
+}
+
+// "Bolsa" de autoretiro: todos los pedidos PAGADOS de un mismo celular, con el
+// saldo pendiente SUMADO por producto. La identidad es el token firmado del número
+// (telToken): si es inválido devolvemos null (link adulterado o de otro número).
+async function obtenerBolsa(token) {
+  const tel9 = telToken.verificarToken(token);
+  if (!tel9) return null;
+
+  const pedidos = await pedidoModel.pagadosPorContacto(tel9);
+  const detallePedidos = [];
+  const bolsaMap = {}; // idproducto -> { idproducto, titulo, pendiente }
+
+  for (const ped of pedidos) {
+    const items = await detalleConPendiente(ped.idpedido);
+    for (const it of items) {
+      if (it.pendiente <= 0) continue;
+      if (!bolsaMap[it.idproducto]) {
+        bolsaMap[it.idproducto] = { idproducto: it.idproducto, titulo: it.titulo, pendiente: 0 };
+      }
+      bolsaMap[it.idproducto].pendiente += it.pendiente;
+    }
+    detallePedidos.push({
+      idpedido: ped.idpedido,
+      hash: ped.hash,
+      codigo: (ped.hash || '').substring(0, 8).toUpperCase(),
+      familia: ped.familia,
+      fecha: ped.fecha,
+      items,
+    });
+  }
+
+  return {
+    tel: tel9,
+    familia: pedidos[0]?.familia || null,
+    dia_d: configService.diaD(),
+    pedidos: detallePedidos,
+    bolsa: Object.values(bolsaMap),
+  };
+}
+
+// Genera el link firmado de la bolsa de un celular + un resumen (nombre, cantidad
+// de pedidos PAGADOS y total) para armar el mensaje de WhatsApp. Lo usan el admin y
+// la caja: así ninguna pantalla necesita la lista completa de pedidos. Devuelve
+// null si el número no es válido; cantidad 0 si no tiene pedidos pagados.
+async function generarLinkBolsa(tel) {
+  const token = telToken.generarToken(tel);
+  if (!token) return null;
+  const tel9 = telToken.verificarToken(token);
+  const pedidos = await pedidoModel.pagadosPorContacto(tel9);
+  const total = pedidos.reduce((s, p) => s + Number(p.total || 0), 0);
+  return { token, familia: pedidos[0]?.familia || null, cantidad: pedidos.length, total };
+}
+
+// Dispara a RETIRO los ítems elegidos de la bolsa de un celular. El cliente pide
+// por producto (la bolsa los muestra sumados); acá repartimos cada producto entre
+// sus pedidos pendientes en orden FIFO (el más viejo primero) y disparamos UNA
+// comanda por pedido afectado, reusando el camino atómico con lock de
+// registrarEntrega (re-chequea saldo y evita el sobre-retiro por carrera).
+async function registrarEntregaBolsa(token, solicitados, operador) {
+  const tel9 = telToken.verificarToken(token);
+  if (!tel9) throw new Error('Link inválido');
+
+  const pedidos = await pedidoModel.pagadosPorContacto(tel9); // FIFO
+  if (!pedidos.length) throw new Error('No hay pedidos para retirar');
+
+  // Saldo pendiente fresco por pedido y producto.
+  const pendientePorPedido = [];
+  for (const ped of pedidos) {
+    const items = await detalleConPendiente(ped.idpedido);
+    const pend = {};
+    for (const it of items) if (it.pendiente > 0) pend[it.idproducto] = it.pendiente;
+    pendientePorPedido.push({ idpedido: ped.idpedido, hash: ped.hash, pend });
+  }
+
+  // Reparto FIFO de cada producto solicitado entre los pedidos que lo tienen.
+  const asignacion = {}; // idpedido -> { hash, items: [{idproducto, cantidad}] }
+  for (const sol of solicitados) {
+    let restante = sol.cantidad;
+    if (!(restante > 0)) continue;
+    for (const ped of pendientePorPedido) {
+      if (restante <= 0) break;
+      const disp = ped.pend[sol.idproducto] || 0;
+      if (disp <= 0) continue;
+      const toma = Math.min(disp, restante);
+      ped.pend[sol.idproducto] -= toma;
+      restante -= toma;
+      if (!asignacion[ped.idpedido]) asignacion[ped.idpedido] = { hash: ped.hash, items: [] };
+      asignacion[ped.idpedido].items.push({ idproducto: sol.idproducto, cantidad: toma });
+    }
+    if (restante > 0) throw new Error('Ya no queda saldo suficiente. Refrescá e intentá de nuevo.');
+  }
+
+  // Una comanda por pedido afectado. Lo normal es un solo pedido → un solo #XX.
+  const numeros = [];
+  for (const idpedido of Object.keys(asignacion)) {
+    const { hash, items } = asignacion[idpedido];
+    const { comandaId } = await registrarEntrega(hash, items, operador);
+    numeros.push(comandaId);
+  }
+  return { numeros };
+}
+
 // Cola de comandas pendientes de imprimir en RETIRO, cada una con sus ítems.
 // La pantalla de retiro la consume, imprime y luego marca cada comanda impresa.
 async function obtenerColaRetiro() {
@@ -103,5 +219,6 @@ async function marcarComandaImpresa(id) {
 
 module.exports = {
   obtenerPedidoParaExpendio, registrarEntrega, obtenerBoleta, obtenerHistorial,
+  obtenerBolsa, registrarEntregaBolsa, generarLinkBolsa,
   obtenerColaRetiro, marcarComandaImpresa,
 };

@@ -62,6 +62,7 @@ export default function TotemPanel() {
   const [exito, setExito] = useState(null);  // { codigo, hash }
   const [ttl, setTtl] = useState(0);         // cuenta regresiva visible
   const [bypassPago, setBypassPago] = useState(false); // PRUEBA: saltea Bancard (flag de config)
+  const [telefono, setTelefono] = useState(''); // celular opcional → habilita autoretiro por WhatsApp
 
   const { items, agregar, quitar, limpiar } = useCarrito();
   const itemsRef = useRef([]); // foto del carrito para disparar la comanda al pagar
@@ -110,6 +111,7 @@ export default function TotemPanel() {
     setQrError(false);
     setExito(null);
     setSearch('');
+    setTelefono('');
     setActiveTab('TODOS');
     setFase('idle');
   }
@@ -126,7 +128,7 @@ export default function TotemPanel() {
     // Foto del carrito para disparar la comanda (retira todo) al confirmarse el pago.
     itemsRef.current = items.map(i => ({ idproducto: i.idproducto, cantidad: i.cantidad }));
     try {
-      const pedido = await crearPedidoTotem({ items: itemsRef.current });
+      const pedido = await crearPedidoTotem({ items: itemsRef.current, contacto: telefono });
 
       // PRUEBA (revertible): saltea el QR de Bancard y marca pagado directo, como si
       // hubiera pagado OK. Va derecho a "seguí desde tu celular". Controlado por el flag
@@ -415,6 +417,15 @@ export default function TotemPanel() {
                 <span>Total</span><span>Gs. {fmtGs(total)}</span>
               </div>
             </div>
+            {/* Celular opcional: si lo dejás, podés retirar después por WhatsApp.
+                Si no, te llevás el QR/ticket en el celu y retirás en el acto. */}
+            <input
+              type="tel"
+              value={telefono}
+              onChange={e => setTelefono(e.target.value)}
+              placeholder="📲 Celular (opcional · para retirar por WhatsApp)"
+              style={{ width: '100%', boxSizing: 'border-box', marginBottom: '.6rem', padding: '.85rem 1rem', borderRadius: 12, border: '1px solid #ccc', fontSize: '1rem' }}
+            />
             <button className="td-cta" disabled={creando} onClick={irAPagar}>
               {creando ? 'Generando QR…' : <>Pagar con QR <span className="td-cta-amount">Gs. {fmtGs(total)}</span></>}
             </button>

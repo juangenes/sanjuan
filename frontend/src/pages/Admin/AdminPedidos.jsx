@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { QRCodeCanvas } from 'qrcode.react';
-import { getPedidosAdmin, marcarPagado, cambiarEstadoPedido, getPedido } from '../../api';
+import { getPedidosAdmin, marcarPagado, cambiarEstadoPedido, getPedido, getBolsaLink } from '../../api';
+import { normNum, waLinkBolsa } from '../../utils/bolsa';
 import { compartirComprobante } from '../../utils/comprobante';
 import { metodoPago } from '../../utils/metodoPago';
 import toast from 'react-hot-toast';
@@ -21,26 +22,6 @@ function waLink(p) {
   }
   const num = p.contacto.replace(/\D/g, '').replace(/^0/, '');
   return `https://wa.me/595${num}?text=${encodeURIComponent(msg)}`;
-}
-
-// Normaliza un celular a su forma comparable: solo dígitos, sin prefijo país (595)
-// ni el 0 inicial. Así "0981123456", "981123456" y "595981123456" coinciden.
-function normNum(s) {
-  return (s || '').replace(/\D/g, '').replace(/^595/, '').replace(/^0/, '');
-}
-
-// Arma un wa.me con el listado de pedidos de un cliente para enviárselo a su
-// propio número. Reusa el mismo patrón de deep-link (envío manual, sin API).
-function waLinkListado(numNorm, lista) {
-  const lineas = lista.map((p, i) => {
-    const codigo = p.hash.substring(0, 8).toUpperCase();
-    const link = `https://sanjuandicequesi.com/pedido/${p.hash}`;
-    const est = p.estado === 'PAGADO' ? '✅ PAGADO' : '🔔 PENDIENTE DE PAGO';
-    return `${i + 1}) ${codigo} · ${p.familia}\n${est} — Gs. ${Number(p.total).toLocaleString()}\n${link}`;
-  });
-  const total = lista.reduce((s, p) => s + Number(p.total || 0), 0);
-  const msg = `*SAN JUAN DICE QUE SI 2026*\n\nTus pedidos (${lista.length}):\n\n${lineas.join('\n\n')}\n\n*Total: Gs. ${total.toLocaleString()}*`;
-  return `https://wa.me/595${numNorm}?text=${encodeURIComponent(msg)}`;
 }
 
 export default function AdminPedidos() {
@@ -179,14 +160,18 @@ export default function AdminPedidos() {
     return () => { cancel = true; cancelAnimationFrame(raf); };
   }, [imgPedido]);
 
-  // Busca todos los pedidos (no anulados) de un celular y abre WhatsApp hacia ese
-  // mismo número con el listado armado, listo para enviar.
-  function enviarListado() {
+  // Genera el link firmado de la bolsa de un celular y abre WhatsApp hacia ESE
+  // número con el mensaje listo para enviar (único canal de entrega del link). El
+  // backend valida que el número tenga pedidos pagados y devuelve el resumen.
+  async function enviarListado() {
     const objetivo = normNum(numEnvio);
     if (objetivo.length < 6) { toast.error('Ingresá un celular válido'); return; }
-    const lista = pedidos.filter(p => p.estado !== 'ANULADO' && normNum(p.contacto) === objetivo);
-    if (!lista.length) { toast.error('No hay pedidos para ese número'); return; }
-    window.open(waLinkListado(objetivo, lista), '_blank');
+    try {
+      const info = await getBolsaLink(objetivo);
+      window.open(waLinkBolsa(objetivo, info), '_blank');
+    } catch (err) {
+      toast.error(err.response?.data?.error || 'No se pudo generar el link');
+    }
   }
 
   const filtrados = filtro === 'TODOS' ? pedidos : pedidos.filter(p => p.estado === filtro);

@@ -54,6 +54,23 @@ async function listarPagados() {
   return rows;
 }
 
+// Pedidos PAGADOS de un mismo celular, para la "bolsa" de autoretiro agrupado.
+// Comparamos por los últimos 9 dígitos (el móvil PY sin país 595 ni 0 inicial):
+// limpiamos los separadores típicos del contacto guardado y tomamos RIGHT(...,9),
+// que coincide con normalizarTel() del backend. Orden FIFO (más viejo primero)
+// para repartir el retiro parcial de forma estable entre pedidos.
+async function pagadosPorContacto(tel9) {
+  const [rows] = await db.query(
+    `SELECT idpedido, hash, familia, fecha, contacto, total
+     FROM pedidos
+     WHERE estado = 'PAGADO'
+       AND RIGHT(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(contacto,'-',''),' ',''),'+',''),'(',''),')',''), 9) = ?
+     ORDER BY fecha ASC, idpedido ASC`,
+    [tel9]
+  );
+  return rows;
+}
+
 async function buscarPorHash(hash) {
   const [rows] = await db.query(
     'SELECT * FROM pedidos WHERE hash = ?', [hash]
@@ -230,4 +247,4 @@ async function ventasPorProductoDetalle({ desde, hasta } = {}) {
   return { productos, totales };
 }
 
-module.exports = { crear, obtenerFecha, actualizarHash, listarTodos, listarPagados, listarPendientes, buscarPorHash, buscarPorId, marcarPagado, registrarCobro, actualizarDatos, cambiarEstado, buscarPorHookAlias, guardarQrBancard, marcarPagadoBancard, actualizarStatusBancard, resumenDashboard, resumenPorProducto, ventasPorProductoDetalle };
+module.exports = { crear, obtenerFecha, actualizarHash, listarTodos, listarPagados, listarPendientes, pagadosPorContacto, buscarPorHash, buscarPorId, marcarPagado, registrarCobro, actualizarDatos, cambiarEstado, buscarPorHookAlias, guardarQrBancard, marcarPagadoBancard, actualizarStatusBancard, resumenDashboard, resumenPorProducto, ventasPorProductoDetalle };

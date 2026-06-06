@@ -57,4 +57,12 @@ function notificarLecturaCaja(caja, meta) {
   return notificarEntidad({ resource: 'caja', action: 'lectura', scope: `sanjuan-caja-${caja}`, meta });
 }
 
-module.exports = { notificarEntidad, notificarDespacho, notificarRetiro, notificarFotos, notificarLecturaCaja };
+// Acreditador de saldos (/tarjetas): avisa al celular que carga las tarjetitas que
+// cayó un pedido nuevo con créditos de juego para acreditar. Scope único: todos los
+// acreditadores comparten la misma cola. El panel la levanta de la base; el evento
+// solo dispara el refetch (mismo patrón que la caja con las lecturas).
+function notificarTarjetas(meta) {
+  return notificarEntidad({ resource: 'tarjetas', action: 'acreditar', scope: 'sanjuan-tarjetas', meta });
+}
+
+module.exports = { notificarEntidad, notificarDespacho, notificarRetiro, notificarFotos, notificarLecturaCaja, notificarTarjetas };

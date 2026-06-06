@@ -138,20 +138,19 @@ export function construirComprobante(pedido, qrCanvas) {
   return out;
 }
 
-// Genera el comprobante y lo comparte: en móvil abre la hoja de compartir nativa
-// (con la imagen adjunta de verdad), en desktop descarga el PNG como fallback.
+// Comparte un <canvas> ya renderizado como imagen PNG: en móvil abre la hoja de
+// compartir nativa (donde el usuario puede elegir "Guardar imagen" y mandarla a
+// la galería), en desktop descarga el PNG como fallback.
 // Devuelve 'shared' | 'cancelled' | 'downloaded'.
-export async function compartirComprobante(pedido, qrCanvas) {
-  const codigo = (pedido.hash || '').substring(0, 8).toUpperCase();
-  const canvas = construirComprobante(pedido, qrCanvas);
+export async function compartirCanvas(canvas, nombreArchivo, titulo) {
   const blob = await new Promise((res) => canvas.toBlob(res, 'image/png'));
   if (!blob) throw new Error('No se pudo generar la imagen');
-  const file = new File([blob], `pedido-${codigo}.png`, { type: 'image/png' });
+  const file = new File([blob], nombreArchivo, { type: 'image/png' });
 
-  // Móvil: hoja de compartir nativa (permite elegir WhatsApp y adjuntar la imagen).
+  // Móvil: hoja de compartir nativa (permite "Guardar imagen"/WhatsApp con la imagen adjunta).
   if (navigator.canShare && navigator.canShare({ files: [file] })) {
     try {
-      await navigator.share({ files: [file], title: `Pedido ${codigo}` });
+      await navigator.share({ files: [file], title: titulo });
       return 'shared';
     } catch (err) {
       if (err?.name === 'AbortError') return 'cancelled'; // el usuario canceló
@@ -165,4 +164,13 @@ export async function compartirComprobante(pedido, qrCanvas) {
   document.body.appendChild(a); a.click(); a.remove();
   URL.revokeObjectURL(url);
   return 'downloaded';
+}
+
+// Genera el comprobante y lo comparte: en móvil abre la hoja de compartir nativa
+// (con la imagen adjunta de verdad), en desktop descarga el PNG como fallback.
+// Devuelve 'shared' | 'cancelled' | 'downloaded'.
+export async function compartirComprobante(pedido, qrCanvas) {
+  const codigo = (pedido.hash || '').substring(0, 8).toUpperCase();
+  const canvas = construirComprobante(pedido, qrCanvas);
+  return compartirCanvas(canvas, `pedido-${codigo}.png`, `Pedido ${codigo}`);
 }
