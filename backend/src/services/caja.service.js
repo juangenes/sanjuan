@@ -4,6 +4,7 @@ const pedidoModel = require('../models/pedido.model');
 const pedidoProductoModel = require('../models/pedidoProducto.model');
 const cajaLecturaModel = require('../models/cajaLectura.model');
 const { notificarLecturaCaja } = require('../utils/rtsClient');
+const { CATEGORIAS_SIN_RETIRO } = require('../config/categorias');
 
 // Caja del día: el cajero arma un pedido nuevo (productos elegidos en el momento),
 // cobra en persona y lo deja PAGADO. Usa la lista de precios NORMAL (no preventa).
@@ -44,10 +45,10 @@ async function despacharTodo(hash, operador) {
   if (!pedido) throw new Error('Pedido no encontrado');
 
   const productos = await pedidoProductoModel.obtenerPorPedido(pedido.idpedido);
-  // Excluimos los JUEGO: se dispensan como créditos en la tarjeta, no se retiran
-  // en el mostrador. Si el pedido es SOLO juegos, no hay comanda que disparar.
+  // Excluimos las categorías SIN_RETIRO (juegos, figuritas): no se retiran en el
+  // mostrador. Si el pedido es SOLO de ésas, no hay comanda que disparar.
   const items = productos
-    .filter(p => p.categoria !== 'JUEGO')
+    .filter(p => !CATEGORIAS_SIN_RETIRO.includes(p.categoria))
     .map(p => ({ idproducto: p.idproducto, cantidad: p.cantidad }));
   if (!items.length) return { numero: null, idot: null };
 

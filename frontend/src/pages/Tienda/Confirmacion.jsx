@@ -7,6 +7,7 @@ import { getPedido, getRetirosPedido, generarQrBancard, getEstadoBancard, revert
 // reversamos el QR en Bancard (recomendación de Bancard: ~5 min + revert).
 const QR_VIDA_MS = 5 * 60 * 1000;
 import { compartirComprobante } from '../../utils/comprobante';
+import { CATEGORIAS_SIN_RETIRO } from '../../utils/categorias';
 import toast from 'react-hot-toast';
 import styles from './Confirmacion.module.css';
 
@@ -191,9 +192,10 @@ export default function Confirmacion() {
   const mostrarTicket = !esPreventa && ultimoRetiroNum != null;
 
   // AUTORETIRO: ítems que todavía no se mandaron a preparar y selección actual.
-  // Los JUEGO no se retiran acá (se cargan como créditos en la tarjeta), así que
-  // no entran al autoretiro; igual siguen visibles en el resumen del pedido.
-  const pendientes = (pedido.items || []).filter(i => i.pendiente > 0 && i.categoria !== 'JUEGO');
+  // Las categorías SIN_RETIRO (juegos, figuritas) no se retiran acá, así que no se
+  // pueden elegir para preparar; igual siguen visibles en el resumen del pedido.
+  const pendientes = (pedido.items || [])
+    .filter(i => i.pendiente > 0 && !CATEGORIAS_SIN_RETIRO.includes(i.categoria));
   const hayPendientes = pendientes.length > 0;
   const totalPendiente = pendientes.reduce((a, it) => a + it.pendiente, 0);
   const totalSel = pendientes.reduce((a, it) => a + (prepCant[it.idproducto] || 0), 0);

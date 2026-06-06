@@ -46,16 +46,16 @@ async function registrarEntrega(hash, items, operador) {
   if (pedido.estado !== 'PAGADO') throw new Error('El pedido no está pagado');
 
   // Guard central de TODOS los disparos a RETIRO (caja, autoretiro del celular y
-  // tótem): descartamos los ítems JUEGO. Los juegos no se retiran en el mostrador,
-  // se cargan como créditos en la tarjeta (panel de acreditación). Así un juego
-  // nunca termina en una comanda de cocina, venga del flujo que venga.
+  // tótem): descartamos las categorías SIN_RETIRO (juegos, figuritas). Los juegos
+  // se cargan como créditos en la tarjeta y las figuritas se entregan en mano en la
+  // caja. Así nunca terminan en una comanda de cocina, venga del flujo que venga.
   const productos = await pedidoProductoModel.obtenerPorPedido(pedido.idpedido);
-  const esJuego = new Set(
-    productos.filter(p => p.categoria === 'JUEGO').map(p => Number(p.idproducto))
+  const sinRetiro = new Set(
+    productos.filter(p => CATEGORIAS_SIN_RETIRO.includes(p.categoria)).map(p => Number(p.idproducto))
   );
-  const itemsRetiro = items.filter(i => !esJuego.has(Number(i.idproducto)));
+  const itemsRetiro = items.filter(i => !sinRetiro.has(Number(i.idproducto)));
   if (!itemsRetiro.length) {
-    throw new Error('Este pedido no tiene ítems de retiro (los juegos se cargan en la tarjeta)');
+    throw new Error('Este pedido no tiene ítems de retiro (los juegos y figuritas no se retiran acá)');
   }
 
   // Re-chequea el saldo y registra la entrega de forma atómica (transacción con

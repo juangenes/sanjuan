@@ -1,4 +1,5 @@
 const db = require('../config/db');
+const { CATEGORIAS_SIN_RETIRO } = require('../config/categorias');
 
 async function crear(datos, conn) {
   const { cedula, familia, contacto, total, metodo_pago, origen } = datos;
@@ -34,13 +35,13 @@ async function listarTodos() {
 
 async function listarPagados() {
   const [rows] = await db.query(
-    // Los JUEGO no cuentan para el saldo de retiro: se dispensan como créditos en
-    // la tarjeta, no se retiran en el mostrador. Excluyéndolos del conteo, un pedido
-    // solo de comida se marca "completo" al retirarla, y uno solo de juegos da 0/0
-    // (no aparece como pendiente de retiro en la caja).
+    // Las categorías SIN_RETIRO (juegos, figuritas) no cuentan para el saldo de
+    // retiro: no se retiran en el mostrador. Excluyéndolas del conteo, un pedido
+    // solo de comida se marca "completo" al retirarla, y uno solo de juegos/figuritas
+    // da 0/0 (no aparece como pendiente de retiro en la caja).
     `SELECT p.idpedido, p.hash, p.fecha, p.cedula, p.familia, p.total,
-            COALESCE(SUM(CASE WHEN pr.categoria <> 'JUEGO' THEN pp.cantidad ELSE 0 END), 0) AS total_items,
-            COALESCE(SUM(CASE WHEN pr.categoria <> 'JUEGO' THEN ent.entregado ELSE 0 END), 0) AS total_entregado,
+            COALESCE(SUM(CASE WHEN pr.categoria NOT IN (?) THEN pp.cantidad ELSE 0 END), 0) AS total_items,
+            COALESCE(SUM(CASE WHEN pr.categoria NOT IN (?) THEN ent.entregado ELSE 0 END), 0) AS total_entregado,
             (SELECT ev.estacion FROM expendio_envios ev
               WHERE ev.idpedido = p.idpedido AND ev.estado = 'PENDIENTE'
               ORDER BY ev.creado_en DESC LIMIT 1) AS estacion_activa
@@ -54,7 +55,8 @@ async function listarPagados() {
      ) ent ON ent.idpedido = pp.idpedido AND ent.idproducto = pp.idproducto
      WHERE p.estado = 'PAGADO'
      GROUP BY p.idpedido
-     ORDER BY p.fecha DESC`
+     ORDER BY p.fecha DESC`,
+    [CATEGORIAS_SIN_RETIRO, CATEGORIAS_SIN_RETIRO]
   );
   return rows;
 }
