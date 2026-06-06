@@ -30,7 +30,9 @@ export function CarritoProvider({ children }) {
 
   function limpiar() { setItems([]); }
 
-  const total = items.reduce((acc, i) => acc + i.precio_preventa * i.cantidad, 0);
+  // `precio_vigente` lo fija la Tienda según día D (normal) o preventa. Si no
+  // viene (carrito viejo), cae a preventa para no romper.
+  const total = items.reduce((acc, i) => acc + (Number(i.precio_vigente) || Number(i.precio_preventa) || 0) * i.cantidad, 0);
   const cantidadTotal = items.reduce((acc, i) => acc + i.cantidad, 0);
 
   return (

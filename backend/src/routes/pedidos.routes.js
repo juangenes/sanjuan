@@ -15,7 +15,11 @@ router.post('/', async (req, res) => {
     if (!familia || !contacto || !items?.length) {
       return res.status(400).json({ error: 'Datos incompletos' });
     }
-    const resultado = await pedidoService.crearPedido({ cedula, familia, contacto, items, metodo_pago }, { origen: 'tienda' });
+    // DÍA D: la tienda online cobra a precio del día (normal). Antes (preventa
+    // abierta) cobra con el descuento de preventa. Se controla con el mismo flag
+    // `dia_d` de /admin/configuracion que rige caja walk-in y el autoretiro.
+    const lista = configService.diaD() ? 'normal' : 'preventa';
+    const resultado = await pedidoService.crearPedido({ cedula, familia, contacto, items, metodo_pago }, { lista, origen: 'tienda' });
     res.status(201).json({ success: true, ...resultado });
   } catch (err) {
     res.status(400).json({ success: false, error: err.message });

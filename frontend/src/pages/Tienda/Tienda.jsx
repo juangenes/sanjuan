@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
-import { getProductos, crearPedido } from '../../api';
+import { getProductos, crearPedido, getConfig } from '../../api';
 import { useCarrito } from '../../context/CarritoContext';
 import './tienda-desktop.css';
 
@@ -44,10 +44,12 @@ function DesktopHeader() {
   );
 }
 
-function PromoStrip() {
+function PromoStrip({ esDiaD }) {
   return (
     <div className="td-promo">
-      {TIENDA_HABILITADA ? (
+      {esDiaD ? (
+        <>🎉 <span><strong>¡Hoy es San Juan!</strong> · precios del día · retirá tu pedido en el predio</span></>
+      ) : TIENDA_HABILITADA ? (
         <>🔥 <span><strong>Preventa abierta</strong> hasta el 5/06/2026 inclusive · descuentos en toda la tienda</span></>
       ) : (
         <>⏳ <span><strong>La preventa abre muy pronto</strong> · mirá el catálogo y volvé para comprar con descuento</span></>
@@ -84,12 +86,13 @@ function Toolbar({ active, onClick, counts, search, onSearch }) {
   );
 }
 
-function ProductCard({ p, qty, onAdd, onSub }) {
+function ProductCard({ p, qty, onAdd, onSub, esDiaD }) {
   const sin = Number(p.stock) === 0;
   const pv = Number(p.precio_preventa);
   const pn = Number(p.precio_normal);
-  const tieneDesc = pn > pv;              // preventa con descuento sobre precio normal
-  const soloPreventa = pn === 0 && pv > 0; // solo tiene precio de preventa cargado
+  // En día D cobramos precio normal: sin tachado ni etiqueta de preventa.
+  const tieneDesc = !esDiaD && pn > pv;              // preventa con descuento sobre precio normal
+  const soloPreventa = !esDiaD && pn === 0 && pv > 0; // solo tiene precio de preventa cargado
   const stockBajo = !sin && Number(p.stock) <= 5;
   return (
     <div className={`td-card ${sin ? 'agotado' : ''} ${qty > 0 ? 'has-qty' : ''}`}>
@@ -110,7 +113,7 @@ function ProductCard({ p, qty, onAdd, onSub }) {
         {p.descripcion && <p className="td-card-desc">{p.descripcion}</p>}
         <div className="td-card-bot">
           <div className="td-price-row">
-            <p className="td-card-precio">Gs. {fmtGs(p.precio_preventa)}</p>
+            <p className="td-card-precio">Gs. {fmtGs(p.precio_vigente)}</p>
             {tieneDesc && <span className="td-card-precio-old">Gs. {fmtGs(p.precio_normal)}</span>}
           </div>
           {sin ? null : qty === 0 ? (
@@ -161,7 +164,7 @@ function CartSidebar({ items, total, onAdd, onSub, onClear, onCheckout }) {
             <div className="td-cart-line-info">
               <div className="td-cart-line-name">{i.titulo}</div>
               <div className="td-cart-line-price">
-                <strong>Gs. {fmtGs(i.precio_preventa * i.cantidad)}</strong>
+                <strong>Gs. {fmtGs((Number(i.precio_vigente) || Number(i.precio_preventa)) * i.cantidad)}</strong>
                 <span style={{ color: '#aaa' }}> · {i.cantidad} u.</span>
               </div>
             </div>
@@ -328,6 +331,7 @@ function CheckoutModal({ total, items, onClose, onSuccess }) {
 
 export default function Tienda() {
   const [productos, setProductos] = useState([]);
+  const [esDiaD, setEsDiaD] = useState(false);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('TODOS');
   const [search, setSearch] = useState('');
@@ -351,8 +355,20 @@ export default function Tienda() {
   }, []);
 
   useEffect(() => {
-    getProductos()
-      .then(setProductos)
+    Promise.all([getProductos(), getConfig().catch(() => ({}))])
+      .then(([list, cfg]) => {
+        const d = !!cfg?.dia_d;
+        setEsDiaD(d);
+        // Fijamos el precio que rige hoy en cada producto: día D = normal (precio
+        // del día), si no = preventa. Espeja la lógica del backend (lista). El
+        // carrito y el total leen `precio_vigente`, así muestra == cobra.
+        setProductos(list.map(p => ({
+          ...p,
+          precio_vigente: d
+            ? (Number(p.precio_normal) || Number(p.precio_preventa))
+            : (Number(p.precio_preventa) || Number(p.precio_normal)),
+        })));
+      })
       .catch(() => toast.error('No se pudieron cargar los productos'))
       .finally(() => setLoading(false));
   }, []);
@@ -383,7 +399,7 @@ export default function Tienda() {
   return (
     <div className="td-app">
       <DesktopHeader />
-      <PromoStrip />
+      <PromoStrip esDiaD={esDiaD} />
       <main className="td-main">
         <Toolbar
           active={activeTab}
@@ -406,6 +422,7 @@ export default function Tienda() {
                     qty={qtyOf(p.idproducto)}
                     onAdd={() => agregar(p)}
                     onSub={() => quitar(p.idproducto)}
+                    esDiaD={esDiaD}
                   />
                 ))}
               </div>
