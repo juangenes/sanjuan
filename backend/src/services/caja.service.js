@@ -44,8 +44,12 @@ async function despacharTodo(hash, operador) {
   if (!pedido) throw new Error('Pedido no encontrado');
 
   const productos = await pedidoProductoModel.obtenerPorPedido(pedido.idpedido);
-  const items = productos.map(p => ({ idproducto: p.idproducto, cantidad: p.cantidad }));
-  if (!items.length) throw new Error('El pedido no tiene ítems');
+  // Excluimos los JUEGO: se dispensan como créditos en la tarjeta, no se retiran
+  // en el mostrador. Si el pedido es SOLO juegos, no hay comanda que disparar.
+  const items = productos
+    .filter(p => p.categoria !== 'JUEGO')
+    .map(p => ({ idproducto: p.idproducto, cantidad: p.cantidad }));
+  if (!items.length) return { numero: null, idot: null };
 
   const { idot, comandaId } = await expendioService.registrarEntrega(hash, items, operador);
   return { numero: comandaId, idot };

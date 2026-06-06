@@ -191,7 +191,9 @@ export default function Confirmacion() {
   const mostrarTicket = !esPreventa && ultimoRetiroNum != null;
 
   // AUTORETIRO: ítems que todavía no se mandaron a preparar y selección actual.
-  const pendientes = (pedido.items || []).filter(i => i.pendiente > 0);
+  // Los JUEGO no se retiran acá (se cargan como créditos en la tarjeta), así que
+  // no entran al autoretiro; igual siguen visibles en el resumen del pedido.
+  const pendientes = (pedido.items || []).filter(i => i.pendiente > 0 && i.categoria !== 'JUEGO');
   const hayPendientes = pendientes.length > 0;
   const totalPendiente = pendientes.reduce((a, it) => a + it.pendiente, 0);
   const totalSel = pendientes.reduce((a, it) => a + (prepCant[it.idproducto] || 0), 0);

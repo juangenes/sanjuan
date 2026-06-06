@@ -34,14 +34,19 @@ async function listarTodos() {
 
 async function listarPagados() {
   const [rows] = await db.query(
+    // Los JUEGO no cuentan para el saldo de retiro: se dispensan como créditos en
+    // la tarjeta, no se retiran en el mostrador. Excluyéndolos del conteo, un pedido
+    // solo de comida se marca "completo" al retirarla, y uno solo de juegos da 0/0
+    // (no aparece como pendiente de retiro en la caja).
     `SELECT p.idpedido, p.hash, p.fecha, p.cedula, p.familia, p.total,
-            COALESCE(SUM(pp.cantidad), 0) AS total_items,
-            COALESCE(SUM(ent.entregado), 0) AS total_entregado,
+            COALESCE(SUM(CASE WHEN pr.categoria <> 'JUEGO' THEN pp.cantidad ELSE 0 END), 0) AS total_items,
+            COALESCE(SUM(CASE WHEN pr.categoria <> 'JUEGO' THEN ent.entregado ELSE 0 END), 0) AS total_entregado,
             (SELECT ev.estacion FROM expendio_envios ev
               WHERE ev.idpedido = p.idpedido AND ev.estado = 'PENDIENTE'
               ORDER BY ev.creado_en DESC LIMIT 1) AS estacion_activa
      FROM pedidos p
      LEFT JOIN pedidos_productos pp ON pp.idpedido = p.idpedido
+     LEFT JOIN productos pr ON pr.idproducto = pp.idproducto
      LEFT JOIN (
        SELECT idpedido, idproducto, SUM(cantidad) AS entregado
        FROM pedidos_entregas
