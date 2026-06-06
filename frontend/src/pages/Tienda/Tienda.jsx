@@ -45,15 +45,11 @@ function DesktopHeader() {
 }
 
 function PromoStrip({ esDiaD }) {
+  // Ya no hay preventa: solo mostramos la franja el día del evento.
+  if (!esDiaD) return null;
   return (
     <div className="td-promo">
-      {esDiaD ? (
-        <>🎉 <span><strong>¡Hoy es San Juan!</strong> · precios del día · retirá tu pedido en el predio</span></>
-      ) : TIENDA_HABILITADA ? (
-        <>🔥 <span><strong>Preventa abierta</strong> hasta el 5/06/2026 inclusive · descuentos en toda la tienda</span></>
-      ) : (
-        <>⏳ <span><strong>La preventa abre muy pronto</strong> · mirá el catálogo y volvé para comprar con descuento</span></>
-      )}
+      🎉 <span><strong>¡Hoy es San Juan!</strong> · precios del día · retirá tu pedido en el predio</span>
     </div>
   );
 }
