@@ -5,6 +5,7 @@ const envioModel = require('../models/envioExpendio.model');
 const configService = require('./configuracion.service');
 const telToken = require('../utils/telToken');
 const { notificarDespacho, notificarRetiro } = require('../utils/rtsClient');
+const { CATEGORIAS_SIN_RETIRO } = require('../config/categorias');
 
 // Modelo unificado "fast food": no hay estaciones. Toda comanda va a una única
 // pantalla/impresora de RETIRO (scope sanjuan-retiro). "Disparar a retiro" es lo
@@ -17,7 +18,11 @@ async function obtenerPedidoParaExpendio(hash) {
   if (!pedido) return null;
   if (pedido.estado !== 'PAGADO') throw new Error('El pedido no está pagado');
 
-  const items = await pedidoProductoModel.obtenerPorPedido(pedido.idpedido);
+  // Las categorías SIN_RETIRO (juegos, figuritas) no se retiran en el mostrador:
+  // los juegos se dispensan como créditos en la tarjeta y las figuritas se entregan
+  // en mano en la caja. No las mostramos como ítems retirables.
+  const items = (await pedidoProductoModel.obtenerPorPedido(pedido.idpedido))
+    .filter(i => !CATEGORIAS_SIN_RETIRO.includes(i.categoria));
   const entregas = await entregaModel.obtenerEntregasPorPedido(pedido.idpedido);
 
   const entregasMap = {};
@@ -40,11 +45,24 @@ async function registrarEntrega(hash, items, operador) {
   if (!pedido) throw new Error('Pedido no encontrado');
   if (pedido.estado !== 'PAGADO') throw new Error('El pedido no está pagado');
 
+  // Guard central de TODOS los disparos a RETIRO (caja, autoretiro del celular y
+  // tótem): descartamos los ítems JUEGO. Los juegos no se retiran en el mostrador,
+  // se cargan como créditos en la tarjeta (panel de acreditación). Así un juego
+  // nunca termina en una comanda de cocina, venga del flujo que venga.
+  const productos = await pedidoProductoModel.obtenerPorPedido(pedido.idpedido);
+  const esJuego = new Set(
+    productos.filter(p => p.categoria === 'JUEGO').map(p => Number(p.idproducto))
+  );
+  const itemsRetiro = items.filter(i => !esJuego.has(Number(i.idproducto)));
+  if (!itemsRetiro.length) {
+    throw new Error('Este pedido no tiene ítems de retiro (los juegos se cargan en la tarjeta)');
+  }
+
   // Re-chequea el saldo y registra la entrega de forma atómica (transacción con
   // lock sobre el pedido): si dos terminales disparan el mismo pedido a la vez, la
   // segunda relee el saldo recién cuando la primera confirmó y rechaza si ya no
   // queda. Evita el sobre-retiro por carrera. También garantiza idempotencia.
-  const idot = await entregaModel.registrarConSaldo(pedido.idpedido, items, operador);
+  const idot = await entregaModel.registrarConSaldo(pedido.idpedido, itemsRetiro, operador);
 
   // Encola la comanda y avisa a la pantalla de retiro (en vivo). Si el RTS falla,
   // la comanda igual queda PENDIENTE en la base y la pantalla la levanta al refrescar.
