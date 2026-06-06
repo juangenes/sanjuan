@@ -1,10 +1,9 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { QRCodeCanvas, QRCodeSVG } from 'qrcode.react';
+import { QRCodeCanvas } from 'qrcode.react';
 import toast from 'react-hot-toast';
 import {
-  getProductos, tomarPedidoCaja, tomarPedidoCajaQr, getPedidosExpendio,
-  generarQrBancard, getEstadoBancard, revertirBancard,
+  getProductos, tomarPedidoCaja, getPedidosExpendio,
   getLecturasCaja, atenderLecturaCaja, despacharPedidoCaja, getConfig, getBolsaLink,
 } from '../../api';
 import { normNum, waLinkBolsa } from '../../utils/bolsa';
@@ -34,13 +33,9 @@ const METODOS = [
   { key: 'EFECTIVO', label: '💵 Efectivo' },
   { key: 'POS_DEBITO', label: '💳 POS Débito' },
   { key: 'POS_CREDITO', label: '💳 POS Crédito' },
-  { key: 'INFONET', label: '📱 QR Bancard' },
 ];
 
 const fmtGs = (n) => Number(n || 0).toLocaleString('es-PY');
-// Vida del QR de pago en pantalla: a los ~5 min sin acreditarse lo reversamos
-// en Bancard (recomendación de Bancard).
-const QR_VIDA_MS = 5 * 60 * 1000;
 // Precio del día: lista NORMAL (sin descuento de preventa). Cae al de preventa
 // solo si el producto no tiene precio normal cargado.
 const precioCaja = (p) => Number(p.precio_normal) || Number(p.precio_preventa) || 0;
@@ -60,7 +55,6 @@ export default function CajaPanel() {
   const [search, setSearch] = useState('');
   const [cobroOpen, setCobroOpen] = useState(false);
   const [exito, setExito] = useState(null); // { codigo, hash, idpedido, vuelto, metodo, nombre, total, recibido, lineas }
-  const [qrPago, setQrPago] = useState(null); // { hash, idpedido, nombre, total, lineas, data, error } — pago QR en curso
   const [imprimiendo, setImprimiendo] = useState(false);
   const [impreso, setImpreso] = useState(false);
   const [diaD, setDiaD] = useState(false); // DÍA D: walk-in dispara la comanda al cobrar
@@ -112,25 +106,6 @@ export default function CajaPanel() {
       subtotal: precioCaja(i) * i.cantidad,
     }));
 
-    // Pago con QR de Bancard: NO se cobra acá. Creamos el pedido PENDIENTE y
-    // pasamos a la pantalla de QR; el pago lo confirma el callback de Bancard y
-    // lo detectamos por polling. La comanda a RETIRO la dispara el callback.
-    if (metodo === 'INFONET') {
-      const pedido = await tomarPedidoCajaQr({ nombre, contacto, items: itemsPayload });
-      limpiar();
-      setCobroOpen(false);
-      setQrPago({
-        hash: pedido.hash,
-        idpedido: pedido.idpedido,
-        nombre: (nombre && nombre.trim()) || 'Mostrador',
-        total: pedido.total,
-        lineas,
-        data: null,
-        error: false,
-      });
-      return;
-    }
-
     const payload = {
       nombre,
       contacto,
@@ -178,68 +153,6 @@ export default function CajaPanel() {
     }
   }
 
-  // Pago con QR en curso: genera el QR de Bancard y poletea el estado hasta que
-  // el callback confirme el pago. Al confirmarse, dispara la comanda (retira todo)
-  // igual que en efectivo y muestra el #XX.
-  useEffect(() => {
-    if (!qrPago?.hash) return;
-    const { hash, idpedido, nombre, total, lineas } = qrPago;
-    let cancelado = false;
-    let timer;
-
-    async function alPagar() {
-      if (cancelado) return;
-      const numero = await despacharCajaSiDiaD(hash);
-      if (cancelado) return;
-      setExito({
-        codigo: hash.substring(0, 8).toUpperCase(),
-        numero,
-        hash, idpedido, vuelto: 0, metodo: 'INFONET',
-        nombre, total, recibido: 0, lineas,
-      });
-      setQrPago(null);
-      toast.success('¡Pago confirmado!');
-    }
-
-    generarQrBancard(hash)
-      .then(r => {
-        if (cancelado) return;
-        if (r.ya_pagado) { alPagar(); return; }
-        if (r.qr_data) setQrPago(q => (q && q.hash === hash ? { ...q, data: r.qr_data } : q));
-        else setQrPago(q => (q && q.hash === hash ? { ...q, error: true } : q));
-      })
-      .catch(() => { if (!cancelado) setQrPago(q => (q && q.hash === hash ? { ...q, error: true } : q)); });
-
-    async function poll() {
-      try {
-        const r = await getEstadoBancard(hash);
-        if (cancelado) return;
-        if (r.pagado) { alPagar(); return; }
-      } catch { /* reintentamos en el próximo ciclo */ }
-      if (!cancelado) timer = setTimeout(poll, 4000);
-    }
-    timer = setTimeout(poll, 4000);
-
-    // Vencimiento del QR: a los ~5 min sin pagarse, reversamos en Bancard y
-    // marcamos el QR como vencido (el cajero genera uno nuevo).
-    const vencer = setTimeout(() => {
-      if (cancelado) return;
-      cancelado = true;
-      clearTimeout(timer);
-      revertirBancard(hash).catch(() => {});
-      setQrPago(q => (q && q.hash === hash ? { ...q, vencido: true } : q));
-    }, QR_VIDA_MS);
-
-    return () => { cancelado = true; clearTimeout(timer); clearTimeout(vencer); };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [qrPago?.hash]);
-
-  // Cancela el pago QR pendiente: reversa el QR en Bancard y vuelve al catálogo.
-  function cancelarQr() {
-    if (qrPago?.hash) revertirBancard(qrPago.hash).catch(() => {});
-    setQrPago(null);
-  }
-
   // Impresión explícita del ticket desde la pantalla de éxito (USB / driver Windows).
   async function imprimirTicket() {
     if (imprimiendo) return;
@@ -262,46 +175,6 @@ export default function CajaPanel() {
     } finally {
       setImprimiendo(false);
     }
-  }
-
-  if (qrPago) {
-    return (
-      <div className={styles.pagina}>
-        <div className={styles.exitoWrap}>
-          <div className={styles.exitoCard}>
-            <h2>📱 Pago con QR</h2>
-            <p className={styles.exitoLabel}>Total a pagar</p>
-            <div className={styles.exitoCodigo}>Gs. {fmtGs(qrPago.total)}</div>
-            {qrPago.vencido ? (
-              <p style={{ marginTop: '1rem', fontWeight: 700, color: '#856404' }}>
-                ⏳ El QR venció por tiempo y se canceló. Tocá «Cerrar» y generá uno nuevo.
-              </p>
-            ) : qrPago.data ? (
-              <>
-                <div className={styles.exitoQr} style={{ marginTop: '1rem' }}>
-                  <QRCodeSVG value={qrPago.data} size={240} />
-                  <span>El comensal escanea con Pago Móvil o la app de su banco.</span>
-                </div>
-                <p style={{ marginTop: '1rem', fontWeight: 700, color: '#856404' }}>
-                  ⏳ Esperando confirmación del pago…
-                </p>
-              </>
-            ) : qrPago.error ? (
-              <p style={{ marginTop: '1rem', fontWeight: 700, color: '#b00020' }}>
-                ⚠️ No se pudo generar el QR. Cancelá e intentá de nuevo.
-              </p>
-            ) : (
-              <p style={{ marginTop: '1rem' }}>Generando QR de pago…</p>
-            )}
-            <div className={styles.exitoBtns} style={{ marginTop: '1.5rem' }}>
-              <button className={styles.btnNuevo} onClick={cancelarQr}>
-                {qrPago.vencido ? 'Cerrar' : '✕ Cancelar'}
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
   }
 
   if (exito) {
@@ -749,11 +622,7 @@ function CobroModal({ total, onClose, onConfirm }) {
         </div>
         <div className="td-modal-foot">
           <button className="td-cta" disabled={!ok || loading} style={{ opacity: ok && !loading ? 1 : .55 }} onClick={submit}>
-            {loading
-              ? 'Procesando...'
-              : metodo === 'INFONET'
-                ? `📱 Generar QR · Gs. ${fmtGs(total)}`
-                : `✅ Cobrar Gs. ${fmtGs(total)}`}
+            {loading ? 'Procesando...' : `✅ Cobrar Gs. ${fmtGs(total)}`}
           </button>
         </div>
       </div>
