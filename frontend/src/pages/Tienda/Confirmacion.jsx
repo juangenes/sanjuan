@@ -161,7 +161,7 @@ export default function Confirmacion() {
   const waHref = `https://wa.me/${WHATSAPP_ORG}?text=${encodeURIComponent(waMsg)}`;
 
   async function copiarAlias() {
-    const alias = '981352935';
+    const alias = '981120287';
     try {
       await navigator.clipboard.writeText(alias);
       toast.success('Alias copiado');
@@ -571,7 +571,7 @@ export default function Confirmacion() {
                 ALIAS
               </span>
               <strong style={{ fontSize: '1.6rem', fontWeight: 900, letterSpacing: '.02em', color: '#1a1a1a' }}>
-                +595981352935
+                +595981120287
               </strong>
               <span style={{ fontSize: '.8rem', fontWeight: 700, color: '#8a6d00' }}>
                 📋 Tocá para copiar

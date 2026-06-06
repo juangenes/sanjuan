@@ -109,7 +109,7 @@ export function construirComprobante(pedido, qrCanvas) {
     ctx.fillStyle = '#e8f8ee';
     const lines = [
       'Transferí el monto de tu pedido al',
-      'Alias 0981352935 y luego enviá el',
+      'Alias 0981120287 y luego enviá el',
       'comprobante por WhatsApp al:',
     ];
     const boxH = 28 + lines.length * 20 + 30 + 16;
