@@ -71,6 +71,22 @@ router.post('/cargar', authAdmin, async (req, res) => {
   }
 });
 
+// Admin — reporte de créditos consumidos por puesto (ranking por ingresos).
+// Va antes de /:codigo/movimientos: '/admin/...' no es capturado por esa ruta
+// (segundo segmento distinto a 'movimientos'), pero lo dejamos explícito acá.
+router.get('/admin/consumo-puesto', authAdmin, async (req, res) => {
+  try {
+    const puestos = await tarjetaModel.consumoPorPuesto();
+    const totales = puestos.reduce(
+      (a, p) => ({ creditos: a.creditos + Number(p.creditos), valor: a.valor + Number(p.valor) }),
+      { creditos: 0, valor: 0 }
+    );
+    res.json({ success: true, puestos, totales });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // Admin — historial de movimientos
 router.get('/:codigo/movimientos', authAdmin, async (req, res) => {
   try {

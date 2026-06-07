@@ -180,6 +180,23 @@ async function pedidoTieneJuego(idpedido) {
   return !!row;
 }
 
+// Reporte admin — créditos consumidos por puesto (ranking por ingresos). Cada
+// fila de tarjeta_debito es UN crédito gastado en un puesto; agrupamos contando
+// créditos y sumando su valor en guaraníes. LEFT JOIN desde puestos para que un
+// stand sin consumo igual aparezca en cero (foto completa de todos los puestos).
+async function consumoPorPuesto() {
+  const [rows] = await db.query(`
+    SELECT pu.id AS idpuesto, pu.codigo, pu.nombre,
+           COUNT(td.id)                        AS creditos,
+           COALESCE(SUM(td.valor_unitario), 0) AS valor
+    FROM puestos pu
+    LEFT JOIN tarjeta_debito td ON td.idpuesto = pu.id
+    GROUP BY pu.id, pu.codigo, pu.nombre
+    ORDER BY valor DESC, creditos DESC, pu.nombre ASC
+  `);
+  return rows;
+}
+
 async function movimientos(idtarjeta) {
   const [rows] = await db.query(
     `SELECT 'CARGA' AS tipo, tc.cantidad, tc.valor_unitario, tc.fecha, tc.operador, NULL AS puesto
@@ -195,4 +212,4 @@ async function movimientos(idtarjeta) {
   return rows;
 }
 
-module.exports = { buscarPorCodigo, cargar, saldo, consumir, movimientos, pedidosConCreditosPendientes, dispensar, pedidoTieneJuego };
+module.exports = { buscarPorCodigo, cargar, saldo, consumir, movimientos, consumoPorPuesto, pedidosConCreditosPendientes, dispensar, pedidoTieneJuego };
