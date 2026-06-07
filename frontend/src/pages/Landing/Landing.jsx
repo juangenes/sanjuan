@@ -27,9 +27,9 @@ function LandingHero() {
         </span>
         <h1>¡Gracias!</h1>
         <p className="ld-hero-sub ld-hero-sub-center">
-          La fiesta terminó, pero nos quedan el olor a leña, las risas de los
-          chicos y un montón de momentos lindos. Gracias a cada familia que
-          participó y apoyó esta iniciativa: la hicieron posible.
+          La fiesta terminó, pero nos quedan las comidas típicas, los juegos,
+          las risas de los chicos y los encuentros entre familias. Gracias a
+          cada uno que participó y apoyó esta iniciativa: la hicieron posible.
         </p>
         <div className="ld-hero-actions ld-hero-actions-center">
           <Link to={FOTOS_PATH} className="ld-btn-primary">
