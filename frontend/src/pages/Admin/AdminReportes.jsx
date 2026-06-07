@@ -13,7 +13,7 @@ const REPORTES = [
   },
   { icono: '🍔', titulo: 'Ventas por producto', descripcion: 'Unidades, ingresos y entregas por producto.', to: '/admin/ventas-producto' },
   { icono: '📊', titulo: 'Resumen general', descripcion: 'Pedidos, montos y estado de cobro del evento.', to: '/admin/dashboard' },
-  { icono: '💳', titulo: 'Créditos cargados vs consumidos', descripcion: 'Cuadre de acreditación contra consumo.', proximamente: true },
+  { to: '/admin/reportes/cuadre-acreditacion', icono: '💳', titulo: 'Cuadre de acreditación', descripcion: 'Créditos cargados vs consumidos y saldo no consumido (en Gs).' },
   { icono: '💵', titulo: 'Cuadre de caja', descripcion: 'Cobros por método de pago y por cajero.', proximamente: true },
 ];
 

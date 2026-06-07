@@ -220,6 +220,52 @@ async function consumoDetallePuesto(idpuesto) {
   return { puesto, consumos, totales };
 }
 
+// Reporte admin — cuadre de acreditación: créditos cargados vs consumidos y el
+// saldo NO consumido, valuado por el valor_unitario de cada carga (hay precios
+// distintos: preventa vs normal). El saldo por carga = cantidad − consumos que
+// la referencian (FIFO ya dejó cada consumo atado a su carga via idtarjeta_credito).
+async function cuadreAcreditacion() {
+  // Subquery común: consumos por carga.
+  const consumosPorCarga = `
+    LEFT JOIN (SELECT idtarjeta_credito, COUNT(*) n FROM tarjeta_debito GROUP BY idtarjeta_credito) c
+      ON c.idtarjeta_credito = tc.id`;
+
+  const [[totales]] = await db.query(`
+    SELECT
+      SUM(tc.cantidad)                                            AS cargados,
+      SUM(COALESCE(c.n,0))                                        AS consumidos,
+      SUM(tc.cantidad - COALESCE(c.n,0))                          AS no_consumidos,
+      SUM(tc.cantidad * tc.valor_unitario)                       AS gs_cargado,
+      SUM(COALESCE(c.n,0) * tc.valor_unitario)                   AS gs_consumido,
+      SUM((tc.cantidad - COALESCE(c.n,0)) * tc.valor_unitario)   AS gs_no_consumido
+    FROM tarjeta_credito tc ${consumosPorCarga}
+  `);
+
+  const [porValor] = await db.query(`
+    SELECT tc.valor_unitario,
+      SUM(tc.cantidad)                                          AS cargados,
+      SUM(COALESCE(c.n,0))                                      AS consumidos,
+      SUM(tc.cantidad - COALESCE(c.n,0))                        AS no_consumidos,
+      SUM((tc.cantidad - COALESCE(c.n,0)) * tc.valor_unitario) AS gs_no_consumido
+    FROM tarjeta_credito tc ${consumosPorCarga}
+    GROUP BY tc.valor_unitario
+    ORDER BY tc.valor_unitario
+  `);
+
+  const [tarjetas] = await db.query(`
+    SELECT t.codigo,
+      SUM(tc.cantidad - COALESCE(c.n,0))                        AS saldo,
+      SUM((tc.cantidad - COALESCE(c.n,0)) * tc.valor_unitario) AS saldo_gs
+    FROM tarjeta_credito tc
+    JOIN tarjetas t ON t.id = tc.idtarjeta ${consumosPorCarga}
+    GROUP BY t.id, t.codigo
+    HAVING saldo > 0
+    ORDER BY saldo_gs DESC, saldo DESC
+  `);
+
+  return { totales, porValor, tarjetas };
+}
+
 async function movimientos(idtarjeta) {
   const [rows] = await db.query(
     `SELECT 'CARGA' AS tipo, tc.cantidad, tc.valor_unitario, tc.fecha, tc.operador, NULL AS puesto
@@ -235,4 +281,4 @@ async function movimientos(idtarjeta) {
   return rows;
 }
 
-module.exports = { buscarPorCodigo, cargar, saldo, consumir, movimientos, consumoPorPuesto, consumoDetallePuesto, pedidosConCreditosPendientes, dispensar, pedidoTieneJuego };
+module.exports = { buscarPorCodigo, cargar, saldo, consumir, movimientos, consumoPorPuesto, consumoDetallePuesto, cuadreAcreditacion, pedidosConCreditosPendientes, dispensar, pedidoTieneJuego };

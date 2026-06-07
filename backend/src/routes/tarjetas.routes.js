@@ -98,6 +98,16 @@ router.get('/admin/consumo-puesto/:idpuesto', authAdmin, async (req, res) => {
   }
 });
 
+// Admin — cuadre de acreditación (cargado vs consumido vs saldo no consumido).
+router.get('/admin/cuadre-acreditacion', authAdmin, async (req, res) => {
+  try {
+    const data = await tarjetaModel.cuadreAcreditacion();
+    res.json({ success: true, ...data });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // Admin — historial de movimientos
 router.get('/:codigo/movimientos', authAdmin, async (req, res) => {
   try {
