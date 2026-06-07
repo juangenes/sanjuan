@@ -57,10 +57,11 @@ export function statsGrado(consumos) {
   };
 }
 
-// Carga /logo.png como dataURL + dimensiones (para conservar el aspecto).
+// Carga el logo del San Juan como dataURL + dimensiones (para conservar el
+// aspecto) + formato (PNG/JPEG, para jspdf y exceljs).
 async function cargarLogo() {
   try {
-    const res = await fetch('/logo.png');
+    const res = await fetch('/img/logo-pdf.png');
     const blob = await res.blob();
     const dataUrl = await new Promise((resolve, reject) => {
       const fr = new FileReader();
@@ -74,7 +75,8 @@ async function cargarLogo() {
       img.onerror = () => resolve({ w: 1, h: 1 });
       img.src = dataUrl;
     });
-    return { dataUrl, ...dims };
+    const extension = (blob.type || '').includes('png') ? 'png' : 'jpeg';
+    return { dataUrl, ...dims, format: extension === 'png' ? 'PNG' : 'JPEG', extension };
   } catch {
     return null;
   }
@@ -111,7 +113,7 @@ export async function generarPdfGrado({ puesto, consumos }) {
   // ---------- Página 1: Carta ----------
   let y = M + 10;
   const ld = logoDims(120);
-  if (ld) { doc.addImage(logo.dataUrl, 'PNG', (W - ld.w) / 2, y, ld.w, ld.h); y += ld.h + 24; }
+  if (ld) { doc.addImage(logo.dataUrl, logo.format, (W - ld.w) / 2, y, ld.w, ld.h); y += ld.h + 24; }
   else y += 10;
 
   doc.setTextColor(...NAVY);
@@ -133,9 +135,9 @@ export async function generarPdfGrado({ puesto, consumos }) {
   doc.setFont('helvetica', 'normal');
 
   const parrafos = [
-    `Ayer vivimos una noche inolvidable. Queremos agradecerles de corazón por haber sido parte del San Juan, y muy especialmente por el juego "${juego}", que estuvo a cargo de las familias del ${grado}.`,
+    `Ayer vivimos una jornada inolvidable. Queremos agradecerles de corazón por haber sido parte del San Juan, y muy especialmente por el juego "${juego}", que estuvo a cargo de las familias del ${grado}.`,
     'Nada de esto hubiera sido posible sin su esfuerzo, su tiempo y su cariño. Cada familia que armó, atendió y acompañó el puesto hizo que la fiesta saliera adelante y fuera el éxito que fue.',
-    'Como pequeño reconocimiento, preparamos este reporte con los números de la participación de tu grado durante la noche. En las páginas siguientes vas a encontrar las estadísticas y el detalle de la actividad.',
+    'Como pequeño reconocimiento, preparamos este reporte con los números de la participación de tu grado durante la jornada. En las páginas siguientes vas a encontrar las estadísticas y el detalle de la actividad.',
     '¡Gracias por tanto! Esta fiesta es de todos, y la hicieron posible ustedes.',
   ];
   doc.setFontSize(11.5);
@@ -232,7 +234,7 @@ function drawHeader(doc, W, M, logo, titulo, subtitulo) {
   doc.rect(0, 0, W, 50, 'F');
   if (logo && logo.w) {
     const h = 30; const w = (h * logo.w) / logo.h;
-    try { doc.addImage(logo.dataUrl, 'PNG', M, 10, w, h); } catch { /* ignore */ }
+    try { doc.addImage(logo.dataUrl, logo.format, M, 10, w, h); } catch { /* ignore */ }
   }
   doc.setTextColor(255, 255, 255);
   doc.setFont('helvetica', 'bold');
@@ -293,7 +295,7 @@ export async function generarXlsxGrado({ puesto, consumos }) {
 
   if (logo?.dataUrl) {
     try {
-      const imgId = wb.addImage({ base64: logo.dataUrl, extension: 'png' });
+      const imgId = wb.addImage({ base64: logo.dataUrl, extension: logo.extension });
       ws.addImage(imgId, { tl: { col: 0, row: 0 }, ext: { width: 150, height: (150 * logo.h) / logo.w } });
     } catch { /* logo opcional */ }
   }
@@ -309,7 +311,7 @@ export async function generarXlsxGrado({ puesto, consumos }) {
   const blurb = ws.getCell('A6');
   blurb.value =
     `¡Gracias, familias del ${grado}! Sin su esfuerzo en el juego "${juego}" esta fiesta no hubiera sido posible. ` +
-    'Acá les compartimos los números de la participación de su grado durante la noche.';
+    'Acá les compartimos los números de la participación de su grado durante la jornada.';
   blurb.alignment = { wrapText: true, vertical: 'top' };
   blurb.font = { italic: true, color: { argb: 'FF444444' } };
 
