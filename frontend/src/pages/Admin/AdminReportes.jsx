@@ -11,6 +11,12 @@ const REPORTES = [
     titulo: 'Consumo por puesto',
     descripcion: 'Créditos gastados y valor en guaraníes en cada stand, ranking por ingresos.',
   },
+  {
+    to: '/admin/reportes/grados',
+    icono: '🎓',
+    titulo: 'Reporte por grado (padres)',
+    descripcion: 'PDF de agradecimiento + estadísticas y gráfico, y Excel con formato, por grado.',
+  },
   { icono: '🍔', titulo: 'Ventas por producto', descripcion: 'Unidades, ingresos y entregas por producto.', to: '/admin/ventas-producto' },
   { icono: '📊', titulo: 'Resumen general', descripcion: 'Pedidos, montos y estado de cobro del evento.', to: '/admin/dashboard' },
   { to: '/admin/reportes/cuadre-acreditacion', icono: '💳', titulo: 'Cuadre de acreditación', descripcion: 'Créditos cargados vs consumidos y saldo no consumido (en Gs).' },

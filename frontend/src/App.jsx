@@ -18,6 +18,7 @@ import AdminReportes from './pages/Admin/AdminReportes';
 import AdminConsumoPuesto from './pages/Admin/AdminConsumoPuesto';
 import AdminConsumoPuestoDetalle from './pages/Admin/AdminConsumoPuestoDetalle';
 import AdminCuadreAcreditacion from './pages/Admin/AdminCuadreAcreditacion';
+import AdminReportesGrado from './pages/Admin/AdminReportesGrado';
 import AdminPuestos from './pages/Admin/AdminPuestos';
 import AdminConfiguracion from './pages/Admin/AdminConfiguracion';
 import ExpendioLogin from './pages/Expendio/ExpendioLogin';
@@ -91,6 +92,7 @@ export default function App() {
           <Route path="/admin/reportes/consumo-puesto" element={<AdminConsumoPuesto />} />
           <Route path="/admin/reportes/consumo-puesto/:idpuesto" element={<AdminConsumoPuestoDetalle />} />
           <Route path="/admin/reportes/cuadre-acreditacion" element={<AdminCuadreAcreditacion />} />
+          <Route path="/admin/reportes/grados" element={<AdminReportesGrado />} />
 
           {/* Redirects desde rutas viejas (Organización / juegos) */}
           <Route path="/organizacion/expendio/*" element={<Navigate to="/retiro" replace />} />
