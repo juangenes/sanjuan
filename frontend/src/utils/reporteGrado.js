@@ -174,7 +174,6 @@ export async function generarPdfGrado({ puesto, consumos }) {
     { label: 'Juegos jugados', valor: st.total.toLocaleString('es-PY') },
     { label: 'Juegos por minuto', valor: st.porMinuto.toFixed(1) },
     { label: 'Hora pico', valor: st.peakHora !== null ? fmtHora(st.peakHora) : '—', sub: st.peakHora !== null ? `${st.peakVal} juegos` : '' },
-    { label: 'Créditos (Gs.)', valor: `${n7.toLocaleString('es-PY')} a 7.000`, sub: `${n8.toLocaleString('es-PY')} a 8.000` },
     { label: 'Actividad', valor: st.primera ? `${dtFmt.format(new Date(st.primera)).slice(-8)}–${dtFmt.format(new Date(st.ultima)).slice(-8)}` : '—' },
   ];
   const cols = 3;
@@ -196,6 +195,30 @@ export async function generarPdfGrado({ puesto, consumos }) {
     if (k.sub) { doc.setFont('helvetica', 'normal'); doc.setFontSize(9); doc.text(k.sub, cx + 12, cy + 60); }
   });
   y += Math.ceil(kpis.length / cols) * (ch + gap) + 24;
+
+  // Resumen de créditos por valor (7.000 / 8.000): una tablita encaja mejor que
+  // un KPI, que solo sabe mostrar un número.
+  doc.setTextColor(...NAVY);
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(13);
+  doc.text('Créditos por valor', M, y);
+  y += 10;
+  autoTable(doc, {
+    startY: y,
+    head: [['Valor del crédito', 'Jugadas', 'Subtotal']],
+    body: [
+      [fmtGs(7000), n7.toLocaleString('es-PY'), fmtGs(7000 * n7)],
+      [fmtGs(8000), n8.toLocaleString('es-PY'), fmtGs(8000 * n8)],
+    ],
+    foot: [['TOTAL', (n7 + n8).toLocaleString('es-PY'), fmtGs(7000 * n7 + 8000 * n8)]],
+    styles: { fontSize: 10, cellPadding: 6 },
+    headStyles: { fillColor: NAVY, textColor: 255, fontStyle: 'bold' },
+    footStyles: { fillColor: [240, 244, 248], textColor: NAVY, fontStyle: 'bold' },
+    columnStyles: { 1: { halign: 'right' }, 2: { halign: 'right' } },
+    margin: { left: M, right: M },
+    tableWidth: (W - M * 2) * 0.62,
+  });
+  y = doc.lastAutoTable.finalY + 28;
 
   // Gráfico de juegos por hora
   doc.setTextColor(...NAVY);
@@ -278,6 +301,9 @@ export async function generarXlsxGrado({ puesto, consumos }) {
   const st = statsGrado(consumos);
   const { grado, juego } = partesGrado(puesto.nombre);
 
+  const n7 = consumos.filter((c) => Number(c.valor_unitario) === 7000).length;
+  const n8 = consumos.filter((c) => Number(c.valor_unitario) === 8000).length;
+
   const wb = new ExcelJS.Workbook();
   wb.creator = 'San Juan dice que sí 2026';
 
@@ -348,6 +374,49 @@ export async function generarXlsxGrado({ puesto, consumos }) {
     ws.getRow(r).height = 22;
     r += 1;
   }
+
+  // Créditos por valor (7.000 / 8.000): tablita con cantidad y subtotal.
+  r += 1;
+  ws.getCell(`A${r}`).value = 'Créditos por valor';
+  ws.getCell(`A${r}`).font = { bold: true, size: 13, color: { argb: 'FF0B2E55' } };
+  r += 1;
+  const credHead = ws.getRow(r);
+  ['Valor del crédito', 'Jugadas', 'Subtotal'].forEach((t, i) => {
+    const c = credHead.getCell(i + 1);
+    c.value = t;
+    c.fill = navyFill;
+    c.font = headFont;
+    c.alignment = { horizontal: i === 0 ? 'left' : 'right', vertical: 'middle' };
+    c.border = thinBorder;
+  });
+  credHead.height = 22;
+  r += 1;
+  const credRows = [
+    [7000, n7],
+    [8000, n8],
+    ['TOTAL', n7 + n8],
+  ];
+  credRows.forEach(([valor, cant], i) => {
+    const esTotal = valor === 'TOTAL';
+    const row = ws.getRow(r);
+    const cA = row.getCell(1);
+    const cB = row.getCell(2);
+    const cC = row.getCell(3);
+    cA.value = esTotal ? 'TOTAL' : valor;
+    if (!esTotal) cA.numFmt = GS_FMT;
+    cB.value = cant;
+    cB.numFmt = '#,##0';
+    cC.value = esTotal ? 7000 * n7 + 8000 * n8 : valor * cant;
+    cC.numFmt = GS_FMT;
+    [cA, cB, cC].forEach((c, j) => {
+      c.alignment = { horizontal: j === 0 ? 'left' : 'right', vertical: 'middle' };
+      c.border = thinBorder;
+      c.font = { bold: esTotal };
+      if (esTotal) c.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF0F4F8' } };
+    });
+    row.height = 20;
+    r += 1;
+  });
 
   // ===== Hoja 2: Por hora =====
   const wh = wb.addWorksheet('Por hora');
