@@ -1,25 +1,11 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { getConsumoPorPuesto } from '../../api';
+import { descargarCSV } from '../../utils/csv';
 import styles from './Admin.module.css';
 
 const fmtGs = (n) => `Gs. ${Number(n || 0).toLocaleString('es-PY')}`;
 const fmtNum = (n) => Number(n || 0).toLocaleString('es-PY');
-
-// Genera y dispara la descarga de un CSV con BOM (para que Excel respete los
-// acentos) a partir de una matriz de filas. Cada celda se escapa entre comillas.
-function descargarCSV(nombre, filas) {
-  const csv = filas
-    .map((fila) => fila.map((c) => `"${String(c ?? '').replace(/"/g, '""')}"`).join(','))
-    .join('\r\n');
-  const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = nombre;
-  a.click();
-  URL.revokeObjectURL(url);
-}
 
 export default function AdminConsumoPuesto() {
   const navigate = useNavigate();
@@ -133,7 +119,7 @@ export default function AdminConsumoPuesto() {
                     <td>
                       <div style={{ fontWeight: 600 }}>
                         <span style={{ color: '#999', fontWeight: 400, marginRight: 6 }}>{p.codigo}</span>
-                        {p.nombre}
+                        <Link to={`/admin/reportes/consumo-puesto/${p.idpuesto}`} style={{ color: '#0B2E55' }}>{p.nombre}</Link>
                       </div>
                       <div style={{ height: 4, background: '#eee', borderRadius: 2, marginTop: 4, overflow: 'hidden' }}>
                         <div style={{ width: `${barra}%`, height: '100%', background: '#0B2E55' }} />

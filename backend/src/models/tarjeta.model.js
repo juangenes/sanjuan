@@ -197,6 +197,29 @@ async function consumoPorPuesto() {
   return rows;
 }
 
+// Reporte admin — detalle de consumos de UN puesto (cada crédito gastado),
+// del más reciente al más viejo. Trae el código de tarjeta que lo consumió.
+// `fecha` se devuelve como instante UTC (mysql2 timezone:'Z'); el front la
+// muestra en hora de Asunción.
+async function consumoDetallePuesto(idpuesto) {
+  const [[puesto]] = await db.query(
+    'SELECT id AS idpuesto, codigo, nombre FROM puestos WHERE id = ?', [idpuesto]
+  );
+  if (!puesto) return null;
+  const [consumos] = await db.query(`
+    SELECT td.id, td.fecha, td.valor_unitario, t.codigo AS tarjeta
+    FROM tarjeta_debito td
+    JOIN tarjetas t ON t.id = td.idtarjeta
+    WHERE td.idpuesto = ?
+    ORDER BY td.fecha DESC, td.id DESC
+  `, [idpuesto]);
+  const totales = consumos.reduce(
+    (a, c) => ({ creditos: a.creditos + 1, valor: a.valor + Number(c.valor_unitario) }),
+    { creditos: 0, valor: 0 }
+  );
+  return { puesto, consumos, totales };
+}
+
 async function movimientos(idtarjeta) {
   const [rows] = await db.query(
     `SELECT 'CARGA' AS tipo, tc.cantidad, tc.valor_unitario, tc.fecha, tc.operador, NULL AS puesto
@@ -212,4 +235,4 @@ async function movimientos(idtarjeta) {
   return rows;
 }
 
-module.exports = { buscarPorCodigo, cargar, saldo, consumir, movimientos, consumoPorPuesto, pedidosConCreditosPendientes, dispensar, pedidoTieneJuego };
+module.exports = { buscarPorCodigo, cargar, saldo, consumir, movimientos, consumoPorPuesto, consumoDetallePuesto, pedidosConCreditosPendientes, dispensar, pedidoTieneJuego };

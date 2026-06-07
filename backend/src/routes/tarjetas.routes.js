@@ -87,6 +87,17 @@ router.get('/admin/consumo-puesto', authAdmin, async (req, res) => {
   }
 });
 
+// Admin — detalle de consumos de un puesto (cada crédito, más reciente primero).
+router.get('/admin/consumo-puesto/:idpuesto', authAdmin, async (req, res) => {
+  try {
+    const data = await tarjetaModel.consumoDetallePuesto(req.params.idpuesto);
+    if (!data) return res.status(404).json({ error: 'Puesto no encontrado' });
+    res.json({ success: true, ...data });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // Admin — historial de movimientos
 router.get('/:codigo/movimientos', authAdmin, async (req, res) => {
   try {

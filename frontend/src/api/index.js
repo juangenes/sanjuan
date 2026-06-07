@@ -37,6 +37,9 @@ export const getProductosAdmin = () => api.get('/productos/admin').then(r => r.d
 // Reportes (admin) — créditos consumidos por puesto (ranking por ingresos).
 export const getConsumoPorPuesto = () =>
   api.get('/tarjetas/admin/consumo-puesto').then(r => r.data);
+// Reportes (admin) — detalle de consumos de un puesto (cada crédito, desc por fecha).
+export const getConsumoDetallePuesto = (idpuesto) =>
+  api.get(`/tarjetas/admin/consumo-puesto/${idpuesto}`).then(r => r.data);
 export const crearProducto = (datos) => api.post('/productos', datos).then(r => r.data);
 export const actualizarProducto = (id, datos) => api.put(`/productos/${id}`, datos).then(r => r.data);
 export const eliminarProducto = (id) => api.delete(`/productos/${id}`).then(r => r.data);
