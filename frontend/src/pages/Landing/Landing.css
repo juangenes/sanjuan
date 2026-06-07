@@ -211,6 +211,32 @@
 .ld-hero-badge .num{font-size:1.4rem;line-height:1}
 .ld-hero-badge .lbl{font-size:.55rem;letter-spacing:.1em;text-transform:uppercase;margin-top:.2rem;opacity:.8}
 
+/* HERO — variante GRACIAS (centrado, sin póster) */
+.ld-hero-gracias{padding:6rem 2.4rem 6.5rem;text-align:center}
+.ld-hero-inner-gracias{
+  display:block;max-width:760px;
+}
+.ld-hero-gracias h1{
+  font-size:6.4rem;
+}
+.ld-hero-sub-center{margin-left:auto;margin-right:auto;max-width:600px}
+.ld-hero-actions-center{justify-content:center}
+
+/* CARTA — mensaje de agradecimiento */
+.ld-carta{background:var(--ld-cream)}
+.ld-carta-inner{max-width:760px;margin:0 auto;text-align:center}
+.ld-carta .ld-lead{margin-inline:auto;margin-bottom:1.4rem;max-width:680px}
+.ld-carta-firma{
+  margin:2.4rem 0 0;
+  font-family:'Caveat Brush','Bebas Neue',sans-serif;
+  color:var(--ld-azul);font-size:1.9rem;line-height:1.1;letter-spacing:.5px;
+}
+.ld-carta-firma span{
+  display:block;margin-top:.3rem;
+  font-family:'Inter','Segoe UI',system-ui,sans-serif;
+  font-size:.85rem;font-weight:600;letter-spacing:.04em;color:var(--ld-muted);
+}
+
 /* SECTION SHARED */
 .ld-section{padding:5rem 2.4rem;position:relative}
 .ld-section-inner{max-width:1100px;margin:0 auto}
@@ -397,6 +423,32 @@
 }
 .ld-final p{font-size:1.05rem;color:rgba(255,255,255,.85);line-height:1.6;margin:0 0 2rem}
 .ld-final .ld-btn-primary{font-size:1.1rem;padding:1.1rem 1.9rem}
+
+/* FOTO GRUPAL — cierre */
+.ld-grupal{
+  background:var(--ld-cream);
+  padding:0 0 4rem;
+}
+.ld-grupal-inner{max-width:900px;margin:0 auto;padding:0 1.2rem}
+.ld-grupal-foto{
+  border-radius:18px;overflow:hidden;
+  box-shadow:0 24px 50px -20px rgba(11,46,85,.45);
+  border:6px solid #fff;
+}
+.ld-grupal-foto img{display:block;width:100%;height:auto}
+.ld-grupal-texto{text-align:center;margin-top:2rem}
+.ld-grupal-texto h2{
+  margin:0;
+  font-family:'Caveat Brush','Bebas Neue',sans-serif;font-weight:400;
+  color:var(--ld-rojo);font-size:3.4rem;line-height:1;letter-spacing:.5px;
+}
+.ld-grupal-texto p{
+  margin:.6rem 0 0;
+  font-size:.95rem;font-weight:700;letter-spacing:.04em;color:var(--ld-azul);
+}
+@media (max-width:520px){
+  .ld-grupal-texto h2{font-size:2.6rem}
+}
 
 /* FOOTER */
 .ld-footer{

@@ -99,6 +99,9 @@ export async function generarPdfGrado({ puesto, consumos }) {
   const st = statsGrado(consumos);
   const { grado, juego } = partesGrado(puesto.nombre);
 
+  const n7 = consumos.filter((c) => Number(c.valor_unitario) === 7000).length;
+  const n8 = consumos.filter((c) => Number(c.valor_unitario) === 8000).length;
+
   const doc = new jsPDF({ unit: 'pt', format: 'a4' });
   const W = doc.internal.pageSize.getWidth();
   const H = doc.internal.pageSize.getHeight();
@@ -171,7 +174,7 @@ export async function generarPdfGrado({ puesto, consumos }) {
     { label: 'Juegos jugados', valor: st.total.toLocaleString('es-PY') },
     { label: 'Juegos por minuto', valor: st.porMinuto.toFixed(1) },
     { label: 'Hora pico', valor: st.peakHora !== null ? fmtHora(st.peakHora) : '—', sub: st.peakHora !== null ? `${st.peakVal} juegos` : '' },
-    { label: 'Valor por juego', valor: fmtGs(st.ticketProm) },
+    { label: 'Créditos (Gs.)', valor: `${n7.toLocaleString('es-PY')} a 7.000`, sub: `${n8.toLocaleString('es-PY')} a 8.000` },
     { label: 'Actividad', valor: st.primera ? `${dtFmt.format(new Date(st.primera)).slice(-8)}–${dtFmt.format(new Date(st.ultima)).slice(-8)}` : '—' },
   ];
   const cols = 3;
