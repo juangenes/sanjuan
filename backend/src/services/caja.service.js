@@ -23,10 +23,12 @@ async function tomarPedido({ nombre, cedula, contacto, items, metodo, recibido }
 
   // crearPedido valida stock, calcula el total con precio normal, cobra y deja
   // el pedido PAGADO de forma transaccional. Devuelve { idpedido, hash, total, vuelto }.
-  // NO disparamos la comanda acá: tras confirmar el cobro, la pantalla de caja le
-  // pregunta al cliente "¿retirás todo ahora o por partes?". Si elige "todo ahora"
-  // llama a despacharTodo; si elige "por partes", sigue desde su celular (no se
-  // dispara nada y retira cuando quiera, como una preventa).
+  // NO disparamos la comanda acá. Qué pasa después depende del momento:
+  //  - DÍA D (walk-in): la pantalla de caja llama a despacharTodo apenas cobra y
+  //    dispara TODO lo pendiente a RETIRO (el que compra en el día come ahora; no
+  //    pregunta "por partes" ni pasa por el autoretiro de la bolsa).
+  //  - Antes del DÍA D (preventa): no se dispara nada; el éxito muestra el QR y el
+  //    cliente retira después desde su celular (autoretiro de la bolsa, por partes).
   const pedido = await pedidoService.crearPedido(datos, {
     lista: 'normal',
     origen: 'caja',
