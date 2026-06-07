@@ -141,6 +141,7 @@ export async function generarPdfGrado({ puesto, consumos }) {
     `Ayer vivimos una jornada inolvidable. Queremos agradecerles de corazón por haber sido parte del San Juan, y muy especialmente por el juego "${juego}", que estuvo a cargo de las familias del ${grado}.`,
     'Nada de esto hubiera sido posible sin su esfuerzo, su tiempo y su cariño. Cada familia que armó, atendió y acompañó el puesto hizo que la fiesta saliera adelante y fuera el éxito que fue.',
     'Como pequeño reconocimiento, preparamos este reporte con los números de la participación de tu grado durante la jornada. En las páginas siguientes vas a encontrar las estadísticas y el detalle de la actividad.',
+    'Como en todos los puestos, lo recaudado se reparte según lo acordado: el 80% queda para el grado y el 20% restante para la organización del San Juan dice que sí 2026, que sostiene los gastos comunes de la fiesta. En la página siguiente vas a ver el monto exacto que le corresponde a tu grado.',
     '¡Gracias por tanto! Esta fiesta es de todos, y la hicieron posible ustedes.',
   ];
   doc.setFontSize(11.5);
@@ -220,7 +221,39 @@ export async function generarPdfGrado({ puesto, consumos }) {
   });
   y = doc.lastAutoTable.finalY + 28;
 
-  // Gráfico de juegos por hora
+  // Distribución de la recaudación: el trato es 80% para el grado y 20% para la
+  // organización. Los padres preguntan, así que lo dejamos explícito.
+  const orgMonto = Math.round(st.recaudacion * 0.20);
+  const gradoMonto = st.recaudacion - orgMonto;
+  doc.setTextColor(...NAVY);
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(13);
+  doc.text('¿A dónde va lo recaudado?', M, y);
+  y += 10;
+  autoTable(doc, {
+    startY: y,
+    head: [['Destino', '%', 'Monto']],
+    body: [
+      [`Para tu grado (${grado})`, '80%', fmtGs(gradoMonto)],
+      ['Para la organización San Juan 2026', '20%', fmtGs(orgMonto)],
+    ],
+    foot: [['TOTAL RECAUDADO', '100%', fmtGs(st.recaudacion)]],
+    styles: { fontSize: 10, cellPadding: 6 },
+    headStyles: { fillColor: NAVY, textColor: 255, fontStyle: 'bold' },
+    footStyles: { fillColor: [240, 244, 248], textColor: NAVY, fontStyle: 'bold' },
+    columnStyles: { 1: { halign: 'right' }, 2: { halign: 'right' } },
+    margin: { left: M, right: M },
+    tableWidth: (W - M * 2) * 0.62,
+  });
+  y = doc.lastAutoTable.finalY + 28;
+
+  // Gráfico de juegos por hora. Si ya no hay lugar en la página, lo pasamos a la
+  // siguiente (el gráfico se dibuja a mano y no pagina solo).
+  if (y + 16 + 180 + 30 > H - M) {
+    doc.addPage();
+    drawHeader(doc, W, M, logo, 'Los números de tu grado', `${grado} · ${juego}`);
+    y = M + 70;
+  }
   doc.setTextColor(...NAVY);
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(13);
@@ -340,7 +373,8 @@ export async function generarXlsxGrado({ puesto, consumos }) {
   const blurb = ws.getCell('A6');
   blurb.value =
     `¡Gracias, familias del ${grado}! Sin su esfuerzo en el juego "${juego}" esta fiesta no hubiera sido posible. ` +
-    'Acá les compartimos los números de la participación de su grado durante la jornada.';
+    'Acá les compartimos los números de la participación de su grado durante la jornada. ' +
+    'Lo recaudado se reparte según lo acordado: 80% para el grado y 20% para la organización del San Juan 2026 (ver "¿A dónde va lo recaudado?").';
   blurb.alignment = { wrapText: true, vertical: 'top' };
   blurb.font = { italic: true, color: { argb: 'FF444444' } };
 
@@ -407,6 +441,49 @@ export async function generarXlsxGrado({ puesto, consumos }) {
     cB.value = cant;
     cB.numFmt = '#,##0';
     cC.value = esTotal ? 7000 * n7 + 8000 * n8 : valor * cant;
+    cC.numFmt = GS_FMT;
+    [cA, cB, cC].forEach((c, j) => {
+      c.alignment = { horizontal: j === 0 ? 'left' : 'right', vertical: 'middle' };
+      c.border = thinBorder;
+      c.font = { bold: esTotal };
+      if (esTotal) c.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF0F4F8' } };
+    });
+    row.height = 20;
+    r += 1;
+  });
+
+  // Distribución de la recaudación (80% grado / 20% organización): lo dejamos
+  // explícito porque los padres preguntan a dónde va lo recaudado.
+  const orgMonto = Math.round(st.recaudacion * 0.20);
+  const gradoMonto = st.recaudacion - orgMonto;
+  r += 1;
+  ws.getCell(`A${r}`).value = '¿A dónde va lo recaudado?';
+  ws.getCell(`A${r}`).font = { bold: true, size: 13, color: { argb: 'FF0B2E55' } };
+  r += 1;
+  const distHead = ws.getRow(r);
+  ['Destino', '%', 'Monto'].forEach((t, i) => {
+    const c = distHead.getCell(i + 1);
+    c.value = t;
+    c.fill = navyFill;
+    c.font = headFont;
+    c.alignment = { horizontal: i === 0 ? 'left' : 'right', vertical: 'middle' };
+    c.border = thinBorder;
+  });
+  distHead.height = 22;
+  r += 1;
+  const distRows = [
+    [`Para tu grado (${grado})`, '80%', gradoMonto, false],
+    ['Para la organización San Juan 2026', '20%', orgMonto, false],
+    ['TOTAL RECAUDADO', '100%', st.recaudacion, true],
+  ];
+  distRows.forEach(([destino, pct, monto, esTotal]) => {
+    const row = ws.getRow(r);
+    const cA = row.getCell(1);
+    const cB = row.getCell(2);
+    const cC = row.getCell(3);
+    cA.value = destino;
+    cB.value = pct;
+    cC.value = monto;
     cC.numFmt = GS_FMT;
     [cA, cB, cC].forEach((c, j) => {
       c.alignment = { horizontal: j === 0 ? 'left' : 'right', vertical: 'middle' };
