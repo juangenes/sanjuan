@@ -89,13 +89,18 @@ function footer(label) {
   doc.text(`Página ${page}`, W - M, H - 24, { align: 'right' });
 }
 
-// Tarjeta KPI
+// Tarjeta KPI — el valor se achica solo para entrar en el ancho.
 function kpiCard(x, y, w, h, valor, etiqueta, color = NAVY) {
   doc.setFillColor(...LIGHT);
   doc.roundedRect(x, y, w, h, 6, 6, 'F');
   doc.setTextColor(...color);
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(16);
+  let fs = 16;
+  doc.setFontSize(fs);
+  while (doc.getTextWidth(String(valor)) > w - 12 && fs > 8) {
+    fs -= 0.5;
+    doc.setFontSize(fs);
+  }
   doc.text(String(valor), x + w / 2, y + 28, { align: 'center' });
   doc.setTextColor(90, 90, 90);
   doc.setFont('helvetica', 'normal');
@@ -129,10 +134,10 @@ y += 28;
 const gap = 12;
 const kw = (W - M * 2 - gap * 3) / 4;
 const kh = 56;
-kpiCard(M, y, kw, kh, fmtGs(totMonto).replace('Gs. ', '₲ '), 'Total recaudado', GREEN);
+kpiCard(M, y, kw, kh, fmtGs(totMonto), 'Total recaudado', GREEN);
 kpiCard(M + (kw + gap), y, kw, kh, fmtNum(data.length), 'Ventas (pedidos)');
 kpiCard(M + (kw + gap) * 2, y, kw, kh, fmtNum(cajas.length), 'Cajas operativas');
-kpiCard(M + (kw + gap) * 3, y, kw, kh, fmtGs(Math.round(totMonto / data.length)).replace('Gs. ', '₲ '), 'Ticket promedio');
+kpiCard(M + (kw + gap) * 3, y, kw, kh, fmtGs(Math.round(totMonto / data.length)), 'Ticket promedio');
 y += kh + 26;
 
 // Recaudación por método de pago

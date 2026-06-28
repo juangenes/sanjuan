@@ -1,0 +1,43 @@
+{
+  "grado": "3er Grado",
+  "grado_alias": "3420954",
+  "grado_responsable": "Gilda Zaracho",
+  "jornada": "2026-06-06",
+  "emision": "2026-06-10",
+  "split_grado": 0.80,
+  "split_org": 0.20,
+  "juego": {
+    "nombre": "El árbol de la suerte",
+    "creditos": 460,
+    "c7": 204,
+    "c8": 256,
+    "valor": 3476000,
+    "rango_primera": "11:19",
+    "rango_ultima": "16:21",
+    "horas": [
+      { "hora": 11, "creditos": 55,  "monto": 406000 },
+      { "hora": 12, "creditos": 105, "monto": 775000 },
+      { "hora": 13, "creditos": 98,  "monto": 744000 },
+      { "hora": 14, "creditos": 102, "monto": 788000 },
+      { "hora": 15, "creditos": 82,  "monto": 627000 },
+      { "hora": 16, "creditos": 18,  "monto": 136000 }
+    ]
+  },
+  "figuritas": {
+    "valor": 1310000,
+    "unidades": 187,
+    "pedidos": 30,
+    "rango_primera": "11:25",
+    "rango_ultima": "16:08",
+    "excluido_nota": "Se excluye un (1) cargo de prueba de Gs. 10.000 que no corresponde a una venta real.",
+    "tipos": [
+      { "titulo": "Figuritas Normales",   "precio": 2500,  "unidades": 38, "monto": 95000 },
+      { "titulo": "Figuritas Cromadas",   "precio": 5000,  "unidades": 55, "monto": 275000 },
+      { "titulo": "Figuritas Especiales", "precio": 10000, "unidades": 94, "monto": 940000 }
+    ],
+    "metodos": [
+      { "metodo": "POS_DEBITO", "pedidos": 14, "unidades": 129, "monto": 1015000 },
+      { "metodo": "EFECTIVO",   "pedidos": 16, "unidades": 58,  "monto": 295000 }
+    ]
+  }
+}
