@@ -20,3 +20,6 @@ tarjetas-qr/
 gen-qr-prueba.js
 qr-prueba/
 bancard-evidencia-*.png
+
+# Config local de Claude Code (permisos/env por máquina) — NO subir al repo
+.claude/settings.local.json
