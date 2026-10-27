@@ -1,0 +1,12 @@
+# Código propio de San Juan; .gitignore también se respeta.
+# Dumps y datos exportados quedan fuera del grafo.
+node_modules/
+graphify-out/
+dist/
+build/
+.playwright-mcp/
+package-lock.json
+sanjuan_dump.sql
+*-data.json
+.env
+.env.*

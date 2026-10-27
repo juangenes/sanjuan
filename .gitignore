@@ -23,3 +23,6 @@ bancard-evidencia-*.png
 
 # Config local de Claude Code (permisos/env por máquina) — NO subir al repo
 .claude/settings.local.json
+
+# Salida generada de Graphify
+graphify-out/
